@@ -444,7 +444,7 @@ namespace SimpleBlob.PgSql.Test
             };
             Assert.True(_store.SetContent(content));
 
-            BlobItemContent content2 = _store.GetContent(item.Id);
+            BlobItemContent content2 = _store.GetContent(item.Id, false);
             byte[] buf2 = ReadStreamToEnd(content2.Content).ToArray();
             Assert.Equal(buf.Length, buf2.Length);
             for (int i = 0; i < buf.Length; i++)

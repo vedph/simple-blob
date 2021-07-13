@@ -52,8 +52,10 @@ namespace SimpleBlob.Core
         /// Gets the content of the item with the specified identifier.
         /// </summary>
         /// <param name="id">The identifier.</param>
+        /// <param name="metadataOnly">True to get only metadata without content.
+        /// </param>
         /// <returns>The content, or null if not found.</returns>
-        BlobItemContent GetContent(string id);
+        BlobItemContent GetContent(string id, bool metadataOnly);
 
         /// <summary>
         /// Gets the properties of the item with the specified identifier.

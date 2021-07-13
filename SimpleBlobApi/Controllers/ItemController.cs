@@ -64,7 +64,7 @@ namespace SimpleBlobApi.Controllers
         /// <param name="id">The item's identifier.</param>
         /// <returns>The item or 404 if not found.</returns>
         [HttpGet("api/items/{id}", Name = "GetItem")]
-        [Authorize(Roles = "reader,writer,browser,admin")]
+        [Authorize]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
         public ActionResult<BlobItem> GetItem([FromRoute] string id)

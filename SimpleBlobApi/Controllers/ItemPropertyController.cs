@@ -31,7 +31,7 @@ namespace SimpleBlobApi.Controllers
         /// <param name="id">The item identifier.</param>
         /// <returns>Array of properties.</returns>
         [HttpGet("api/items/{id}/properties", Name = "GetProperties")]
-        [Authorize(Roles = "reader,writer,browser,admin")]
+        [Authorize]
         [ProducesResponseType(200)]
         public ActionResult<BlobItemProperty[]> GetProperties([FromRoute] string id)
         {

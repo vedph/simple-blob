@@ -192,33 +192,57 @@ namespace SimpleBlob.PgSql
         /// Gets the content of the item with the specified identifier.
         /// </summary>
         /// <param name="id">The identifier.</param>
+        /// <param name="metadataOnly">True to get only metadata without content.
+        /// </param>
         /// <returns>The content, or null if not found.</returns>
         /// <exception cref="ArgumentNullException">id</exception>
-        public BlobItemContent GetContent(string id)
+        public BlobItemContent GetContent(string id, bool metadataOnly)
         {
             if (id == null) throw new ArgumentNullException(nameof(id));
 
-            NpgsqlCommand cmd = new NpgsqlCommand("SELECT itemid,mimetype," +
-                "hash,size,userid,datemodified,content\n" +
-                $"FROM {T_CONT} WHERE itemid=@itemid;",
-                (NpgsqlConnection)Connection);
-
-            AddParameter("@itemid", DbType.String, id, cmd);
-
-            using NpgsqlDataReader reader = cmd.ExecuteReader();
-
-            if (!reader.Read()) return null;
-
-            return new BlobItemContent
+            if (metadataOnly)
             {
-                ItemId = reader.GetString("itemid"),
-                MimeType = reader.GetString("mimetype"),
-                Hash = reader.GetInt64("hash"),
-                Size = reader.GetInt64("size"),
-                UserId = reader.GetString("userid"),
-                DateModified = reader.GetDateTime("datemodified"),
-                Content = new MemoryStream((byte[])reader["content"])
-            };
+                IDbCommand cmd = Connection.CreateCommand();
+                cmd.CommandText = "SELECT itemid,mimetype,hash,size," +
+                    $"userid,datemodified FROM {T_CONT}\n" +
+                    "WHERE itemid=@itemid;";
+                AddParameter("@itemid", DbType.String, id, cmd);
+                using IDataReader reader = cmd.ExecuteReader();
+                if (!reader.Read()) return null;
+                return new BlobItemContent
+                {
+                    ItemId = id,
+                    MimeType = reader.GetString(1),
+                    Hash = reader.GetInt64(2),
+                    Size = reader.GetInt64(3),
+                    UserId = reader.GetString(4),
+                    DateModified = reader.GetDateTime(5)
+                };
+            }
+            else
+            {
+                NpgsqlCommand cmd = new NpgsqlCommand("SELECT itemid,mimetype," +
+                    "hash,size,userid,datemodified,content\n" +
+                    $"FROM {T_CONT} WHERE itemid=@itemid;",
+                    (NpgsqlConnection)Connection);
+
+                AddParameter("@itemid", DbType.String, id, cmd);
+
+                using NpgsqlDataReader reader = cmd.ExecuteReader();
+
+                if (!reader.Read()) return null;
+
+                return new BlobItemContent
+                {
+                    ItemId = reader.GetString("itemid"),
+                    MimeType = reader.GetString("mimetype"),
+                    Hash = reader.GetInt64("hash"),
+                    Size = reader.GetInt64("size"),
+                    UserId = reader.GetString("userid"),
+                    DateModified = reader.GetDateTime("datemodified"),
+                    Content = new MemoryStream((byte[])reader["content"])
+                };
+            }
         }
 
         /// <summary>
