@@ -10,3 +10,13 @@ Projects:
 - `SimpleBlob.Sql`: shared components for SQL-based implementations.
 - `SimpleBlob.PgSql`: PostgresSQL implementation.
 - `SimpleBlobApi`: API wrapper.
+
+## Docker
+
+Quick Docker image build:
+
+```bash
+docker build . -t vedph2020/simple-blob-api:1.0.0 -t vedph2020/simple-blob-api:latest
+```
+
+(replace with the current version).

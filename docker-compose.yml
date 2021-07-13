@@ -1,0 +1,37 @@
+version: '3.7'
+
+services:
+  simple-blob-pgsql:
+    image: postgis/postgis
+    container_name: simple-blob-pgsql
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=postgres
+    ports:
+      - 5432:5432
+    networks:
+      - simple-blob-network
+    volumes:
+      # https://hub.docker.com/r/postgis/postgis
+      - /var/db/pgsql:/var/lib/postgresql/data
+
+  simple-blob-api:
+    image: vedph2020/simple-blob-api:1.0.0
+    ports:
+        # https://stackoverflow.com/questions/48669548/why-does-aspnet-core-start-on-port-80-from-within-docker
+        - 2418:80
+    depends_on:
+        - simple-blob-pgsql
+    environment:
+        # for Windows use : as separator, for non Windows use __
+        # (see https://github.com/aspnet/Configuration/issues/469)
+        - CONNECTIONSTRINGS__DEFAULT=User ID=postgres;Password=postgres;Host=simple-blob-pgsql;Port=5432;Database={0};
+        # - ALLOWED__ORIGINS__3=http://www.something.com
+        - SEEDDELAY=30
+    networks:
+        - simple-blob-network
+
+networks:
+  simple-blob-network:
+    driver: bridge

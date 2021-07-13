@@ -9,14 +9,16 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleBlob.Sql", "SimpleBlo
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleBlob.PgSql", "SimpleBlob.PgSql\SimpleBlob.PgSql.csproj", "{BD666447-CC9A-4BFC-AE88-B90020CB3EF6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleBlob.PgSql.Test", "SimpleBlob.PgSql.Test\SimpleBlob.PgSql.Test.csproj", "{AF338A4B-8FC1-4A8F-9760-ACCC91808CF8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleBlob.PgSql.Test", "SimpleBlob.PgSql.Test\SimpleBlob.PgSql.Test.csproj", "{AF338A4B-8FC1-4A8F-9760-ACCC91808CF8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3FEB36D5-5715-4443-AEFF-1E9D40A33C81}"
 	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+		Dockerfile = Dockerfile
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleBlobApi", "SimpleBlobApi\SimpleBlobApi.csproj", "{4AB077CC-B6D6-47F2-BA4B-D853DAB8D894}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleBlobApi", "SimpleBlobApi\SimpleBlobApi.csproj", "{4AB077CC-B6D6-47F2-BA4B-D853DAB8D894}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -8,6 +8,7 @@ using SimpleBlob.PgSql;
 using System;
 using System.Data.Common;
 using System.Globalization;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SimpleBlobApi.Services
@@ -63,6 +64,14 @@ namespace SimpleBlobApi.Services
                 {
                     IConfiguration config =
                         serviceProvider.GetService<IConfiguration>();
+
+                    int delay = config.GetValue<int>("SeedDelay");
+                    if (delay > 0)
+                    {
+                        logger.LogInformation($"Waiting {delay} seconds...");
+                        Thread.Sleep(delay * 1000);
+                    }
+
                     //IHostEnvironment environment =
                     //    serviceProvider.GetService<IHostEnvironment>();
 
