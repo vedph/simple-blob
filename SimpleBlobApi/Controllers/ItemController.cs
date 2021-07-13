@@ -1,4 +1,5 @@
 ﻿using Fusi.Tools.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SimpleBlob.Core;
 using SimpleBlobApi.Models;
@@ -29,6 +30,7 @@ namespace SimpleBlobApi.Controllers
         /// <param name="filter">The filter.</param>
         /// <returns>Page of matching items.</returns>
         [HttpGet("api/items")]
+        [Authorize(Roles = "writer,browser,admin")]
         [ProducesResponseType(200)]
         public ActionResult<DataPage<BlobItem>> GetItems(
             [FromQuery] BlobItemFilterModel filter)
@@ -42,6 +44,7 @@ namespace SimpleBlobApi.Controllers
         /// </summary>
         /// <param name="item">The item.</param>
         [HttpPost("api/items")]
+        [Authorize(Roles = "writer,browser,admin")]
         [ProducesResponseType(200)]
         public ActionResult AddItem([FromBody] BlobItemModel item)
         {
@@ -61,6 +64,7 @@ namespace SimpleBlobApi.Controllers
         /// <param name="id">The item's identifier.</param>
         /// <returns>The item or 404 if not found.</returns>
         [HttpGet("api/items/{id}", Name = "GetItem")]
+        [Authorize(Roles = "reader,writer,browser,admin")]
         [ProducesResponseType(200)]
         [ProducesResponseType(404)]
         public ActionResult<BlobItem> GetItem([FromRoute] string id)
@@ -75,6 +79,7 @@ namespace SimpleBlobApi.Controllers
         /// </summary>
         /// <param name="id">The identifier.</param>
         [HttpDelete("api/items/{id}")]
+        [Authorize(Roles = "writer,browser,admin")]
         public void DeleteItem([FromRoute] string id)
         {
             _store.DeleteItem(id);

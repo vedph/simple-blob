@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SimpleBlob.Core;
 
@@ -30,6 +31,7 @@ namespace SimpleBlobApi.Controllers
         /// <param name="mimeType">The MIME type.</param>
         /// <param name="id">The BLOB item's identifier.</param>
         [HttpPost("items/{id}/content")]
+        [Authorize(Roles = "admin,writer")]
         public IActionResult UploadContent(IFormFile file,
             [FromQuery] string mimeType,
             [FromQuery] string id)
@@ -52,6 +54,7 @@ namespace SimpleBlobApi.Controllers
         /// </summary>
         /// <param name="id">The item's identifier.</param>
         /// <returns>Content.</returns>
+        [Authorize(Roles = "reader,writer,admin")]
         [HttpGet("items/{id}/content", Name = "DownloadContent")]
         public FileResult DownloadContent([FromRoute] string id)
         {

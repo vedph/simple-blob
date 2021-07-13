@@ -24,6 +24,8 @@ using System.Text;
 using Microsoft.IdentityModel.Logging;
 using SimpleBlobApi.Services;
 using System.Globalization;
+using MessagingApi;
+using Microsoft.Extensions.Options;
 
 namespace SimpleBlobApi
 {
@@ -51,6 +53,20 @@ namespace SimpleBlobApi
         {
             Configuration = configuration;
             HostEnvironment = environment;
+        }
+
+        private void ConfigureOptionsServices(IServiceCollection services)
+        {
+            // configuration sections
+            // https://andrewlock.net/adding-validation-to-strongly-typed-configuration-objects-in-asp-net-core/
+            services.Configure<MessagingOptions>(Configuration.GetSection("Messaging"));
+            services.Configure<DotNetMailerOptions>(Configuration.GetSection("Mailer"));
+
+            // explicitly register the settings object by delegating to the IOptions object
+            services.AddSingleton(resolver =>
+                resolver.GetRequiredService<IOptions<MessagingOptions>>().Value);
+            services.AddSingleton(resolver =>
+                resolver.GetRequiredService<IOptions<DotNetMailerOptions>>().Value);
         }
 
         private void ConfigureCorsServices(IServiceCollection services)
@@ -180,6 +196,8 @@ namespace SimpleBlobApi
         {
             // CORS (before MVC)
             ConfigureCorsServices(services);
+            // options
+            ConfigureOptionsServices(services);
 
             services.AddControllers();
 

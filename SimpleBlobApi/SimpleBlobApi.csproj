@@ -19,6 +19,7 @@
   <ItemGroup>
     <PackageReference Include="EFCore.NamingConventions" Version="5.0.2" />
     <PackageReference Include="Fusi.DbManager.PgSql" Version="1.0.5" />
+    <PackageReference Include="MessagingApi" Version="1.0.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.8" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="5.0.8" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="5.0.8" />
@@ -39,6 +40,10 @@
     <ProjectReference Include="..\SimpleBlob.Core\SimpleBlob.Core.csproj" />
     <ProjectReference Include="..\SimpleBlob.PgSql\SimpleBlob.PgSql.csproj" />
     <ProjectReference Include="..\SimpleBlob.Sql\SimpleBlob.Sql.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\" />
   </ItemGroup>
 
 </Project>

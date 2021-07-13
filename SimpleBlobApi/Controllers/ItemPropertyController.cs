@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SimpleBlob.Core;
 using SimpleBlobApi.Models;
 using System.Collections.Generic;
@@ -30,6 +31,7 @@ namespace SimpleBlobApi.Controllers
         /// <param name="id">The item identifier.</param>
         /// <returns>Array of properties.</returns>
         [HttpGet("api/items/{id}/properties", Name = "GetProperties")]
+        [Authorize(Roles = "reader,writer,browser,admin")]
         [ProducesResponseType(200)]
         public ActionResult<BlobItemProperty[]> GetProperties([FromRoute] string id)
         {
@@ -44,6 +46,7 @@ namespace SimpleBlobApi.Controllers
         /// <param name="reset">if set to <c>true</c>, remove all the existing
         /// properties before adding the new ones.</param>
         [HttpPost("api/items/{id}/properties")]
+        [Authorize(Roles = "writer,browser,admin")]
         [ProducesResponseType(200)]
         public ActionResult AddProperties(
             [FromBody] BlobItemPropertiesModel model,
@@ -65,6 +68,7 @@ namespace SimpleBlobApi.Controllers
         /// </summary>
         /// <param name="id">The item's identifier.</param>
         [HttpDelete("api/items/{id}/properties")]
+        [Authorize(Roles = "writer,browser,admin")]
         public void DeleteProperties([FromRoute] string id)
         {
             _store.DeleteProperties(id);
