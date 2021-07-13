@@ -129,7 +129,7 @@ namespace SimpleBlob.PgSql.Test
                     UserId = "zeus",
                     MimeType = odd ? "text/plain" : "text/html",
                     Content = new MemoryStream(
-                        Encoding.UTF8.GetBytes("Text nr." + count))
+                        Encoding.UTF8.GetBytes("Text nr." + n))
                 });
             }
 
@@ -286,6 +286,123 @@ namespace SimpleBlob.PgSql.Test
                 PageNumber = 1,
                 PageSize = 2,
                 MaxDateModified = DateTime.UtcNow - new TimeSpan(3, 0, 0)
+            });
+            Assert.Equal(0, page.Total);
+            Assert.Empty(page.Items);
+        }
+
+        [Fact]
+        public void GetItems_MinSizeForAll_Ok()
+        {
+            Init();
+            // odd/1, even/2, odd/3, even/4, odd/5
+            foreach (BlobItem item in GetItems(5)) _store.AddItem(item);
+            foreach (BlobItemContent content in GetItemContents(5))
+                _store.SetContent(content);
+
+            DataPage<BlobItem> page = _store.GetItems(new BlobItemFilter
+            {
+                PageNumber = 1,
+                PageSize = 2,
+                MinSize = 1
+            });
+            Assert.Equal(5, page.Total);
+            Assert.Equal("even/2", page.Items[0].Id);
+            Assert.Equal("even/4", page.Items[1].Id);
+        }
+
+        [Fact]
+        public void GetItems_MinSizeForNone_Ok()
+        {
+            Init();
+            // odd/1, even/2, odd/3, even/4, odd/5
+            foreach (BlobItem item in GetItems(5)) _store.AddItem(item);
+            foreach (BlobItemContent content in GetItemContents(5))
+                _store.SetContent(content);
+
+            DataPage<BlobItem> page = _store.GetItems(new BlobItemFilter
+            {
+                PageNumber = 1,
+                PageSize = 2,
+                MinSize = 1000
+            });
+            Assert.Equal(0, page.Total);
+            Assert.Empty(page.Items);
+        }
+
+        [Fact]
+        public void GetItems_MaxSizeForAll_Ok()
+        {
+            Init();
+            // odd/1, even/2, odd/3, even/4, odd/5
+            foreach (BlobItem item in GetItems(5)) _store.AddItem(item);
+            foreach (BlobItemContent content in GetItemContents(5))
+                _store.SetContent(content);
+
+            DataPage<BlobItem> page = _store.GetItems(new BlobItemFilter
+            {
+                PageNumber = 1,
+                PageSize = 2,
+                MaxSize = 1000
+            });
+            Assert.Equal(5, page.Total);
+            Assert.Equal("even/2", page.Items[0].Id);
+            Assert.Equal("even/4", page.Items[1].Id);
+        }
+
+        [Fact]
+        public void GetItems_MaxSizeForNone_Ok()
+        {
+            Init();
+            // odd/1, even/2, odd/3, even/4, odd/5
+            foreach (BlobItem item in GetItems(5)) _store.AddItem(item);
+            foreach (BlobItemContent content in GetItemContents(5))
+                _store.SetContent(content);
+
+            DataPage<BlobItem> page = _store.GetItems(new BlobItemFilter
+            {
+                PageNumber = 1,
+                PageSize = 2,
+                MaxSize = 1
+            });
+            Assert.Equal(0, page.Total);
+            Assert.Empty(page.Items);
+        }
+
+        [Fact]
+        public void GetItems_UserIdForAll_Ok()
+        {
+            Init();
+            // odd/1, even/2, odd/3, even/4, odd/5
+            foreach (BlobItem item in GetItems(5)) _store.AddItem(item);
+            foreach (BlobItemContent content in GetItemContents(5))
+                _store.SetContent(content);
+
+            DataPage<BlobItem> page = _store.GetItems(new BlobItemFilter
+            {
+                PageNumber = 1,
+                PageSize = 2,
+                UserId = "zeus"
+            });
+            Assert.Equal(5, page.Total);
+            Assert.Equal("even/2", page.Items[0].Id);
+            Assert.Equal("even/4", page.Items[1].Id);
+        }
+
+        [Fact]
+        public void GetItems_UserIdForNone_Ok()
+        {
+            Init();
+            // odd/1, even/2, odd/3, even/4, odd/5
+            foreach (BlobItem item in GetItems(5)) _store.AddItem(item);
+            foreach (BlobItemContent content in GetItemContents(5))
+                _store.SetContent(content);
+
+            DataPage<BlobItem> page = _store.GetItems(new BlobItemFilter
+            {
+                PageNumber = 1,
+                PageSize = 2,
+                UserId = "notexisting"
             });
             Assert.Equal(0, page.Total);
             Assert.Empty(page.Items);
