@@ -8,6 +8,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace SimpleBlobApi
 {
@@ -48,7 +49,7 @@ namespace SimpleBlobApi
         /// </summary>
         /// <param name="args">The arguments.</param>
         /// <returns>0=ok, else error.</returns>
-        public static int Main(string[] args)
+        public static async Task<int> Main(string[] args)
         {
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
@@ -68,10 +69,10 @@ namespace SimpleBlobApi
                 // this is the place for seeding:
                 // see https://stackoverflow.com/questions/45148389/how-to-seed-in-entity-framework-core-2
                 // and https://docs.microsoft.com/en-us/aspnet/core/migration/1x-to-2x/?view=aspnetcore-2.1#move-database-initialization-code
-                var host = CreateHostBuilder(args)
+                var host = await CreateHostBuilder(args)
                     .UseSerilog()
                     .Build()
-                    .Seed();
+                    .SeedAsync();
 
                 host.Run();
 

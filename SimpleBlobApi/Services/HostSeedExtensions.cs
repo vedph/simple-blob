@@ -3,9 +3,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Polly;
 using SimpleBlob.PgSql;
 using System;
+using System.Data.Common;
 using System.Globalization;
+using System.Threading.Tasks;
 
 namespace SimpleBlobApi.Services
 {
@@ -14,28 +17,31 @@ namespace SimpleBlobApi.Services
     /// </summary>
     public static class HostSeedExtensions
     {
-        private static void EnsureDatabaseExists(string name,
-            IConfiguration config,
-            IHostEnvironment environment)
+        private static Task SeedAsync(IServiceProvider serviceProvider)
         {
-            string cs = string.Format(
-                CultureInfo.InvariantCulture,
-                config.GetConnectionString("Default"),
-                name);
+            ApplicationDatabaseInitializer initializer =
+                new ApplicationDatabaseInitializer(serviceProvider);
 
-            // check if DB exists
-            Serilog.Log.Information($"Checking for database {name}...");
+            return Policy.Handle<DbException>()
+                .WaitAndRetry(new[]
+                {
+                    TimeSpan.FromSeconds(10),
+                    TimeSpan.FromSeconds(30),
+                    TimeSpan.FromSeconds(60)
+                }, (exception, timeSpan, _) =>
+                {
+                    ILogger logger = serviceProvider
+                        .GetService<ILoggerFactory>()
+                        .CreateLogger(typeof(HostSeedExtensions));
 
-            PgSqlDbManager manager = new PgSqlDbManager(cs);
-
-            if (!manager.Exists(name))
-            {
-                Serilog.Log.Information($"Creating database {name}...");
-                PgSqlSimpleBlobStore store = new PgSqlSimpleBlobStore(cs);
-                string sql = store.GetSchema();
-                manager.CreateDatabase(name, sql, null);
-                Serilog.Log.Information("Database created.");
-            }
+                    string message = "Unable to connect to DB" +
+                        $" (sleep {timeSpan}): {exception.Message}";
+                    Console.WriteLine(message);
+                    logger.LogError(exception, message);
+                }).Execute(async () =>
+                {
+                    await initializer.SeedAsync();
+                });
         }
 
         /// <summary>
@@ -44,7 +50,7 @@ namespace SimpleBlobApi.Services
         /// <param name="host">The host.</param>
         /// <returns>The received host, to allow concatenation.</returns>
         /// <exception cref="ArgumentNullException">serviceProvider</exception>
-        public static IHost Seed(this IHost host)
+        public static async Task<IHost> SeedAsync(this IHost host)
         {
             using (var scope = host.Services.CreateScope())
             {
@@ -57,12 +63,11 @@ namespace SimpleBlobApi.Services
                 {
                     IConfiguration config =
                         serviceProvider.GetService<IConfiguration>();
-                    IHostEnvironment environment =
-                        serviceProvider.GetService<IHostEnvironment>();
+                    //IHostEnvironment environment =
+                    //    serviceProvider.GetService<IHostEnvironment>();
 
-                    EnsureDatabaseExists(
-                        config.GetSection("DatabaseName").Get<string>(),
-                        config, environment);
+                    await SeedAsync(serviceProvider);
+                    return host;
                 }
                 catch (Exception ex)
                 {
@@ -70,7 +75,6 @@ namespace SimpleBlobApi.Services
                     throw;
                 }
             }
-            return host;
         }
     }
 }

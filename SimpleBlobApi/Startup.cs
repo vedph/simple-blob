@@ -16,6 +16,14 @@ using System.Reflection;
 using System.Text.Json;
 using SimpleBlob.PgSql;
 using SimpleBlob.Core;
+using SimpleBlobApi.Auth;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using Microsoft.IdentityModel.Logging;
+using SimpleBlobApi.Services;
+using System.Globalization;
 
 namespace SimpleBlobApi
 {
@@ -67,6 +75,58 @@ namespace SimpleBlobApi
             }));
         }
 
+        private void ConfigureAuthServices(IServiceCollection services)
+        {
+            // identity
+            string connStringTemplate = Configuration.GetConnectionString(
+                "Default");
+
+            services.AddDbContext<ApplicationDbContext>(options =>
+            {
+                options.UseNpgsql(
+                    string.Format(CultureInfo.InvariantCulture,
+                    Configuration.GetConnectionString("Default"),
+                    Configuration.GetValue<string>("DatabaseName")));
+            });
+
+            services.AddIdentity<ApplicationUser, ApplicationRole>()
+                .AddEntityFrameworkStores<ApplicationDbContext>();
+
+            // authentication service
+            services
+                .AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                })
+               .AddJwtBearer(options =>
+               {
+                   // NOTE: remember to set the values in configuration:
+                   // Jwt:SecureKey, Jwt:Audience, Jwt:Issuer
+                   IConfigurationSection jwtSection = Configuration.GetSection("Jwt");
+                   string key = jwtSection["SecureKey"];
+                   if (string.IsNullOrEmpty(key))
+                       throw new ApplicationException("Required JWT SecureKey not found");
+
+                   options.SaveToken = true;
+                   options.RequireHttpsMetadata = false;
+                   options.TokenValidationParameters = new TokenValidationParameters()
+                   {
+                       ValidateIssuer = true,
+                       ValidateAudience = true,
+                       ValidAudience = jwtSection["Audience"],
+                       ValidIssuer = jwtSection["Issuer"],
+                       IssuerSigningKey = new SymmetricSecurityKey(
+                           Encoding.UTF8.GetBytes(key))
+                   };
+               });
+#if DEBUG
+            // use to show more information when troubleshooting JWT issues
+            IdentityModelEventSource.ShowPII = true;
+#endif
+        }
+
         private static void ConfigureSwaggerServices(IServiceCollection services)
         {
             services.AddSwaggerGen(c =>
@@ -112,7 +172,10 @@ namespace SimpleBlobApi
             });
         }
 
-        // This method gets called by the runtime. Use this method to add services to the container.
+        /// <summary>
+        /// Configures the services.
+        /// </summary>
+        /// <param name="services">The services.</param>
         public void ConfigureServices(IServiceCollection services)
         {
             // CORS (before MVC)
@@ -131,9 +194,14 @@ namespace SimpleBlobApi
                 .SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
 
             // authentication
-            // ConfigureAuthServices(services);
+            ConfigureAuthServices(services);
 
+            // configuration
             services.AddSingleton(_ => Configuration);
+
+            // user repository service
+            services.AddScoped<IUserRepository<ApplicationUser>,
+                ApplicationUserRepository>();
 
             // BLOB services
             services.AddScoped<ISimpleBlobStore>(_ =>
