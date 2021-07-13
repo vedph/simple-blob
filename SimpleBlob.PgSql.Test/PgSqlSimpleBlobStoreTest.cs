@@ -1,5 +1,6 @@
 using Fusi.DbManager;
 using Fusi.DbManager.PgSql;
+using Fusi.Tools.Data;
 using SimpleBlob.Core;
 using System.Collections.Generic;
 using System.IO;
@@ -98,6 +99,54 @@ namespace SimpleBlob.PgSql.Test
             Assert.Null(_store.GetItem(item.Id));
         }
 
+        private IList<BlobItem> GetItems(int count)
+        {
+            List<BlobItem> items = new List<BlobItem>();
+            for (int n = 1; n <= count; n++)
+            {
+                items.Add(new BlobItem
+                {
+                    Id = (n % 2 == 0? "even" : "odd") + "/" + n,
+                    UserId = "zeus"
+                });
+            }
+            return items;
+        }
+
+        [Fact]
+        public void GetItems_NoFilterPage1_Ok()
+        {
+            Init();
+            // odd/1, even/2, odd/3, even/4, odd/5
+            foreach (BlobItem item in GetItems(5)) _store.AddItem(item);
+
+            DataPage<BlobItem> page = _store.GetItems(new BlobItemFilter
+            {
+                PageNumber = 1,
+                PageSize = 2
+            });
+            Assert.Equal(5, page.Total);
+            Assert.Equal("even/2", page.Items[0].Id);
+            Assert.Equal("even/4", page.Items[1].Id);
+        }
+
+        [Fact]
+        public void GetItems_NoFilterPage2_Ok()
+        {
+            Init();
+            // odd/1, even/2, odd/3, even/4, odd/5
+            foreach (BlobItem item in GetItems(5)) _store.AddItem(item);
+
+            DataPage<BlobItem> page = _store.GetItems(new BlobItemFilter
+            {
+                PageNumber = 2,
+                PageSize = 2
+            });
+            Assert.Equal(5, page.Total);
+            Assert.Equal("odd/1", page.Items[0].Id);
+            Assert.Equal("odd/3", page.Items[1].Id);
+        }
+
         private static IList<byte> ReadStreamToEnd(Stream stream)
         {
             using BinaryReader reader = new BinaryReader(stream);
@@ -109,6 +158,24 @@ namespace SimpleBlob.PgSql.Test
                 bytes.AddRange(buf);
             } while (buf.Length == 8192);
             return bytes;
+        }
+
+        [Fact]
+        public void GetItems_Path_Ok()
+        {
+            Init();
+            // odd/1, even/2, odd/3, even/4, odd/5
+            foreach (BlobItem item in GetItems(5)) _store.AddItem(item);
+
+            DataPage<BlobItem> page = _store.GetItems(new BlobItemFilter
+            {
+                PageNumber = 1,
+                PageSize = 2,
+                Path = "odd/*"
+            });
+            Assert.Equal(3, page.Total);
+            Assert.Equal("odd/1", page.Items[0].Id);
+            Assert.Equal("odd/3", page.Items[1].Id);
         }
 
         [Fact]

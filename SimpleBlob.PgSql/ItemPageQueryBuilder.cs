@@ -6,23 +6,36 @@ using System.Text;
 
 namespace SimpleBlob.PgSql
 {
+    /// <summary>
+    /// Query builder for items browsers.
+    /// </summary>
     public static class ItemPageQueryBuilder
     {
         private static void AppendClause(int n, string name, string op,
             string value, StringBuilder sb)
         {
+            // WHERE/AND name op value
             sb.Append(n == 1 ? "\nWHERE\n" : "\nAND\n");
             sb.Append(name);
             sb.Append(' ').Append(op).Append(' ');
             sb.Append(value);
         }
 
+        /// <summary>
+        /// Builds the query for the specified filter.
+        /// </summary>
+        /// <param name="filter">The filter.</param>
+        /// <param name="cmd">The target command.</param>
+        /// <returns>Query with 1=data query and 2=count query.</returns>
         public static Tuple<string, string> Build(BlobItemFilter filter, IDbCommand cmd)
         {
             bool fromContent = false;
 
+            // head = ... item AS i
             StringBuilder head = new StringBuilder();
-            head.Append(SqlSimpleBlobStore.T_ITEM).AppendLine(" AS i");
+            head.Append(SqlSimpleBlobStore.T_ITEM).Append(" AS i");
+
+            // tail will contain WHERE clauses
             StringBuilder tail = new StringBuilder();
             int n = 0;
 
@@ -31,8 +44,7 @@ namespace SimpleBlob.PgSql
             {
                 if (filter.Path.Contains('*') || filter.Path.Contains('?'))
                 {
-                    string path = filter.Path.Replace('*', '%');
-                    path = filter.Path.Replace('?', '_');
+                    string path = filter.Path.Replace('*', '%').Replace('?', '_');
 
                     SqlSimpleBlobStore.AddParameter(
                         "@path", DbType.String, path, cmd);
@@ -127,15 +139,16 @@ namespace SimpleBlob.PgSql
 
             StringBuilder data = new StringBuilder();
             data.Append("SELECT i.id,i.userid,i.datemodified FROM ");
-            data.Append(head).AppendLine();
-            data.Append(tail).AppendLine();
-            data.Append("ORDER BY item.id OFFSET ").Append(filter.GetSkipCount())
+            data.Append(head);
+            if (tail.Length > 0) data.Append(tail);
+            data.Append("\nORDER BY i.id OFFSET ").Append(filter.GetSkipCount())
                 .Append(" LIMIT ").Append(filter.PageSize).Append(';');
 
             StringBuilder tot = new StringBuilder();
             tot.Append("SELECT COUNT(i.id) FROM ");
-            tot.Append(head).AppendLine();
-            tot.Append(tail).Append(';');
+            tot.Append(head);
+            if (tail.Length > 0) tot.Append(tail);
+            tot.Append(';');
 
             return Tuple.Create(data.ToString(), tot.ToString());
         }
