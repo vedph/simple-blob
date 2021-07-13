@@ -43,6 +43,11 @@ namespace SimpleBlob.Core
         public long MaxSize { get; set; }
 
         /// <summary>
+        /// Gets or sets the user identifier for the item or its content.
+        /// </summary>
+        public string UserId { get; set; }
+
+        /// <summary>
         /// Gets or sets the properties to match. Any of these properties
         /// should match.
         /// </summary>

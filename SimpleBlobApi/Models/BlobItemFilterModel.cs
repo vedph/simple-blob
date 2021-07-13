@@ -57,6 +57,12 @@ namespace SimpleBlobApi.Models
         public long MaxSize { get; set; }
 
         /// <summary>
+        /// The user identifier for both the item and its content.
+        /// </summary>
+        [MaxLength(50)]
+        public string UserId { get; set; }
+
+        /// <summary>
         /// Gets or sets the properties to match. Any of these properties
         /// should match. This is a string where each property is represented
         /// by a <c>name=value</c> pair, and separated by comma.
@@ -80,6 +86,7 @@ namespace SimpleBlobApi.Models
                 MaxDateModified = MaxDateModified,
                 MinSize = MinSize,
                 MaxSize = MaxSize,
+                UserId = UserId
             };
 
             if (!string.IsNullOrEmpty(Properties))

@@ -104,13 +104,35 @@ namespace SimpleBlob.PgSql.Test
             List<BlobItem> items = new List<BlobItem>();
             for (int n = 1; n <= count; n++)
             {
-                items.Add(new BlobItem
+                bool odd = n % 2 != 0;
+                BlobItem item = new BlobItem
                 {
-                    Id = (n % 2 == 0? "even" : "odd") + "/" + n,
+                    Id = (odd? "odd" : "even") + "/" + n,
                     UserId = "zeus"
-                });
+                };
+                items.Add(item);
             }
             return items;
+        }
+
+        private static IList<BlobItemContent> GetItemContents(int count)
+        {
+            List<BlobItemContent> contents = new List<BlobItemContent>();
+
+            for (int n = 1; n <= count; n++)
+            {
+                bool odd = n % 2 != 0;
+                contents.Add(new BlobItemContent
+                {
+                    ItemId = (odd ? "odd" : "even") + "/" + n,
+                    UserId = "zeus",
+                    MimeType = odd ? "text/plain" : "text/html",
+                    Content = new MemoryStream(
+                        Encoding.UTF8.GetBytes("Text nr." + count))
+                });
+            }
+
+            return contents;
         }
 
         [Fact]
@@ -172,6 +194,26 @@ namespace SimpleBlob.PgSql.Test
                 PageNumber = 1,
                 PageSize = 2,
                 Path = "odd/*"
+            });
+            Assert.Equal(3, page.Total);
+            Assert.Equal("odd/1", page.Items[0].Id);
+            Assert.Equal("odd/3", page.Items[1].Id);
+        }
+
+        [Fact]
+        public void GetItems_MimeType_Ok()
+        {
+            Init();
+            // odd/1, even/2, odd/3, even/4, odd/5
+            foreach (BlobItem item in GetItems(5)) _store.AddItem(item);
+            foreach (BlobItemContent content in GetItemContents(5))
+                _store.SetContent(content);
+
+            DataPage<BlobItem> page = _store.GetItems(new BlobItemFilter
+            {
+                PageNumber = 1,
+                PageSize = 2,
+                MimeType = "text/plain"
             });
             Assert.Equal(3, page.Total);
             Assert.Equal("odd/1", page.Items[0].Id);

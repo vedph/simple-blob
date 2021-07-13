@@ -62,8 +62,8 @@ namespace SimpleBlob.PgSql
             if (!string.IsNullOrEmpty(filter.MimeType))
             {
                 fromContent = true;
-                head.Append("INNER JOIN ").Append(SqlSimpleBlobStore.T_CONT)
-                    .AppendLine(" AS ic ON i.id=ic.itemid");
+                head.Append("\nINNER JOIN ").Append(SqlSimpleBlobStore.T_CONT)
+                    .Append(" AS ic ON i.id=ic.itemid");
                 SqlSimpleBlobStore.AddParameter(
                     "@mimetype", DbType.String, filter.MimeType, cmd);
                 AppendClause(++n, "ic.mimetype", "=", "@mimetype", tail);
@@ -90,8 +90,8 @@ namespace SimpleBlob.PgSql
             {
                 if (!fromContent)
                 {
-                    head.Append("INNER JOIN ").Append(SqlSimpleBlobStore.T_CONT)
-                        .AppendLine(" AS ic ON i.id=ic.itemid");
+                    head.Append("\nINNER JOIN ").Append(SqlSimpleBlobStore.T_CONT)
+                        .Append(" AS ic ON i.id=ic.itemid");
                     fromContent = true;
                 }
                 SqlSimpleBlobStore.AddParameter(
@@ -104,13 +104,28 @@ namespace SimpleBlob.PgSql
             {
                 if (!fromContent)
                 {
-                    head.Append("INNER JOIN ").Append(SqlSimpleBlobStore.T_CONT)
-                        .AppendLine(" AS ic ON i.id=ic.itemid");
+                    head.Append("\nINNER JOIN ").Append(SqlSimpleBlobStore.T_CONT)
+                        .Append(" AS ic ON i.id=ic.itemid");
                     fromContent = true;
                 }
                 SqlSimpleBlobStore.AddParameter(
                     "@maxsize", DbType.Int64, filter.MaxSize, cmd);
                 AppendClause(++n, "ic.size", "<=", "@maxsize", tail);
+            }
+
+            // user ID
+            if (!string.IsNullOrEmpty(filter.UserId))
+            {
+                if (!fromContent)
+                {
+                    head.Append("\nINNER JOIN ").Append(SqlSimpleBlobStore.T_CONT)
+                        .Append(" AS ic ON i.id=ic.itemid");
+                }
+                SqlSimpleBlobStore.AddParameter("@userid", DbType.String,
+                    filter.UserId, cmd);
+
+                tail.Append(n == 1 ? "\nWHERE\n" : "\nAND\n")
+                    .Append("(i.userid=@userid OR ic.userid=@userid)");
             }
 
             // properties
