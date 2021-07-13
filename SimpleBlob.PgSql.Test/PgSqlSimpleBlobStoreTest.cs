@@ -2,6 +2,7 @@ using Fusi.DbManager;
 using Fusi.DbManager.PgSql;
 using Fusi.Tools.Data;
 using SimpleBlob.Core;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -218,6 +219,76 @@ namespace SimpleBlob.PgSql.Test
             Assert.Equal(3, page.Total);
             Assert.Equal("odd/1", page.Items[0].Id);
             Assert.Equal("odd/3", page.Items[1].Id);
+        }
+
+        [Fact]
+        public void GetItems_MinDateModifiedForAll_Ok()
+        {
+            Init();
+            // odd/1, even/2, odd/3, even/4, odd/5
+            foreach (BlobItem item in GetItems(5)) _store.AddItem(item);
+
+            DataPage<BlobItem> page = _store.GetItems(new BlobItemFilter
+            {
+                PageNumber = 1,
+                PageSize = 2,
+                MinDateModified = DateTime.UtcNow - new TimeSpan(3, 0, 0)
+            });
+            Assert.Equal(5, page.Total);
+            Assert.Equal("even/2", page.Items[0].Id);
+            Assert.Equal("even/4", page.Items[1].Id);
+        }
+
+        [Fact]
+        public void GetItems_MinDateModifiedForNone_Ok()
+        {
+            Init();
+            // odd/1, even/2, odd/3, even/4, odd/5
+            foreach (BlobItem item in GetItems(5)) _store.AddItem(item);
+
+            DataPage<BlobItem> page = _store.GetItems(new BlobItemFilter
+            {
+                PageNumber = 1,
+                PageSize = 2,
+                MinDateModified = DateTime.UtcNow + new TimeSpan(3, 0, 0)
+            });
+            Assert.Equal(0, page.Total);
+            Assert.Empty(page.Items);
+        }
+
+        [Fact]
+        public void GetItems_MaxDateModifiedForAll_Ok()
+        {
+            Init();
+            // odd/1, even/2, odd/3, even/4, odd/5
+            foreach (BlobItem item in GetItems(5)) _store.AddItem(item);
+
+            DataPage<BlobItem> page = _store.GetItems(new BlobItemFilter
+            {
+                PageNumber = 1,
+                PageSize = 2,
+                MaxDateModified = DateTime.UtcNow + new TimeSpan(3, 0, 0)
+            });
+            Assert.Equal(5, page.Total);
+            Assert.Equal("even/2", page.Items[0].Id);
+            Assert.Equal("even/4", page.Items[1].Id);
+        }
+
+        [Fact]
+        public void GetItems_MaxDateModifiedForNone_Ok()
+        {
+            Init();
+            // odd/1, even/2, odd/3, even/4, odd/5
+            foreach (BlobItem item in GetItems(5)) _store.AddItem(item);
+
+            DataPage<BlobItem> page = _store.GetItems(new BlobItemFilter
+            {
+                PageNumber = 1,
+                PageSize = 2,
+                MaxDateModified = DateTime.UtcNow - new TimeSpan(3, 0, 0)
+            });
+            Assert.Equal(0, page.Total);
+            Assert.Empty(page.Items);
         }
 
         [Fact]

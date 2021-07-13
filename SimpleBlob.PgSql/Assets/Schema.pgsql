@@ -1,7 +1,7 @@
 ﻿CREATE TABLE item (
 	id varchar(300) NOT NULL,
 	userid varchar(50) NOT NULL,
-	datemodified date NOT NULL,
+	datemodified timestamp with time zone NOT NULL,
 	CONSTRAINT item_pk PRIMARY KEY (id)
 );
 
@@ -22,7 +22,7 @@ CREATE TABLE item_content (
 	size int8 NOT NULL,
 	content BYTEA NULL,
 	userid varchar(50) NOT NULL,
-	datemodified date NOT NULL,
+	datemodified timestamp with time zone NOT NULL,
 	CONSTRAINT item_content_pk PRIMARY KEY (itemid),
 	CONSTRAINT item_content_fk FOREIGN KEY (itemid) REFERENCES item(id) ON DELETE CASCADE ON UPDATE CASCADE
 );
