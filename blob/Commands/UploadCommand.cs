@@ -15,10 +15,13 @@ namespace SimpleBlob.Cli.Commands
     public sealed class UploadCommand : ICommand
     {
         private readonly UploadCommandOptions _options;
+        private readonly MimeTypeMap _typeMap;
+        private ApiLogin _login;
 
         public UploadCommand(UploadCommandOptions options)
         {
             _options = options;
+            _typeMap = new MimeTypeMap();
         }
 
         public static void Configure(CommandLineApplication command,
@@ -42,6 +45,14 @@ namespace SimpleBlob.Cli.Commands
             CommandOption recurseOption = command.Option("--recurse|-r",
                 "Recurse subdirectories",
                 CommandOptionType.NoValue);
+
+            CommandOption mimeTypeOption = command.Option("--type|-t",
+                "The MIME type for the files to upload",
+                CommandOptionType.SingleValue);
+            CommandOption mimeTypeListOption = command.Option("--ext-list|-e",
+                "The list of common file extensions with their MIME types. " +
+                "This is used when no MIME type is specified with -t.",
+                CommandOptionType.SingleValue);
 
             CommandOption metaExtOption = command.Option("--meta|-m",
                 "The extension appended to the content filename " +
@@ -75,7 +86,9 @@ namespace SimpleBlob.Cli.Commands
                         ? metaExtOption.Value() : ".meta",
                     MetaDelimiter = metaDelimOption.HasValue()
                         ? metaDelimOption.Value() : ",",
-                    IsDryRun = dryOption.HasValue()
+                    IsDryRun = dryOption.HasValue(),
+                    MimeType = mimeTypeOption.Value(),
+                    MimeTypeList = mimeTypeListOption.Value()
                 });
                 return 0;
             });
@@ -120,6 +133,30 @@ namespace SimpleBlob.Cli.Commands
                 : $"Error adding item {id}: {response.ReasonPhrase}";
         }
 
+        private async Task<string> SetItemContentAsync(string id,
+            string path, string apiRootUri)
+        {
+            if (_options.IsDryRun) return null;
+
+            string uri = apiRootUri + $"api/items/{id}/content";
+            string mimeType = _options.MimeType;
+            if (string.IsNullOrEmpty(mimeType))
+            {
+                mimeType = _typeMap.GetType(Path.GetExtension(path));
+                if (mimeType == null) return "Unknown extension: " + path;
+            }
+
+            string response = await FileUploader.UploadFile(uri, path,
+                _login.Token,
+                new Dictionary<string, object>
+                {
+                    { "mimeType", mimeType },
+                    { "id", id }
+                });
+            // TODO response
+            return null;
+        }
+
         public async Task<int> Run()
         {
             ColorConsole.WriteWrappedHeader("Upload Files");
@@ -133,16 +170,20 @@ namespace SimpleBlob.Cli.Commands
                 return 2;
             }
 
+            // load types if required
+            if (!string.IsNullOrEmpty(_options.MimeTypeList))
+                _typeMap.Load(_options.MimeTypeList);
+
             // prompt for userID/password if required
-            LoginCredentials credentials = new LoginCredentials(
+                LoginCredentials credentials = new LoginCredentials(
                 _options.UserId,
                 _options.Password);
             credentials.PromptIfRequired();
 
             // login
             Console.WriteLine("Logging in...");
-            ApiLogin login = new ApiLogin(apiRootUri);
-            if (!login.Login(credentials.UserName, credentials.Password))
+            _login = new ApiLogin(apiRootUri);
+            if (!_login.Login(credentials.UserName, credentials.Password))
             {
                 ColorConsole.WriteError("Unable to login");
                 return 2;
@@ -155,10 +196,12 @@ namespace SimpleBlob.Cli.Commands
             };
 
             // setup client
-            HttpClient client = ClientHelper.GetClient(apiRootUri, login.Token);
+            using HttpClient client = ClientHelper.GetClient(apiRootUri,
+                _login.Token);
 
             // process files
             int count = 0;
+
             foreach (string path in FileEnumerator.Enumerate(
                 _options.InputDir, _options.FileMask, _options.IsRegexMask,
                 _options.IsRecursive))
@@ -196,11 +239,18 @@ namespace SimpleBlob.Cli.Commands
                 }
 
                 // set content
-                // TODO
-
-                await FileUploader.UploadFile(apiRootUri, path, login.Token);
-                // TODO
+                error = await SetItemContentAsync(id, path, apiRootUri);
+                if (error != null)
+                {
+                    _options.Logger.LogError(error);
+                    ColorConsole.WriteError(error);
+                    return 2;
+                }
             }
+
+            string info = "Upload complete: " + count;
+            _options.Logger.LogInformation(info);
+            ColorConsole.WriteInfo(info);
 
             return 0;
         }
@@ -210,6 +260,8 @@ namespace SimpleBlob.Cli.Commands
     {
         public string InputDir { get; set; }
         public string FileMask { get; set; }
+        public string MimeType { get; set; }
+        public string MimeTypeList { get; set; }
         public bool IsRegexMask { get; set; }
         public bool IsRecursive { get; set; }
         public string MetaExtension { get; set; }

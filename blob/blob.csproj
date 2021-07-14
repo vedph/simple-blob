@@ -15,12 +15,17 @@
 
   <ItemGroup>
     <None Remove="appsettings.json" />
+    <None Remove="Assets\MimeTypes.csv" />
   </ItemGroup>
 
   <ItemGroup>
     <Content Include="appsettings.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Assets\MimeTypes.csv" />
   </ItemGroup>
 
   <ItemGroup>

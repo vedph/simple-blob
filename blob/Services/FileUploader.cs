@@ -8,6 +8,7 @@ namespace SimpleBlob.Cli.Services
 {
     public static class FileUploader
     {
+        // https://itnext.io/consuming-a-multipart-form-data-rest-method-with-outsystems-c466e404118d
         // https://riptutorial.com/dot-net/example/32520/upload-file-with-webrequest
 
         /// <summary>

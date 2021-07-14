@@ -20,3 +20,33 @@ docker build . -t vedph2020/simple-blob-api:1.0.0 -t vedph2020/simple-blob-api:l
 ```
 
 (replace with the current version).
+
+## CLI Tool
+
+### Upload Command
+
+This command uploads a set of files, as defined from an input folder and a files mask. The mask can be a regular file system mask, or a regular expression. Also, files can optionally be recursively searched starting from the input folder.
+
+It is assumed that each file matching the mask has in the same location a corresponding metadata file, with the same name suffixed with a custom extension. By default this extension is `.meta`. So, if a file to upload is `test.txt`, then the corresponding metadata file should be placed in the same directory with name `test.txt.meta`.
+
+You should also specify the MIME type for the files to upload. If you don't specify any, the type will be automatically derived from the file extension, when possible. This follows the mapping of MIME types defined in `blob/Assets/MimeTypes.csv` (as derived from this [list of common MIME types](https://gist.github.com/jimschubert/94894c938d8f9f64c6863b28c70a22cc)). You can direct the tool to use another file, as far as it has the same structure: a CSV file with a header row and at least 2 columns with name `extension` and `type`.
+
+Syntax:
+
+```ps1
+./blob upload <InputDir> <FileMask> [-p] [-r] [-t MimeType] [-m MetaExtension] [-e ExtensionAndMimeTypeList] [-s MetaSeparator] [-u UserName] [-p Password] [-d]
+```
+
+where:
+
+- `InputDir` is the input directory.
+- `FileMask` is the file mask. It can be a regular expression if `-p` is specified.
+- `-p` specifies that `FileMask` is a regular expression pattern.
+- `-r` recurses subdirectories.
+- `-t` specifies the MIME type for _all_ the files matched. Do not specify this option if you want the type to be derived (when possible) from the file's extension.
+- `-m` the extension expected to be found for metadata files. The default is `.meta`.
+- `-e` the optional CSV MIME types file path, when you want to override the default list of MIME types.
+- `-s` the separator used for the metadata CSV MIME types file. The default is comma (`,`).
+- `-u` the user name. If not specified, you will be prompted for it.
+- `-p` the password. If not specified, you will be prompted for it.
+- `-d` dry run (do not write to service).
