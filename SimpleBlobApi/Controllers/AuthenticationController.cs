@@ -62,10 +62,14 @@ namespace SimpleBlobApi.Controllers
                 new Claim(RegisteredClaims.Jti, Guid.NewGuid().ToString()),
 
                 // (NBF)
-                new Claim(RegisteredClaims.Nbf, (DateTime.UtcNow - new TimeSpan(0, 0, 10)).ToString()),
+                new Claim(RegisteredClaims.Nbf,
+                    (DateTime.UtcNow - new TimeSpan(0, 0, 10)).ToString()),
 
-                new Claim(options.ClaimsIdentity.UserIdClaimType, user.Id.ToString()),
+                new Claim(options.ClaimsIdentity.UserIdClaimType, user.Id),
                 new Claim(options.ClaimsIdentity.UserNameClaimType, user.UserName),
+
+                // (IAT) issued at
+                new Claim(RegisteredClaims.Iat, DateTime.UtcNow.ToString()),
 
                 // email and its confirmation
                 new Claim("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
@@ -133,7 +137,7 @@ namespace SimpleBlobApi.Controllers
                 JwtSecurityToken token = new JwtSecurityToken(
                     issuer: jwtSection["Issuer"],
                     audience: jwtSection["Audience"],
-                    expires: DateTime.Now.AddHours(3),
+                    expires: DateTime.UtcNow.AddHours(3),
                     claims: claims,
                     signingCredentials: new SigningCredentials(
                         authSigningKey,

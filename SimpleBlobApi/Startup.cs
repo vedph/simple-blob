@@ -26,6 +26,7 @@ using SimpleBlobApi.Services;
 using System.Globalization;
 using MessagingApi;
 using Microsoft.Extensions.Options;
+using System.Threading.Tasks;
 
 namespace SimpleBlobApi
 {
@@ -135,6 +136,21 @@ namespace SimpleBlobApi
                        ValidIssuer = jwtSection["Issuer"],
                        IssuerSigningKey = new SymmetricSecurityKey(
                            Encoding.UTF8.GetBytes(key))
+                   };
+
+                   // support refresh
+                   // https://stackoverflow.com/questions/55150099/jwt-token-expiration-time-failing-net-core
+                   options.Events = new JwtBearerEvents
+                   {
+                       OnAuthenticationFailed = context =>
+                       {
+                           if (context.Exception.GetType() ==
+                                typeof(SecurityTokenExpiredException))
+                           {
+                               context.Response.Headers.Add("Token-Expired", "true");
+                           }
+                           return Task.CompletedTask;
+                       }
                    };
                });
 #if DEBUG

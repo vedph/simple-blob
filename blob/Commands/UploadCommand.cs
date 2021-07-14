@@ -1,8 +1,11 @@
-﻿using Microsoft.Extensions.CommandLineUtils;
+﻿using CsvHelper;
+using CsvHelper.Configuration;
+using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
 using System;
+using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 
@@ -19,10 +22,12 @@ namespace SimpleBlob.Cli.Commands
         private readonly string _fileMask;
         private readonly bool _regexMask;
         private readonly bool _recursive;
+        private readonly string _metaExt;
+        private readonly string _metaSep;
 
         public UploadCommand(AppOptions options, string user, string password,
-            string inputDir, string fileMask, bool regexMask,
-            bool recursive)
+            string inputDir, string fileMask, bool regexMask, bool recursive,
+            string metaExt, string metaSep)
         {
             _config = options.Configuration;
             _logger = options.Logger;
@@ -32,6 +37,8 @@ namespace SimpleBlob.Cli.Commands
             _fileMask = fileMask;
             _regexMask = regexMask;
             _recursive = recursive;
+            _metaExt = metaExt;
+            _metaSep = metaSep;
         }
 
         public static void Configure(CommandLineApplication command,
@@ -56,6 +63,14 @@ namespace SimpleBlob.Cli.Commands
                 "Recurse subdirectories",
                 CommandOptionType.NoValue);
 
+            CommandOption metaExtOption = command.Option("--meta|-m",
+                "The extension appended to the content filename " +
+                "to represent its metadata in a correspondent file",
+                CommandOptionType.SingleValue);
+            CommandOption metaSepOption = command.Option("--metasep|-s",
+                "The separator used in delimited metadata files",
+                CommandOptionType.SingleValue);
+
             CommandOption userOption = command.Option("--user|-u",
                 "The BLOB user ID", CommandOptionType.SingleValue);
             CommandOption pwdOption = command.Option("--pwd|-p",
@@ -67,38 +82,69 @@ namespace SimpleBlob.Cli.Commands
                     options,
                     userOption.Value(), pwdOption.Value(),
                     dirArgument.Value, maskArgument.Value, regexOption.HasValue(),
-                    recurseOption.HasValue());
+                    recurseOption.HasValue(),
+                    metaExtOption.HasValue() ? metaExtOption.Value() : ".meta",
+                    metaSepOption.HasValue() ? metaSepOption.Value() : ",");
                 return 0;
             });
         }
 
-        public Task<int> Run()
+        private string BuildMetaPath(string path)
+            => Path.Combine(Path.GetFileNameWithoutExtension(path), _metaExt);
+
+        public async Task<int> Run()
         {
             ColorConsole.WriteWrappedHeader("Upload Files");
             _logger.LogInformation("---UPLOAD---");
 
-            string uri = _config.GetSection("ApiUri")?.Value;
-            if (string.IsNullOrEmpty(uri))
+            string apiRootUri = _config.GetSection("ApiRootUri")?.Value;
+            if (string.IsNullOrEmpty(apiRootUri))
             {
                 ColorConsole.WriteError("Missing ApiUri in configuration");
-                return Task.FromResult(2);
+                return 2;
             }
 
             // prompt for userID/password if required
-            LoginInput login = new LoginInput(_user, _password);
-            login.PromptIfRequired();
+            LoginCredentials credentials = new LoginCredentials(_user, _password);
+            credentials.PromptIfRequired();
 
+            // login
+            Console.WriteLine("Logging in...");
+            ApiLogin login = new ApiLogin(apiRootUri);
+            if (!login.Login(credentials.UserName, credentials.Password))
+            {
+                ColorConsole.WriteError("Unable to login");
+                return 2;
+            }
+
+            // setup the metadata services
+            CsvMetadataReader metaReader = new CsvMetadataReader
+            {
+                Delimiter = _metaSep
+            };
+
+            // process files
             int count = 0;
             foreach (string path in FileEnumerator.Enumerate(
                 _inputDir, _fileMask, _regexMask, _recursive))
             {
+                if (Path.GetExtension(path) == _metaExt) continue;
                 count++;
                 _logger.LogInformation($"{count} {path}");
                 ColorConsole.WriteEmbeddedColorLine($"[green]{count:0000}[/green] {path}");
+
+                string metaPath = BuildMetaPath(path);
+                if (File.Exists(metaPath))
+                {
+                    var metadata = metaReader.Read(metaPath);
+                    // TODO
+                }
+
+                await FileUploader.UploadFile(apiRootUri, path, login.Token);
                 // TODO
             }
 
-            return Task.FromResult(0);
+            return 0;
         }
     }
 }

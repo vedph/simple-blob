@@ -3,21 +3,21 @@
 namespace SimpleBlob.Cli.Services
 {
     /// <summary>
-    /// Login data input. This is used to prompt for user ID and/or password
+    /// Login credentials. This is used to prompt for user ID and/or password
     /// when they are not specified.
     /// </summary>
-    public class LoginInput
+    public class LoginCredentials
     {
-        public string UserId { get; set; }
+        public string UserName { get; set; }
         public string Password { get; set; }
 
-        public LoginInput()
+        public LoginCredentials()
         {
         }
 
-        public LoginInput(string userId, string password)
+        public LoginCredentials(string userId, string password)
         {
-            UserId = userId;
+            UserName = userId;
             Password = password;
         }
 
@@ -34,8 +34,8 @@ namespace SimpleBlob.Cli.Services
 
         public void PromptIfRequired()
         {
-            if (string.IsNullOrEmpty(UserId))
-                UserId = PromptRequired("User ID:");
+            if (string.IsNullOrEmpty(UserName))
+                UserName = PromptRequired("Username:");
 
             if (string.IsNullOrEmpty(Password))
                 Password = PromptRequired("Password:");
