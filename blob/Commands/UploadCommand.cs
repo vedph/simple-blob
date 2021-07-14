@@ -18,32 +18,11 @@ namespace SimpleBlob.Cli.Commands
 {
     public sealed class UploadCommand : ICommand
     {
-        private readonly IConfiguration _config;
-        private readonly ILogger _logger;
+        private readonly UploadCommandOptions _options;
 
-        private readonly string _user;
-        private readonly string _password;
-        private readonly string _inputDir;
-        private readonly string _fileMask;
-        private readonly bool _regexMask;
-        private readonly bool _recursive;
-        private readonly string _metaExt;
-        private readonly string _metaSep;
-
-        public UploadCommand(AppOptions options, string user, string password,
-            string inputDir, string fileMask, bool regexMask, bool recursive,
-            string metaExt, string metaSep)
+        public UploadCommand(UploadCommandOptions options)
         {
-            _config = options.Configuration;
-            _logger = options.Logger;
-            _user = user;
-            _password = password;
-            _inputDir = inputDir;
-            _fileMask = fileMask;
-            _regexMask = regexMask;
-            _recursive = recursive;
-            _metaExt = metaExt;
-            _metaSep = metaSep;
+            _options = options;
         }
 
         public static void Configure(CommandLineApplication command,
@@ -72,37 +51,75 @@ namespace SimpleBlob.Cli.Commands
                 "The extension appended to the content filename " +
                 "to represent its metadata in a correspondent file",
                 CommandOptionType.SingleValue);
-            CommandOption metaSepOption = command.Option("--metasep|-s",
+            CommandOption metaDelimOption = command.Option("--metasep|-s",
                 "The separator used in delimited metadata files",
                 CommandOptionType.SingleValue);
 
             CommandOption userOption = command.Option("--user|-u",
-                "The BLOB user ID", CommandOptionType.SingleValue);
+                "The BLOB user name", CommandOptionType.SingleValue);
             CommandOption pwdOption = command.Option("--pwd|-p",
                 "The BLOB user password", CommandOptionType.SingleValue);
 
+            CommandOption dryOption = command.Option("--dry|-d",
+                "Dry run (do not write data)", CommandOptionType.NoValue);
+
             command.OnExecute(() =>
             {
-                options.Command = new UploadCommand(
-                    options,
-                    userOption.Value(), pwdOption.Value(),
-                    dirArgument.Value, maskArgument.Value, regexOption.HasValue(),
-                    recurseOption.HasValue(),
-                    metaExtOption.HasValue() ? metaExtOption.Value() : ".meta",
-                    metaSepOption.HasValue() ? metaSepOption.Value() : ",");
+                options.Command = new UploadCommand(new UploadCommandOptions
+                {
+                    Configuration = options.Configuration,
+                    Logger = options.Logger,
+                    UserId = userOption.Value(),
+                    Password = pwdOption.Value(),
+                    InputDir = dirArgument.Value,
+                    FileMask = maskArgument.Value,
+                    IsRegexMask = regexOption.HasValue(),
+                    IsRecursive = recurseOption.HasValue(),
+                    MetaExtension = metaExtOption.HasValue()
+                        ? metaExtOption.Value() : ".meta",
+                    MetaDelimiter = metaDelimOption.HasValue()
+                        ? metaDelimOption.Value() : ",",
+                    IsDryRun = dryOption.HasValue()
+                });
                 return 0;
             });
         }
 
         private string BuildMetaPath(string path)
-            => Path.Combine(Path.GetFileNameWithoutExtension(path), _metaExt);
+            => Path.Combine(
+                Path.GetFileNameWithoutExtension(path),
+                _options.MetaExtension);
+
+        private async Task<string> AddItemAsync(string id, HttpClient client)
+        {
+            if (_options.IsDryRun) return null;
+
+            HttpResponseMessage response = await client.PostAsJsonAsync(
+                "api/items", new { id });
+            return response.IsSuccessStatusCode
+                ? null
+                : $"Error adding item {id}: {response.ReasonPhrase}";
+        }
+
+        private async Task<string> SetItemPropertiesAsync(string id,
+            HttpClient client)
+        {
+            if (_options.IsDryRun) return null;
+
+            HttpResponseMessage response = await client.PostAsJsonAsync(
+                $"api/items/{id}/properties/set", new {todo });
+            return response.IsSuccessStatusCode
+                ? null
+                : $"Error adding item {id}: {response.ReasonPhrase}";
+        }
 
         public async Task<int> Run()
         {
             ColorConsole.WriteWrappedHeader("Upload Files");
-            _logger.LogInformation("---UPLOAD---");
+            _options.Logger.LogInformation("---UPLOAD---");
 
-            string apiRootUri = _config.GetSection("ApiRootUri")?.Value;
+            string apiRootUri = _options.Configuration
+                .GetSection("ApiRootUri")?.Value;
             if (string.IsNullOrEmpty(apiRootUri))
             {
                 ColorConsole.WriteError("Missing ApiUri in configuration");
@@ -110,7 +127,9 @@ namespace SimpleBlob.Cli.Commands
             }
 
             // prompt for userID/password if required
-            LoginCredentials credentials = new LoginCredentials(_user, _password);
+            LoginCredentials credentials = new LoginCredentials(
+                _options.UserId,
+                _options.Password);
             credentials.PromptIfRequired();
 
             // login
@@ -125,7 +144,7 @@ namespace SimpleBlob.Cli.Commands
             // setup the metadata services
             CsvMetadataReader metaReader = new CsvMetadataReader
             {
-                Delimiter = _metaSep
+                Delimiter = _options.MetaDelimiter
             };
 
             // setup client
@@ -134,34 +153,41 @@ namespace SimpleBlob.Cli.Commands
             // process files
             int count = 0;
             foreach (string path in FileEnumerator.Enumerate(
-                _inputDir, _fileMask, _regexMask, _recursive))
+                _options.InputDir, _options.FileMask, _options.IsRegexMask,
+                _options.IsRecursive))
             {
                 // skip metadata files
-                if (Path.GetExtension(path) == _metaExt) continue;
+                if (Path.GetExtension(path) == _options.MetaExtension) continue;
 
                 count++;
-                _logger.LogInformation($"{count} {path}");
+                _options.Logger.LogInformation($"{count} {path}");
                 ColorConsole.WriteEmbeddedColorLine($"[green]{count:0000}[/green] {path}");
 
                 // load metadata if any
                 string metaPath = BuildMetaPath(path);
                 IList<Tuple<string, string>> metadata = null;
                 if (File.Exists(metaPath)) metadata = metaReader.Read(metaPath);
-
-                // add item
                 string id = metadata?.FirstOrDefault(t => t.Item1 == "path")
                     ?.Item2 ?? path;
-                HttpResponseMessage response = await client.PostAsJsonAsync(
-                    "api/items", new { id });
-                if (!response.IsSuccessStatusCode)
+
+                // add item
+                string error = await AddItemAsync(id, client);
+                if (error != null)
                 {
-                    string error = $"Error adding item {id}: {response.ReasonPhrase}";
-                    _logger.LogError(error);
+                    _options.Logger.LogError(error);
                     ColorConsole.WriteError(error);
                     return 2;
                 }
 
                 // set properties
+                error = await SetItemPropertiesAsync(id, client);
+                if (error != null)
+                {
+                    _options.Logger.LogError(error);
+                    ColorConsole.WriteError(error);
+                    return 2;
+                }
+
                 // set content
 
                 await FileUploader.UploadFile(apiRootUri, path, login.Token);
@@ -170,5 +196,16 @@ namespace SimpleBlob.Cli.Commands
 
             return 0;
         }
+    }
+
+    public sealed class UploadCommandOptions : CommandOptions
+    {
+        public string InputDir { get; set; }
+        public string FileMask { get; set; }
+        public bool IsRegexMask { get; set; }
+        public bool IsRecursive { get; set; }
+        public string MetaExtension { get; set; }
+        public string MetaDelimiter { get; set; }
+        public bool IsDryRun { get; set; }
     }
 }

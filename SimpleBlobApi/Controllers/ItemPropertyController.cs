@@ -43,20 +43,32 @@ namespace SimpleBlobApi.Controllers
         /// Adds the specified properties to a BLOB item.
         /// </summary>
         /// <param name="model">The model with item ID and properties.</param>
-        /// <param name="reset">if set to <c>true</c>, remove all the existing
-        /// properties before adding the new ones.</param>
-        [HttpPost("api/items/{id}/properties")]
+        [HttpPost("api/items/{id}/properties/add")]
         [Authorize(Roles = "writer,browser,admin")]
         [ProducesResponseType(200)]
         public ActionResult AddProperties(
-            [FromBody] BlobItemPropertiesModel model,
-            [FromQuery] bool reset)
+            [FromBody] BlobItemPropertiesModel model)
         {
             IList<BlobItemProperty> props = model.ToProperties();
-            if (reset)
-                _store.SetProperties(model.ItemId, props);
-            else
-                _store.AddProperties(model.ItemId, props);
+            _store.AddProperties(model.ItemId, props);
+            return CreatedAtRoute("GetProperties", new
+            {
+                id = model.ItemId
+            }, props);
+        }
+
+        /// <summary>
+        /// Sets the specified properties for a BLOB item.
+        /// </summary>
+        /// <param name="model">The model with item ID and properties.</param>
+        [HttpPost("api/items/{id}/properties/set")]
+        [Authorize(Roles = "writer,browser,admin")]
+        [ProducesResponseType(200)]
+        public ActionResult SetProperties(
+            [FromBody] BlobItemPropertiesModel model)
+        {
+            IList<BlobItemProperty> props = model.ToProperties();
+            _store.SetProperties(model.ItemId, props);
             return CreatedAtRoute("GetProperties", new
             {
                 id = model.ItemId
