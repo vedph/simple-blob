@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace SimpleBlobApi.Models
+namespace SimpleBlob.Api.Models
 {
     /// <summary>
     /// BLOB item's content metadata.

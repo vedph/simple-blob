@@ -20,7 +20,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleBlobApi", "SimpleBlobApi\SimpleBlobApi.csproj", "{4AB077CC-B6D6-47F2-BA4B-D853DAB8D894}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "blob", "blob\blob.csproj", "{EA9AB3A9-363F-421F-9278-5E235F6FAE09}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "blob", "blob\blob.csproj", "{EA9AB3A9-363F-421F-9278-5E235F6FAE09}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleBlob.Api.Models", "SimpleBlob.Api.Models\SimpleBlob.Api.Models.csproj", "{E819AAC8-C0B0-4DCF-BE8B-DD9AD642FDDD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -52,6 +54,10 @@ Global
 		{EA9AB3A9-363F-421F-9278-5E235F6FAE09}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{EA9AB3A9-363F-421F-9278-5E235F6FAE09}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{EA9AB3A9-363F-421F-9278-5E235F6FAE09}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E819AAC8-C0B0-4DCF-BE8B-DD9AD642FDDD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E819AAC8-C0B0-4DCF-BE8B-DD9AD642FDDD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E819AAC8-C0B0-4DCF-BE8B-DD9AD642FDDD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E819AAC8-C0B0-4DCF-BE8B-DD9AD642FDDD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

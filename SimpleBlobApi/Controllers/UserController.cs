@@ -24,6 +24,7 @@ namespace SimpleBlobApi.Controllers
         /// Initializes a new instance of the <see cref="UserController" /> class.
         /// </summary>
         /// <param name="repository">The repository.</param>
+        /// <param name="logger">The logger.</param>
         /// <exception cref="ArgumentNullException">userManager</exception>
         public UserController(IUserRepository<ApplicationUser> repository,
             ILogger<UserController> logger)

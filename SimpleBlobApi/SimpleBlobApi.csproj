@@ -37,6 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\SimpleBlob.Api.Models\SimpleBlob.Api.Models.csproj" />
     <ProjectReference Include="..\SimpleBlob.Core\SimpleBlob.Core.csproj" />
     <ProjectReference Include="..\SimpleBlob.PgSql\SimpleBlob.PgSql.csproj" />
     <ProjectReference Include="..\SimpleBlob.Sql\SimpleBlob.Sql.csproj" />

@@ -1,7 +1,7 @@
 ﻿using SimpleBlob.Core;
 using System.ComponentModel.DataAnnotations;
 
-namespace SimpleBlobApi.Models
+namespace SimpleBlob.Api.Models
 {
     /// <summary>
     /// A BLOB item.

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace SimpleBlobApi.Models
+namespace SimpleBlob.Api.Models
 {
     /// <summary>
     /// Blob item properties.

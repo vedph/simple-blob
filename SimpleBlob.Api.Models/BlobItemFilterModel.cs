@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
-namespace SimpleBlobApi.Models
+namespace SimpleBlob.Api.Models
 {
     /// <summary>
     /// BLOB items filter model.

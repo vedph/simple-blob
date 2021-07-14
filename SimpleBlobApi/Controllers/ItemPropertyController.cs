@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SimpleBlob.Api.Models;
 using SimpleBlob.Core;
 using SimpleBlobApi.Models;
 using System.Collections.Generic;

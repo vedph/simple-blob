@@ -35,4 +35,8 @@
     <PackageReference Include="ShellProgressBar" Version="5.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\SimpleBlob.Api.Models\SimpleBlob.Api.Models.csproj" />
+  </ItemGroup>
+
 </Project>

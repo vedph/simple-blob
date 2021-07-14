@@ -1,16 +1,12 @@
-﻿using CsvHelper;
-using CsvHelper.Configuration;
-using Microsoft.Extensions.CommandLineUtils;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
+using SimpleBlob.Api.Models;
 using SimpleBlob.Cli.Services;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 
@@ -102,12 +98,23 @@ namespace SimpleBlob.Cli.Commands
         }
 
         private async Task<string> SetItemPropertiesAsync(string id,
-            HttpClient client)
+            HttpClient client, IList<Tuple<string, string>> metadata)
         {
-            if (_options.IsDryRun) return null;
+            if (_options.IsDryRun || metadata == null || metadata.Count == 0)
+                return null;
+
+            BlobItemPropertiesModel model = new BlobItemPropertiesModel
+            {
+                ItemId = id,
+                Properties = metadata.Select(t => new BlobItemPropertyModel
+                {
+                    Name = t.Item1,
+                    Value = t.Item2
+                }).ToArray()
+            };
 
             HttpResponseMessage response = await client.PostAsJsonAsync(
-                $"api/items/{id}/properties/set", new {todo });
+                $"api/items/{id}/properties/set", new { model });
             return response.IsSuccessStatusCode
                 ? null
                 : $"Error adding item {id}: {response.ReasonPhrase}";
@@ -180,7 +187,7 @@ namespace SimpleBlob.Cli.Commands
                 }
 
                 // set properties
-                error = await SetItemPropertiesAsync(id, client);
+                error = await SetItemPropertiesAsync(id, client, metadata);
                 if (error != null)
                 {
                     _options.Logger.LogError(error);
@@ -189,6 +196,7 @@ namespace SimpleBlob.Cli.Commands
                 }
 
                 // set content
+                // TODO
 
                 await FileUploader.UploadFile(apiRootUri, path, login.Token);
                 // TODO
