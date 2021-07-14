@@ -5,8 +5,13 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 
 namespace SimpleBlob.Cli.Commands
@@ -123,22 +128,41 @@ namespace SimpleBlob.Cli.Commands
                 Delimiter = _metaSep
             };
 
+            // setup client
+            HttpClient client = ClientHelper.GetClient(apiRootUri, login.Token);
+
             // process files
             int count = 0;
             foreach (string path in FileEnumerator.Enumerate(
                 _inputDir, _fileMask, _regexMask, _recursive))
             {
+                // skip metadata files
                 if (Path.GetExtension(path) == _metaExt) continue;
+
                 count++;
                 _logger.LogInformation($"{count} {path}");
                 ColorConsole.WriteEmbeddedColorLine($"[green]{count:0000}[/green] {path}");
 
+                // load metadata if any
                 string metaPath = BuildMetaPath(path);
-                if (File.Exists(metaPath))
+                IList<Tuple<string, string>> metadata = null;
+                if (File.Exists(metaPath)) metadata = metaReader.Read(metaPath);
+
+                // add item
+                string id = metadata?.FirstOrDefault(t => t.Item1 == "path")
+                    ?.Item2 ?? path;
+                HttpResponseMessage response = await client.PostAsJsonAsync(
+                    "api/items", new { id });
+                if (!response.IsSuccessStatusCode)
                 {
-                    var metadata = metaReader.Read(metaPath);
-                    // TODO
+                    string error = $"Error adding item {id}: {response.ReasonPhrase}";
+                    _logger.LogError(error);
+                    ColorConsole.WriteError(error);
+                    return 2;
                 }
+
+                // set properties
+                // set content
 
                 await FileUploader.UploadFile(apiRootUri, path, login.Token);
                 // TODO
