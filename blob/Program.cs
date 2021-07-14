@@ -84,8 +84,8 @@ namespace SimpleBlob.Cli
                     }
 
                     Console.Clear();
-                    await options.Command.Run();
-                    return 0;
+                    int result = await options.Command.Run();
+                    return result;
                 }).Wait();
 
                 Console.ResetColor();

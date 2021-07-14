@@ -25,7 +25,7 @@ namespace SimpleBlob.Cli.Commands
             });
         }
 
-        public Task Run()
+        public Task<int> Run()
         {
             _app.ShowHelp();
             return Task.FromResult(0);

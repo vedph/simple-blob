@@ -4,6 +4,6 @@ namespace SimpleBlob.Cli.Commands
 {
     public interface ICommand
     {
-        Task Run();
+        Task<int> Run();
     }
 }
