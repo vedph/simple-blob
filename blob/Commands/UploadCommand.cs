@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
 using System;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace SimpleBlob.Cli.Commands
