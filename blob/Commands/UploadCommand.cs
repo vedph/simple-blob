@@ -101,11 +101,6 @@ namespace SimpleBlob.Cli.Commands
             });
         }
 
-        private string BuildMetaPath(string path)
-            => Path.Combine(
-                Path.GetFileNameWithoutExtension(path),
-                _options.MetaExtension);
-
         private async Task<string> AddItemAsync(string id, HttpClient client)
         {
             if (_options.IsDryRun) return null;
@@ -134,7 +129,7 @@ namespace SimpleBlob.Cli.Commands
             };
 
             HttpResponseMessage response = await client.PostAsJsonAsync(
-                $"items/{id}/properties/set", new { model });
+                $"properties/{id}/set", model);
             return response.IsSuccessStatusCode
                 ? null
                 : $"Error adding item {id}: {response.ReasonPhrase}";
@@ -159,7 +154,7 @@ namespace SimpleBlob.Cli.Commands
             string id, HttpClient client, string path)
         {
             HttpResponseMessage r = await client.GetAsync(
-                $"items/{id}/content-meta");
+                $"contents/{id}/meta");
             if (!r.IsSuccessStatusCode)
             {
                 return Tuple.Create(false,
@@ -184,7 +179,7 @@ namespace SimpleBlob.Cli.Commands
         {
             if (_options.IsDryRun) return null;
 
-            string uri = apiRootUri + $"items/{id}/content";
+            string uri = apiRootUri + $"contents/{id}";
             string mimeType = _options.MimeType;
             if (string.IsNullOrEmpty(mimeType))
             {
@@ -223,6 +218,7 @@ namespace SimpleBlob.Cli.Commands
                 ColorConsole.WriteError("Missing ApiUri in configuration");
                 return 2;
             }
+            ColorConsole.WriteInfo("Target: " + apiRootUri);
 
             // load types if required
             if (!string.IsNullOrEmpty(_options.MimeTypeList))
@@ -268,10 +264,10 @@ namespace SimpleBlob.Cli.Commands
                 ColorConsole.WriteEmbeddedColorLine($"[green]{count:0000}[/green] {path}");
 
                 // load metadata if any
-                string metaPath = BuildMetaPath(path);
+                string metaPath = path + _options.MetaExtension;
                 IList<Tuple<string, string>> metadata = null;
                 if (File.Exists(metaPath)) metadata = metaReader.Read(metaPath);
-                string id = metadata?.FirstOrDefault(t => t.Item1 == "path")
+                string id = metadata?.FirstOrDefault(t => t.Item1 == "id")
                     ?.Item2 ?? path;
 
                 // add/update item

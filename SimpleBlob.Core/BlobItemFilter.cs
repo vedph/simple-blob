@@ -11,7 +11,7 @@ namespace SimpleBlob.Core
     public class BlobItemFilter : PagingOptions
     {
         /// <summary>
-        /// Gets or sets the virtual path to match. A path uses <c>/</c> as
+        /// Gets or sets the virtual path to match. A path uses <c>\</c> as
         /// separators, and <c>*</c>=any character 0-N times, <c>?</c>=any
         /// character 0-1 times.
         /// </summary>

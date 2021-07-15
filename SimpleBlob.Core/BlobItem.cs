@@ -9,7 +9,7 @@ namespace SimpleBlob.Core
     public class BlobItem
     {
         /// <summary>
-        /// The item ID. This can include <c>/</c> to represent a hierarchy.
+        /// The item ID. This can include <c>\</c> to represent a hierarchy.
         /// </summary>
         public string Id { get; set; }
 

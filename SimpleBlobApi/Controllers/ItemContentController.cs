@@ -31,7 +31,7 @@ namespace SimpleBlobApi.Controllers
         /// <param name="file">The form file to upload.</param>
         /// <param name="mimeType">The MIME type.</param>
         /// <param name="id">The BLOB item's identifier.</param>
-        [HttpPost("api/items/{id}/content")]
+        [HttpPost("api/contents/{id}")]
         [Authorize(Roles = "admin,browser,writer")]
         public IActionResult UploadContent(IFormFile file,
             [FromQuery] string mimeType,
@@ -56,7 +56,7 @@ namespace SimpleBlobApi.Controllers
         /// <param name="id">The item's identifier.</param>
         /// <returns>Content.</returns>
         [Authorize]
-        [HttpGet("api/items/{id}/content", Name = "DownloadContent")]
+        [HttpGet("api/contents/{id}", Name = "DownloadContent")]
         public FileResult DownloadContent([FromRoute] string id)
         {
             BlobItemContent item = _store.GetContent(id, false);
@@ -70,7 +70,7 @@ namespace SimpleBlobApi.Controllers
         /// <returns>Metadata. If the item was not found, an empty metadata
         /// object is returned rather than 404.</returns>
         [Authorize]
-        [HttpGet("api/items/{id}/content-meta")]
+        [HttpGet("api/contents/{id}/meta")]
         [ProducesResponseType(200)]
         public ActionResult<BlobItemContentMetaModel> GetContentMetadata(
             [FromRoute] string id)

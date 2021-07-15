@@ -9,7 +9,7 @@ namespace SimpleBlob.Api.Models
     public sealed class BlobItemModel
     {
         /// <summary>
-        /// The item ID. This can include <c>/</c> to represent a hierarchy.
+        /// The item ID. This can include <c>\</c> to represent a hierarchy.
         /// </summary>
         [Required]
         [MaxLength(300)]

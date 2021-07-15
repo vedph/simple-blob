@@ -2,7 +2,7 @@
   "profiles": {
     "blob": {
       "commandName": "Project",
-      "commandLineArgs": "upload c:\\users\\dfusi\\desktop\\ *.json -t application/json -u zeus -p P4ss-W0rd! -c"
+      "commandLineArgs": "upload c:\\users\\dfusi\\desktop\\samples\\ *.xml -t application/xml -u zeus -p P4ss-W0rd! -c"
     }
   }
 }

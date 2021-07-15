@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Mvc;
 using SimpleBlob.Api.Models;
 using SimpleBlob.Core;
-using SimpleBlobApi.Models;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -31,7 +30,7 @@ namespace SimpleBlobApi.Controllers
         /// </summary>
         /// <param name="id">The item identifier.</param>
         /// <returns>Array of properties.</returns>
-        [HttpGet("api/items/{id}/properties", Name = "GetProperties")]
+        [HttpGet("api/properties/{id}", Name = "GetProperties")]
         [Authorize]
         [ProducesResponseType(200)]
         public ActionResult<BlobItemProperty[]> GetProperties([FromRoute] string id)
@@ -44,14 +43,15 @@ namespace SimpleBlobApi.Controllers
         /// Adds the specified properties to a BLOB item.
         /// </summary>
         /// <param name="model">The model with item ID and properties.</param>
-        [HttpPost("api/items/{id}/properties/add")]
+        [HttpPost("api/properties/{id}/add")]
         [Authorize(Roles = "writer,browser,admin")]
         [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
         public ActionResult AddProperties(
             [FromBody] BlobItemPropertiesModel model)
         {
             IList<BlobItemProperty> props = model.ToProperties();
-            _store.AddProperties(model.ItemId, props);
+            if (!_store.AddProperties(model.ItemId, props)) return NotFound();
             return CreatedAtRoute("GetProperties", new
             {
                 id = model.ItemId
@@ -62,14 +62,15 @@ namespace SimpleBlobApi.Controllers
         /// Sets the specified properties for a BLOB item.
         /// </summary>
         /// <param name="model">The model with item ID and properties.</param>
-        [HttpPost("api/items/{id}/properties/set")]
+        [HttpPost("api/properties/{id}/set")]
         [Authorize(Roles = "writer,browser,admin")]
         [ProducesResponseType(200)]
+        [ProducesResponseType(404)]
         public ActionResult SetProperties(
             [FromBody] BlobItemPropertiesModel model)
         {
             IList<BlobItemProperty> props = model.ToProperties();
-            _store.SetProperties(model.ItemId, props);
+            if (!_store.SetProperties(model.ItemId, props)) return NotFound();
             return CreatedAtRoute("GetProperties", new
             {
                 id = model.ItemId
@@ -80,7 +81,7 @@ namespace SimpleBlobApi.Controllers
         /// Deletes all the properties of the BLOB item with the specified ID.
         /// </summary>
         /// <param name="id">The item's identifier.</param>
-        [HttpDelete("api/items/{id}/properties")]
+        [HttpDelete("api/properties/{id}")]
         [Authorize(Roles = "writer,browser,admin")]
         public void DeleteProperties([FromRoute] string id)
         {

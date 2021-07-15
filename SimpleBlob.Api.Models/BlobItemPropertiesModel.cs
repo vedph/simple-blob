@@ -1,6 +1,8 @@
 ﻿using SimpleBlob.Core;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Text;
 
 namespace SimpleBlob.Api.Models
 {
@@ -41,6 +43,25 @@ namespace SimpleBlob.Api.Models
                 }
             }
             return properties;
+        }
+
+        /// <summary>
+        /// Converts to string.
+        /// </summary>
+        /// <returns>
+        /// A <see cref="string" /> that represents this instance.
+        /// </returns>
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append("ItemId=").Append(ItemId);
+            if (Properties?.Length > 0)
+            {
+                sb.Append(": ");
+                sb.Append(string.Join("; ",
+                    Properties.Select(p => $"{p.Name}={p.Value}")));
+            }
+            return sb.ToString();
         }
     }
 
