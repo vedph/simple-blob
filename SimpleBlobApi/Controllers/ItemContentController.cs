@@ -31,11 +31,11 @@ namespace SimpleBlobApi.Controllers
         /// <param name="file">The form file to upload.</param>
         /// <param name="mimeType">The MIME type.</param>
         /// <param name="id">The BLOB item's identifier.</param>
-        [HttpPost("api/contents/{id}")]
         [Authorize(Roles = "admin,browser,writer")]
+        [HttpPost("api/contents/{id}")]
         public IActionResult UploadContent(IFormFile file,
-            [FromQuery] string mimeType,
-            [FromQuery] string id)
+            [FromForm] string mimeType,
+            [FromForm] string id)
         {
             _store.SetContent(new BlobItemContent
             {

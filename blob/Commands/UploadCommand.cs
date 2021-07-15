@@ -63,6 +63,10 @@ namespace SimpleBlob.Cli.Commands
                 "The separator used in delimited metadata files",
                 CommandOptionType.SingleValue);
 
+            CommandOption idDelimOption = command.Option("--idsep|-l",
+                "The conventional separator used in BLOB IDs",
+                CommandOptionType.SingleValue);
+
             CommandOption userOption = command.Option("--user|-u",
                 "The BLOB user name", CommandOptionType.SingleValue);
             CommandOption pwdOption = command.Option("--pwd|-p",
@@ -92,6 +96,8 @@ namespace SimpleBlob.Cli.Commands
                         ? metaExtOption.Value() : ".meta",
                     MetaDelimiter = metaDelimOption.HasValue()
                         ? metaDelimOption.Value() : ",",
+                    IdDelimiter = idDelimOption.HasValue()
+                        ? idDelimOption.Value() : "|",
                     IsDryRun = dryOption.HasValue(),
                     IsCheckEnabled = checkOption.HasValue(),
                     MimeType = mimeTypeOption.Value(),
@@ -206,6 +212,12 @@ namespace SimpleBlob.Cli.Commands
             return null;
         }
 
+        private static string SanitizePath(string path, string sep)
+        {
+            path = path.Replace("/", sep);
+            return path.Replace("\\", sep);
+        }
+
         public async Task<int> Run()
         {
             ColorConsole.WriteWrappedHeader("Upload Files");
@@ -268,7 +280,7 @@ namespace SimpleBlob.Cli.Commands
                 IList<Tuple<string, string>> metadata = null;
                 if (File.Exists(metaPath)) metadata = metaReader.Read(metaPath);
                 string id = metadata?.FirstOrDefault(t => t.Item1 == "id")
-                    ?.Item2 ?? path;
+                    ?.Item2 ?? SanitizePath(path, _options.IdDelimiter);
 
                 // add/update item
                 string error = await AddItemAsync(id, client);
@@ -316,6 +328,7 @@ namespace SimpleBlob.Cli.Commands
         public bool IsRecursive { get; set; }
         public string MetaExtension { get; set; }
         public string MetaDelimiter { get; set; }
+        public string IdDelimiter { get; set; }
         public bool IsDryRun { get; set; }
         public bool IsCheckEnabled { get; set; }
     }

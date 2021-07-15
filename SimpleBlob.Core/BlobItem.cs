@@ -9,7 +9,11 @@ namespace SimpleBlob.Core
     public class BlobItem
     {
         /// <summary>
-        /// The item ID. This can include <c>\</c> to represent a hierarchy.
+        /// The item ID. This can include a separator character to represent
+        /// a hierarchy, but slashes should be avoided: the forward slash is
+        /// reserved for URI segments, while the backslash happens to be
+        /// rewritten into <c>/</c> by some services like Kestrel
+        /// (https://techblog.dorogin.com/how-to-pass-a-value-with-a-backslash-to-asp-net-4c8540a65f85).
         /// </summary>
         public string Id { get; set; }
 

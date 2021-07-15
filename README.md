@@ -34,7 +34,7 @@ You should also specify the MIME type for the files to upload. If you don't spec
 Syntax:
 
 ```ps1
-./blob upload <InputDir> <FileMask> [-x] [-r] [-t MimeType] [-m MetaExtension] [-e ExtensionAndMimeTypeList] [-s MetaSeparator] [-u UserName] [-p Password] [-d]
+./blob upload <InputDir> <FileMask> [-x] [-r] [-t MimeType] [-m MetaExtension] [-e ExtensionAndMimeTypeList] [-s MetaSeparator] [-l IdSeparator] [-u UserName] [-p Password] [-d]
 ```
 
 where:
@@ -47,6 +47,7 @@ where:
 - `-m` the extension expected to be found for metadata files. The default is `.meta`.
 - `-e` the optional CSV MIME types file path, when you want to override the default list of MIME types.
 - `-s` the separator used for the metadata CSV MIME types file. The default is comma (`,`).
+- `-l` the separator used in BLOB IDs in a file-system like convention. The default is pipe (`|`). Slashes (`/` or `\`) automatically get converted into this separator when using file paths as IDs.
 - `-u` the user name. If not specified, you will be prompted for it.
 - `-p` the password. If not specified, you will be prompted for it.
 - `-c` to theck the file before uploading it. If the file size and CRC32C are the same, its metadata and properties are uploaded, but its content is not. This speeds up the process when some of the files have not changed.
