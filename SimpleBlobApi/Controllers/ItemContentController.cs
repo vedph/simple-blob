@@ -45,19 +45,12 @@ namespace SimpleBlobApi.Controllers
                 Content = file.OpenReadStream(),
                 UserId = User.Identity.Name
             });
+            // mind the final null!
+            // https://stackoverflow.com/questions/68397822/asp-net-5-web-api-createdataction-post-returns-500
             return CreatedAtAction(nameof(DownloadContent), new
             {
                 id = id
-            });
-            //string url = Url.Action(new UrlActionContext
-            //{
-            //    Protocol = Request.Scheme,
-            //    Host = Request.Host.Value,
-            //    Action = nameof(DownloadContent)
-            //});
-            //return new CreatedResult(url, null);
-            //return new CreatedAtActionResult(nameof(DownloadContent),
-            //    nameof(ItemContentController), new { id = id }, null);
+            }, null);
         }
 
         /// <summary>
