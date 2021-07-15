@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.CommandLineUtils;
+﻿using Force.Crc32;
+using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Api.Models;
 using SimpleBlob.Cli.Services;
@@ -67,6 +68,11 @@ namespace SimpleBlob.Cli.Commands
             CommandOption pwdOption = command.Option("--pwd|-p",
                 "The BLOB user password", CommandOptionType.SingleValue);
 
+            CommandOption checkOption = command.Option("--check|-c",
+                "Check for file change before uploading. " +
+                "If no change occurred, nothing is done.",
+                CommandOptionType.NoValue);
+
             CommandOption dryOption = command.Option("--dry|-d",
                 "Dry run (do not write data)", CommandOptionType.NoValue);
 
@@ -87,6 +93,7 @@ namespace SimpleBlob.Cli.Commands
                     MetaDelimiter = metaDelimOption.HasValue()
                         ? metaDelimOption.Value() : ",",
                     IsDryRun = dryOption.HasValue(),
+                    IsCheckEnabled = checkOption.HasValue(),
                     MimeType = mimeTypeOption.Value(),
                     MimeTypeList = mimeTypeListOption.Value()
                 });
@@ -133,8 +140,47 @@ namespace SimpleBlob.Cli.Commands
                 : $"Error adding item {id}: {response.ReasonPhrase}";
         }
 
+        private static long GetCrc(string path)
+        {
+            using FileStream stream = new FileStream(path, FileMode.Open,
+                FileAccess.Read, FileShare.Read);
+            BinaryReader reader = new BinaryReader(stream);
+            uint crc = 0;
+            while (true)
+            {
+                byte[] buf = reader.ReadBytes(8192);
+                crc = Crc32Algorithm.Append(crc, buf);
+                if (buf.Length < 8192) break;
+            }
+            return (long)crc;
+        }
+
+        private static async Task<Tuple<bool, string>> AreContentEqualAsync(
+            string id, HttpClient client, string path)
+        {
+            HttpResponseMessage r = await client.GetAsync(
+                $"api/items/{id}/content-meta");
+            if (!r.IsSuccessStatusCode)
+            {
+                return Tuple.Create(false,
+                    $"Error getting content metadata for item {id}");
+            }
+
+            FileInfo info = new FileInfo(path);
+            BlobItemContentMetaModel meta = await r.Content
+                .ReadFromJsonAsync<BlobItemContentMetaModel>();
+
+            // size must be equal
+            if (info.Length != meta.Size)
+                return Tuple.Create(false, (string)null);
+
+            // CRC32C must be equal
+            long crc = GetCrc(path);
+            return Tuple.Create(crc == meta.Hash, (string)null);
+        }
+
         private async Task<string> SetItemContentAsync(string id,
-            string path, string apiRootUri)
+            HttpClient client, string path, string apiRootUri)
         {
             if (_options.IsDryRun) return null;
 
@@ -144,6 +190,14 @@ namespace SimpleBlob.Cli.Commands
             {
                 mimeType = _typeMap.GetType(Path.GetExtension(path));
                 if (mimeType == null) return "Unknown extension: " + path;
+            }
+
+            // check if required
+            if (_options.IsCheckEnabled)
+            {
+                var t = await AreContentEqualAsync(id, client, path);
+                if (t.Item2 != null) return t.Item2;
+                if (t.Item1) return null;
             }
 
             string response = await FileUploader.UploadFile(uri, path,
@@ -220,7 +274,7 @@ namespace SimpleBlob.Cli.Commands
                 string id = metadata?.FirstOrDefault(t => t.Item1 == "path")
                     ?.Item2 ?? path;
 
-                // add item
+                // add/update item
                 string error = await AddItemAsync(id, client);
                 if (error != null)
                 {
@@ -239,7 +293,7 @@ namespace SimpleBlob.Cli.Commands
                 }
 
                 // set content
-                error = await SetItemContentAsync(id, path, apiRootUri);
+                error = await SetItemContentAsync(id, client, path, apiRootUri);
                 if (error != null)
                 {
                     _options.Logger.LogError(error);
@@ -267,5 +321,6 @@ namespace SimpleBlob.Cli.Commands
         public string MetaExtension { get; set; }
         public string MetaDelimiter { get; set; }
         public bool IsDryRun { get; set; }
+        public bool IsCheckEnabled { get; set; }
     }
 }

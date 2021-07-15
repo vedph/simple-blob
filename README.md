@@ -49,4 +49,5 @@ where:
 - `-s` the separator used for the metadata CSV MIME types file. The default is comma (`,`).
 - `-u` the user name. If not specified, you will be prompted for it.
 - `-p` the password. If not specified, you will be prompted for it.
+- `-c` to theck the file before uploading it. If the file size and CRC32C are the same, its metadata and properties are uploaded, but its content is not. This speeds up the process when some of the files have not changed.
 - `-d` dry run (do not write to service).
