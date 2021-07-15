@@ -40,7 +40,7 @@ namespace SimpleBlob.Cli.Commands
             CommandArgument maskArgument = command.Argument("[fileMask]",
                 "The files mask");
 
-            CommandOption regexOption = command.Option("--regex|-p",
+            CommandOption regexOption = command.Option("--regex|-x",
                 "Use a regular expression pattern for the files mask",
                 CommandOptionType.NoValue);
             CommandOption recurseOption = command.Option("--recurse|-r",
@@ -111,7 +111,7 @@ namespace SimpleBlob.Cli.Commands
             if (_options.IsDryRun) return null;
 
             HttpResponseMessage response = await client.PostAsJsonAsync(
-                "api/items", new { id });
+                "items", new { id });
             return response.IsSuccessStatusCode
                 ? null
                 : $"Error adding item {id}: {response.ReasonPhrase}";
@@ -134,7 +134,7 @@ namespace SimpleBlob.Cli.Commands
             };
 
             HttpResponseMessage response = await client.PostAsJsonAsync(
-                $"api/items/{id}/properties/set", new { model });
+                $"items/{id}/properties/set", new { model });
             return response.IsSuccessStatusCode
                 ? null
                 : $"Error adding item {id}: {response.ReasonPhrase}";
@@ -152,14 +152,14 @@ namespace SimpleBlob.Cli.Commands
                 crc = Crc32Algorithm.Append(crc, buf);
                 if (buf.Length < 8192) break;
             }
-            return (long)crc;
+            return crc;
         }
 
         private static async Task<Tuple<bool, string>> AreContentEqualAsync(
             string id, HttpClient client, string path)
         {
             HttpResponseMessage r = await client.GetAsync(
-                $"api/items/{id}/content-meta");
+                $"items/{id}/content-meta");
             if (!r.IsSuccessStatusCode)
             {
                 return Tuple.Create(false,
@@ -184,7 +184,7 @@ namespace SimpleBlob.Cli.Commands
         {
             if (_options.IsDryRun) return null;
 
-            string uri = apiRootUri + $"api/items/{id}/content";
+            string uri = apiRootUri + $"items/{id}/content";
             string mimeType = _options.MimeType;
             if (string.IsNullOrEmpty(mimeType))
             {
@@ -229,7 +229,7 @@ namespace SimpleBlob.Cli.Commands
                 _typeMap.Load(_options.MimeTypeList);
 
             // prompt for userID/password if required
-                LoginCredentials credentials = new LoginCredentials(
+            LoginCredentials credentials = new LoginCredentials(
                 _options.UserId,
                 _options.Password);
             credentials.PromptIfRequired();

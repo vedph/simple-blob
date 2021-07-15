@@ -67,22 +67,25 @@ namespace SimpleBlobApi.Controllers
         /// Gets the BLOB item's content metadata.
         /// </summary>
         /// <param name="id">The item's identifier.</param>
-        /// <returns>Metadata.</returns>
+        /// <returns>Metadata. If the item was not found, an empty metadata
+        /// object is returned rather than 404.</returns>
         [Authorize]
         [HttpGet("api/items/{id}/content-meta")]
+        [ProducesResponseType(200)]
         public ActionResult<BlobItemContentMetaModel> GetContentMetadata(
             [FromRoute] string id)
         {
             BlobItemContent item = _store.GetContent(id, true);
-            return Ok(new BlobItemContentMetaModel
-            {
-                ItemId = item.ItemId,
-                MimeType = item.MimeType,
-                Hash = item.Hash,
-                Size = item.Size,
-                UserId = item.UserId,
-                DateModified = item.DateModified
-            });
+            return Ok(item != null
+                ? new BlobItemContentMetaModel
+                {
+                    ItemId = item.ItemId,
+                    MimeType = item.MimeType,
+                    Hash = item.Hash,
+                    Size = item.Size,
+                    UserId = item.UserId,
+                    DateModified = item.DateModified
+                } : new BlobItemContentMetaModel());
         }
     }
 }

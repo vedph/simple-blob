@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "blob": {
+      "commandName": "Project",
+      "commandLineArgs": "upload c:\\users\\dfusi\\desktop\\ *.json -t application/json -u zeus -p P4ss-W0rd! -c"
+    }
+  }
+}
