@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 using SimpleBlob.Api.Models;
 using SimpleBlob.Core;
 
@@ -44,10 +45,19 @@ namespace SimpleBlobApi.Controllers
                 Content = file.OpenReadStream(),
                 UserId = User.Identity.Name
             });
-            return CreatedAtRoute("DownloadContent", new
+            return CreatedAtAction(nameof(DownloadContent), new
             {
-                id
+                id = id
             });
+            //string url = Url.Action(new UrlActionContext
+            //{
+            //    Protocol = Request.Scheme,
+            //    Host = Request.Host.Value,
+            //    Action = nameof(DownloadContent)
+            //});
+            //return new CreatedResult(url, null);
+            //return new CreatedAtActionResult(nameof(DownloadContent),
+            //    nameof(ItemContentController), new { id = id }, null);
         }
 
         /// <summary>
@@ -56,7 +66,8 @@ namespace SimpleBlobApi.Controllers
         /// <param name="id">The item's identifier.</param>
         /// <returns>Content.</returns>
         [Authorize]
-        [HttpGet("api/contents/{id}", Name = "DownloadContent")]
+        [ActionName("DownloadContent")]
+        [HttpGet("api/contents/{id}")]
         public FileResult DownloadContent([FromRoute] string id)
         {
             BlobItemContent item = _store.GetContent(id, false);
