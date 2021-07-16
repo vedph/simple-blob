@@ -1,10 +1,12 @@
 ﻿using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
+using SimpleBlob.Api.Models;
 using SimpleBlob.Cli.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 
 namespace SimpleBlob.Cli.Commands
@@ -58,7 +60,7 @@ namespace SimpleBlob.Cli.Commands
                     Id = idArgument.Value,
                     IsResetEnabled = resetOption.HasValue(),
                     Properties = propOption.Values.Count > 0
-                        ? string.Join(",", propOption.Values)
+                        ? propOption.Values.ToArray()
                         : null,
                     MetaPath = metaPathOption.Value(),
                     MetaDelimiter = metaDelimOption.HasValue()
@@ -89,7 +91,69 @@ namespace SimpleBlob.Cli.Commands
             // login
             _login = CommandHelper.LoginAndNotify(apiRootUri, credentials);
 
-            throw new NotImplementedException();
+            // setup client
+            using HttpClient client = ClientHelper.GetClient(apiRootUri,
+                _login.Token);
+
+            // collect properties
+            List<BlobItemPropertyModel> props = new List<BlobItemPropertyModel>();
+
+            // get properties from file if any
+            if (!string.IsNullOrEmpty(_options.MetaPath))
+            {
+                IList<Tuple<string, string>> metadata = new CsvMetadataFile
+                {
+                    Delimiter = _options.MetaDelimiter
+                }.Read(_options.MetaPath);
+                props.AddRange(metadata.Select(m => new BlobItemPropertyModel
+                    { Name = m.Item1, Value = m.Item2 }));
+            }
+
+            // get properties from command line if any
+            if (_options.Properties?.Length > 0)
+            {
+                foreach (string pair in _options.Properties)
+                {
+                    BlobItemPropertyModel prop = new BlobItemPropertyModel();
+                    int i = pair.IndexOf('=');
+                    if (i == -1)
+                    {
+                        prop.Name = pair;
+                        prop.Value = "";
+                    }
+                    else
+                    {
+                        prop.Name = pair.Substring(0, i);
+                        prop.Value = pair.Substring(i + 1);
+                    }
+                    props.Add(prop);
+                }
+            }
+
+            // no property to add is valid only when reset is true
+            ColorConsole.WriteInfo("Properties to add: " + props.Count);
+            if (props.Count == 0 && !_options.IsResetEnabled) return 0;
+
+            string uri = $"properties/{_options.Id}/" +
+                (_options.IsResetEnabled ? "set" : "add");
+
+            HttpResponseMessage response = await client.PostAsJsonAsync(uri,
+                new BlobItemPropertiesModel
+                {
+                    ItemId = _options.Id,
+                    Properties = props.ToArray()
+                });
+            if (!response.IsSuccessStatusCode)
+            {
+                string error = $"Error adding properties to item {_options.Id}: " +
+                    string.Join(", ", props.Select(p => $"{p.Name}={p.Value}"));
+                _options.Logger?.LogError(error);
+                ColorConsole.WriteError(error);
+
+                return 2;
+            }
+
+            return 0;
         }
     }
 
@@ -97,7 +161,7 @@ namespace SimpleBlob.Cli.Commands
     {
         public string Id { get; set; }
         public bool IsResetEnabled { get; set; }
-        public string Properties { get; set; }
+        public string[] Properties { get; set; }
         public string MetaPath { get; set; }
         public string MetaDelimiter { get; set; }
     }

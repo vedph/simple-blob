@@ -88,7 +88,7 @@ You should also specify the MIME type for the files to upload. If you don't spec
 Syntax:
 
 ```ps1
-./blob upload <InputDir> <FileMask> [-x] [-r] [-t MimeType] [-m MetaExtension] [-e ExtensionAndMimeTypeList] [-s MetaSeparator] [-l IdSeparator] [-d] [-u UserName] [-p Password]
+./blob upload <InputDir> <FileMask> [-x] [-r] [-t MimeType] [-m MetaExtension] [-e ExtensionAndMimeTypeList] [--meta-sep MetaSeparator] [-l IdSeparator] [-d] [-u UserName] [-p Password]
 ```
 
 where:
@@ -120,7 +120,7 @@ This command downloads all the files matching the specified filters into a root 
 Syntax:
 
 ```ps1
-./blob list [-n PageNumber] [-z PageSize] [-i IdFilter] [-m MimeType] [-d MinDate:MaxDate] [-s MinSize:MaxSize] [-l LastUser] [-o PropName=PropValue] [- OutputFilePath] [-u UserName] [-p Password]
+./blob list [-n PageNumber] [-z PageSize] [-i IdFilter] [-m MimeType] [-d MinDate:MaxDate] [-s MinSize:MaxSize] [-l LastUser] [-o <Name>=<Value>] [-f OutputFilePath] [--meta-sep MetaSeparator] [-u UserName] [-p Password]
 ```
 
 where:
@@ -134,7 +134,8 @@ where:
 - `-l` the user filter. This is the user who last modified the item.
 - `-o` the property filter. Each property has format name`=`value. Repeat `-o` for multiple properties; just any of them should be matched.
 - `-e` The metadata file extension. Default is `.meta`.
-- `--meta-sep` the metadata file delimiter. Default is comma.
+- `--meta-sep` the separator used for the metadata file. The default is comma (`,`).
+- `-f` the output file path. If not specified, the output will be displayed.
 - `--id-sep` the virtual path separator used in item IDs. The default is pipe (`|`).
 - `-u` the user name. If not specified, you will be prompted for it.
 - `-p` the password. If not specified, you will be prompted for it.
@@ -144,3 +145,20 @@ Sample:
 ```ps1
 ./blob download c:\users\dfusi\desktop\down\ -u zeus -p P4ss-W0rd!
 ```
+
+### Add Properties Command
+
+This command adds the specified properties to a BLOB item. The properties can be just added, or can replace all the existing properties of the item, according to the option chosen. So, you can also use this command to remove all the properties from an item.
+
+Syntax:
+
+```ps1
+./blob add-props <ItemId> [-o <Name>=<Value>] [-f MetadataFilePath] [--meta-sep MetaSeparator] [-r]
+```
+
+- `-o` the property. Each property has format name`=`value. Repeat `-o` for multiple properties.
+- `-f` the optional metadata file path. If specified, properties will be loaded from that file. This is a delimited file without header.
+- `--meta-sep` the separator used for the metadata file. The default is comma (`,`).
+- `-r` remove all the existing properties before adding the new ones (if any).
+
+If both the metadata file and `-o` are used to specify properties, these will be combined together.

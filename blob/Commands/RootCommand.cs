@@ -20,6 +20,7 @@ namespace SimpleBlob.Cli.Commands
             app.Command("upload", c => UploadCommand.Configure(c, options));
             app.Command("download", c => DownloadCommand.Configure(c, options));
             app.Command("get-info", c => GetInfoCommand.Configure(c, options));
+            app.Command("add-props", c => AddPropertiesCommand.Configure(c, options));
 
             app.OnExecute(() =>
             {
