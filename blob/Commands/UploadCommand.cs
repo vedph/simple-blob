@@ -40,6 +40,7 @@ namespace SimpleBlob.Cli.Commands
             CommandArgument maskArgument = app.Argument("[fileMask]",
                 "The files mask");
 
+            // credentials
             CommandHelper.AddCredentialsOptions(app);
 
             CommandOption regexOption = app.Option("--regex|-x",
@@ -98,6 +99,7 @@ namespace SimpleBlob.Cli.Commands
                     MimeType = mimeTypeOption.Value(),
                     MimeTypeList = mimeTypeListOption.Value()
                 };
+                // credentials
                 CommandHelper.SetCredentialsOptions(app, co);
                 options.Command = new UploadCommand(co);
 

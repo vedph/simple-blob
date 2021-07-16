@@ -32,6 +32,7 @@ namespace SimpleBlob.Cli.Commands
 
             CommandArgument idArgument = app.Argument("[id]", "The BLOB item's ID");
 
+            // credentials
             CommandHelper.AddCredentialsOptions(app);
 
             CommandOption fileOption = app.Option("--file|-f",
@@ -47,6 +48,7 @@ namespace SimpleBlob.Cli.Commands
                     Id = idArgument.Value,
                     OutputPath = fileOption.Value()
                 };
+                // credentials
                 CommandHelper.SetCredentialsOptions(app, co);
 
                 options.Command = new GetInfoCommand(co);

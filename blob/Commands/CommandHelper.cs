@@ -114,6 +114,54 @@ namespace SimpleBlob.Cli.Commands
                 CommandOptionType.MultipleValue);
         }
 
+        public static void SetItemListOptions(CommandLineApplication app,
+            ItemListOptions options)
+        {
+            if (app == null) throw new ArgumentNullException(nameof(app));
+            if (options == null) throw new ArgumentNullException(nameof(options));
+
+            CommandOption dateOption = app.Options.Find(o => o.ShortName == "n");
+            CommandOption sizeOption = app.Options.Find(o => o.ShortName == "s");
+            CommandOption propOption = app.Options.Find(o => o.ShortName == "o");
+
+            options.PageNumber = GetOptionValue(app.Options.Find(
+                o => o.ShortName == "n"), 1);
+            options.PageSize = GetOptionValue(app.Options.Find(
+                o => o.ShortName == "z"), 20);
+            options.Id = app.Options.Find(o => o.ShortName == "i")?.Value();
+            options.MimeType = app.Options.Find(o => o.ShortName == "m")?.Value();
+            options.LastUserId = app.Options.Find(o => o.ShortName == "l").Value();
+            options.Properties = propOption.Values.Count > 0
+                ? string.Join(",", propOption.Values)
+                : null;
+
+            Regex rngRegex = new Regex("^(?<a>[^:]+)?:(?<b>.+)?");
+
+            // dates
+            if (dateOption.HasValue())
+            {
+                Match m = rngRegex.Match(dateOption.Value());
+                if (m.Success)
+                {
+                    options.MinDateModified = ParseDate(m.Groups["a"].Value);
+                    options.MaxDateModified = ParseDate(m.Groups["b"].Value);
+                }
+            }
+
+            // sizes
+            if (sizeOption.HasValue())
+            {
+                Match m = rngRegex.Match(dateOption.Value());
+                if (m.Success)
+                {
+                    options.MinSize = long.TryParse(m.Groups["a"].Value,
+                        out long min) ? min : 0;
+                    options.MaxSize = long.TryParse(m.Groups["b"].Value,
+                        out long max) ? max : 0;
+                }
+            }
+        }
+
         public static string BuildItemListQueryString(ItemListOptions options)
         {
             if (options == null) throw new ArgumentNullException(nameof(options));

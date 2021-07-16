@@ -36,7 +36,9 @@ namespace SimpleBlob.Cli.Commands
             CommandArgument outputDirArgument = app.Argument("[output-dir]",
                 "The output directory");
 
+            // credentials
             CommandHelper.AddCredentialsOptions(app);
+            // items list
             CommandHelper.AddItemListOptions(app);
 
             CommandOption metaExtOption = app.Option("--meta|-e",
@@ -53,24 +55,10 @@ namespace SimpleBlob.Cli.Commands
 
             app.OnExecute(() =>
             {
-                CommandOption dateOption = app.Options.Find(o => o.ShortName == "n");
-                CommandOption sizeOption = app.Options.Find(o => o.ShortName == "s");
-                CommandOption propOption = app.Options.Find(o => o.ShortName == "o");
-
                 DownloadCommandOptions co = new DownloadCommandOptions
                 {
                     Configuration = options.Configuration,
                     Logger = options.Logger,
-                    PageNumber = CommandHelper.GetOptionValue(
-                        app.Options.Find(o => o.ShortName == "n"), 1),
-                    PageSize = CommandHelper.GetOptionValue(
-                        app.Options.Find(o => o.ShortName == "z"), 20),
-                    Id = app.Options.Find(o => o.ShortName == "i").Value(),
-                    MimeType = app.Options.Find(o => o.ShortName == "m").Value(),
-                    LastUserId = app.Options.Find(o => o.ShortName == "l").Value(),
-                    Properties = propOption.Values.Count > 0
-                        ? string.Join(",", propOption.Values)
-                        : null,
                     OutputDir = outputDirArgument.Value,
                     MetaExtension = metaExtOption.HasValue()
                         ? metaExtOption.Value() : ".meta",
@@ -79,35 +67,10 @@ namespace SimpleBlob.Cli.Commands
                     MetaDelimiter = metaDelimOption.HasValue()
                         ? metaDelimOption.Value() : ","
                 };
+                // credentials
                 CommandHelper.SetCredentialsOptions(app, co);
-
-                Regex rngRegex = new Regex("^(?<a>[^:]+)?:(?<b>.+)?");
-
-                // dates
-                if (dateOption.HasValue())
-                {
-                    Match m = rngRegex.Match(dateOption.Value());
-                    if (m.Success)
-                    {
-                        co.MinDateModified = CommandHelper.ParseDate(
-                            m.Groups["a"].Value);
-                        co.MaxDateModified = CommandHelper.ParseDate(
-                            m.Groups["b"].Value);
-                    }
-                }
-
-                // sizes
-                if (sizeOption.HasValue())
-                {
-                    Match m = rngRegex.Match(dateOption.Value());
-                    if (m.Success)
-                    {
-                        co.MinSize = long.TryParse(m.Groups["a"].Value,
-                            out long min) ? min : 0;
-                        co.MaxSize = long.TryParse(m.Groups["b"].Value,
-                            out long max) ? max : 0;
-                    }
-                }
+                // items list
+                CommandHelper.SetItemListOptions(app, co);
 
                 options.Command = new DownloadCommand(co);
 
