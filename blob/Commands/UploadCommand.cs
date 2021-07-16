@@ -221,7 +221,8 @@ namespace SimpleBlob.Cli.Commands
             ColorConsole.WriteWrappedHeader("Upload Files");
             _options.Logger.LogInformation("---UPLOAD---");
 
-            string apiRootUri = CommandHelper.GetAndNotifyApiRootUri(_options);
+            string apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
+            if (apiRootUri == null) return 2;
 
             // load types if required
             if (!string.IsNullOrEmpty(_options.MimeTypeList))
@@ -234,13 +235,7 @@ namespace SimpleBlob.Cli.Commands
             credentials.PromptIfRequired();
 
             // login
-            Console.WriteLine("Logging in...");
-            _login = new ApiLogin(apiRootUri);
-            if (!_login.Login(credentials.UserName, credentials.Password))
-            {
-                ColorConsole.WriteError("Unable to login");
-                return 2;
-            }
+            _login = CommandHelper.LoginAndNotify(apiRootUri, credentials);
 
             // setup the metadata services
             CsvMetadataReader metaReader = new CsvMetadataReader

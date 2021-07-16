@@ -16,6 +16,7 @@ namespace SimpleBlob.Cli.Commands
         public static void Configure(CommandLineApplication app, AppOptions options)
         {
             // configure all the app commands here
+            app.Command("list", c => ListCommand.Configure(c, options));
             app.Command("upload", c => UploadCommand.Configure(c, options));
 
             app.OnExecute(() =>

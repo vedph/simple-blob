@@ -36,7 +36,7 @@ namespace SimpleBlob.Cli.Commands
             return d ?? defValue;
         }
 
-        public static string GetAndNotifyApiRootUri(CommandOptions options)
+        public static string GetApiRootUriAndNotify(CommandOptions options)
         {
             string apiRootUri = options.Configuration
                 .GetSection("ApiRootUri")?.Value;
@@ -47,6 +47,20 @@ namespace SimpleBlob.Cli.Commands
             }
             ColorConsole.WriteInfo("Target: " + apiRootUri);
             return apiRootUri;
+        }
+
+        public static ApiLogin LoginAndNotify(string apiRootUri,
+            LoginCredentials credentials)
+        {
+            Console.Write("Logging in... ");
+            ApiLogin login = new ApiLogin(apiRootUri);
+            if (!login.Login(credentials.UserName, credentials.Password))
+            {
+                ColorConsole.WriteError("Unable to login");
+                return null;
+            }
+            Console.WriteLine("done");
+            return login;
         }
 
         public static void AddCredentialsOptions(CommandLineApplication app)
