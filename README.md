@@ -88,7 +88,7 @@ where:
 Sample:
 
 ```ps1
-./blob upload c:\users\dfusi\desktop\ *.json -t application/json -u zeus -p P4ss-W0rd! -c
+./blob upload c:\users\dfusi\desktop\up\ *.json -t application/json -u zeus -p P4ss-W0rd! -c
 ```
 
 ### Download Command
@@ -103,7 +103,7 @@ Syntax:
 
 where:
 
-- `-n` the page number (1-N). Default=1.
+- `-n` the page number to start from (1-N). Default=1.
 - `-z` the page size. Default=20.
 - `-i` the BLOB ID filter. You can use wildcards `*` and `?`.
 - `-m` the MIME type filter.
@@ -120,5 +120,5 @@ where:
 Sample:
 
 ```ps1
-./blob list -n 1 -z 10 -u zeus -p P4ss-W0rd!
+./blob download c:\users\dfusi\desktop\down\ -u zeus -p P4ss-W0rd!
 ```

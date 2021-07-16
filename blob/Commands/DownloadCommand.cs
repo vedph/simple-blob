@@ -160,17 +160,19 @@ namespace SimpleBlob.Cli.Commands
 
                     // get stream
                     HttpResponseMessage response =
-                        await client.GetAsync("contents/{id}");
+                        await client.GetAsync($"contents/{item.Id}");
                     using Stream input = await response.Content.ReadAsStreamAsync();
 
                     // save to file
-                    string file = item.Id.Replace(_options.IdDelimiter,
+                    string itemPath = item.Id.Replace(_options.IdDelimiter,
                         new string(Path.DirectorySeparatorChar, 1));
-                    string dir = Path.GetDirectoryName(file);
-                    string path = Path.Combine(dir, file);
+                    string dir = Path.Combine(_options.OutputDir,
+                        Path.GetDirectoryName(itemPath));
+                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+                    string path = Path.Combine(dir, Path.GetFileName(itemPath));
                     Console.WriteLine(" => " + path);
 
-                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
                     using FileStream output = new FileStream(path, FileMode.Create,
                         FileAccess.Write, FileShare.Read);
                     input.CopyTo(output);
@@ -179,12 +181,16 @@ namespace SimpleBlob.Cli.Commands
                     // load metadata
                     List<Tuple<string, string>> metadata =
                         new List<Tuple<string, string>>();
-                    metadata.Add(Tuple.Create("id", item.Id));
 
                     var props = await client.GetFromJsonAsync<BlobItemProperty[]>(
                         $"properties/{item.Id}");
+                    bool hasId = false;
                     foreach (var p in props)
+                    {
+                        if (p.Name == "id") hasId = true;
                         metadata.Add(Tuple.Create(p.Name, p.Value));
+                    }
+                    if (!hasId) metadata.Add(Tuple.Create("id", item.Id));
 
                     // save metadata to path
                     path += _options.MetaExtension;

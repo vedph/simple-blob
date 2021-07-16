@@ -2,7 +2,7 @@
   "profiles": {
     "blob": {
       "commandName": "Project",
-      "commandLineArgs": "list -n 1 -z 10 -u zeus -p P4ss-W0rd!"
+      "commandLineArgs": "download c:\\users\\dfusi\\desktop\\down\\ -u zeus -p P4ss-W0rd!"
     }
   }
 }

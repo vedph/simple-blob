@@ -48,7 +48,7 @@ namespace SimpleBlob.Cli.Commands
                 ColorConsole.WriteError("Missing ApiUri in configuration");
                 return null;
             }
-            ColorConsole.WriteInfo("Target: " + apiRootUri);
+            ColorConsole.WriteInfo("API: " + apiRootUri);
             return apiRootUri;
         }
 

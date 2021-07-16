@@ -61,9 +61,10 @@ namespace SimpleBlobApi.Controllers
         [Authorize]
         [ActionName("DownloadContent")]
         [HttpGet("api/contents/{id}")]
-        public FileResult DownloadContent([FromRoute] string id)
+        public ActionResult DownloadContent([FromRoute] string id)
         {
             BlobItemContent item = _store.GetContent(id, false);
+            if (item == null) return NotFound();
             return File(item.Content, item.MimeType);
         }
 
