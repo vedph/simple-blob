@@ -9,7 +9,9 @@ Projects:
 - `SimpleBlob.Core`: core components.
 - `SimpleBlob.Sql`: shared components for SQL-based implementations.
 - `SimpleBlob.PgSql`: PostgresSQL implementation.
+- `SimpleBlob.Api.Models`: models used by API.
 - `SimpleBlobApi`: API wrapper.
+- `blob`: CLI client.
 
 ## Docker
 
@@ -75,6 +77,29 @@ Sample:
 
 ```ps1
 ./blob get-info samples|fam-ge-tro-ric711-000000_01 -u zeus -p P4ss-W0rd!
+```
+
+### Delete Command
+
+This command deletes the specified BLOB item.
+
+Syntax:
+
+```ps1
+./blob delete ItemId [-c] [-u UserName] [-p Password]
+```
+
+where:
+
+- `ItemId` is the ID of the item to delete.
+- `-c` skips the confirmation prompt.
+- `-u` the user name. If not specified, you will be prompted for it.
+- `-p` the password. If not specified, you will be prompted for it.
+
+Sample:
+
+```ps1
+./blob delete samples|fam-ge-tro-ric711-000000_01 -c -u zeus -p P4ss-W0rd!
 ```
 
 ### Upload Command

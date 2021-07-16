@@ -152,6 +152,7 @@ namespace SimpleBlob.Cli.Commands
 
                 return 2;
             }
+            else ColorConsole.WriteSuccess("Properties added");
 
             return 0;
         }
