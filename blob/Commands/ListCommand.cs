@@ -41,7 +41,7 @@ namespace SimpleBlob.Cli.Commands
             CommandHelper.AddItemListOptions(app);
 
             CommandOption fileOption = app.Option("--file|-f",
-                "The path to the output file (if not set, output will be displayed)",
+                "The path to the output file (if not set, the output will be displayed)",
                 CommandOptionType.SingleValue);
 
             app.OnExecute(() =>

@@ -55,6 +55,28 @@ Sample:
 ./blob list -n 1 -z 10 -u zeus -p P4ss-W0rd!
 ```
 
+### GetInfo Command
+
+This command gets information about an item.
+
+Syntax:
+
+```ps1
+./blob get-info ItemId [-f OutputFilePath] [-u UserName] [-p Password]
+```
+
+where:
+
+- `-f` the output file path. If not specified, the output will be displayed.
+- `-u` the user name. If not specified, you will be prompted for it.
+- `-p` the password. If not specified, you will be prompted for it.
+
+Sample:
+
+```ps1
+./blob get-info samples|fam-ge-tro-ric711-000000_01 -u zeus -p P4ss-W0rd!
+```
+
 ### Upload Command
 
 This command uploads a set of files, as defined from an input folder and a files mask. The mask can be a regular file system mask, or a regular expression. Also, files can optionally be recursively searched starting from the input folder.

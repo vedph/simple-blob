@@ -71,7 +71,7 @@ namespace SimpleBlob.Cli.Services
             using HttpWebResponse response = (HttpWebResponse)
                 await request.GetResponseAsync();
             using Stream responseStream = response.GetResponseStream();
-            if (responseStream == null) return string.Empty;
+            if (responseStream == null) return "";
             using var reader = new StreamReader(responseStream);
             return await reader.ReadToEndAsync();
         }
