@@ -162,3 +162,9 @@ Syntax:
 - `-r` remove all the existing properties before adding the new ones (if any).
 
 If both the metadata file and `-o` are used to specify properties, these will be combined together.
+
+Sample:
+
+```ps1
+./blob add-props samples|fam-ge-tro-ric711-000000_01 -o category=test -u zeus -p P4ss-W0rd!
+```

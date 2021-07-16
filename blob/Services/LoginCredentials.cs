@@ -35,10 +35,10 @@ namespace SimpleBlob.Cli.Services
         public void PromptIfRequired()
         {
             if (string.IsNullOrEmpty(UserName))
-                UserName = PromptRequired("Username:");
+                UserName = PromptRequired("Username: ");
 
             if (string.IsNullOrEmpty(Password))
-                Password = PromptRequired("Password:");
+                Password = PromptRequired("Password: ");
         }
     }
 }

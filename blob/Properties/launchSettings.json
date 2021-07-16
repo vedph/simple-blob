@@ -2,7 +2,7 @@
   "profiles": {
     "blob": {
       "commandName": "Project",
-      "commandLineArgs": "get-info samples|fam-ge-tro-ric711-000000_01 -u zeus -p P4ss-W0rd!"
+      "commandLineArgs": "add-props samples|fam-ge-tro-ric711-000000_01 -o category=test -u zeus -p P4ss-W0rd!"
     }
   }
 }
