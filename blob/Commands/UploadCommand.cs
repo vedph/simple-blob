@@ -25,69 +25,64 @@ namespace SimpleBlob.Cli.Commands
             _typeMap = new MimeTypeMap();
         }
 
-        public static void Configure(CommandLineApplication command,
+        public static void Configure(CommandLineApplication app,
             AppOptions options)
         {
-            if (command == null)
-                throw new ArgumentNullException(nameof(command));
+            if (app == null)
+                throw new ArgumentNullException(nameof(app));
 
-            command.Description = "Upload all the files matching " +
+            app.Description = "Upload all the files matching " +
                 "the specified mask from the specified directory.";
-            command.HelpOption("-?|-h|--help");
+            app.HelpOption("-?|-h|--help");
 
-            CommandArgument dirArgument = command.Argument("[inputDir]",
+            CommandArgument dirArgument = app.Argument("[inputDir]",
                 "The input directory");
-            CommandArgument maskArgument = command.Argument("[fileMask]",
+            CommandArgument maskArgument = app.Argument("[fileMask]",
                 "The files mask");
 
-            CommandOption regexOption = command.Option("--regex|-x",
+            CommandHelper.AddCredentialsOptions(app);
+
+            CommandOption regexOption = app.Option("--regex|-x",
                 "Use a regular expression pattern for the files mask",
                 CommandOptionType.NoValue);
-            CommandOption recurseOption = command.Option("--recurse|-r",
+            CommandOption recurseOption = app.Option("--recurse|-r",
                 "Recurse subdirectories",
                 CommandOptionType.NoValue);
 
-            CommandOption mimeTypeOption = command.Option("--type|-t",
+            CommandOption mimeTypeOption = app.Option("--type|-t",
                 "The MIME type for the files to upload",
                 CommandOptionType.SingleValue);
-            CommandOption mimeTypeListOption = command.Option("--ext-list|-e",
+            CommandOption mimeTypeListOption = app.Option("--ext-list|-e",
                 "The list of common file extensions with their MIME types. " +
                 "This is used when no MIME type is specified with -t.",
                 CommandOptionType.SingleValue);
 
-            CommandOption metaExtOption = command.Option("--meta|-m",
+            CommandOption metaExtOption = app.Option("--meta|-m",
                 "The extension appended to the content filename " +
                 "to represent its metadata in a correspondent file",
                 CommandOptionType.SingleValue);
-            CommandOption metaDelimOption = command.Option("--metasep|-s",
+            CommandOption metaDelimOption = app.Option("--metasep|-s",
                 "The separator used in delimited metadata files",
                 CommandOptionType.SingleValue);
 
-            CommandOption idDelimOption = command.Option("--idsep|-l",
+            CommandOption idDelimOption = app.Option("--idsep|-l",
                 "The conventional separator used in BLOB IDs",
                 CommandOptionType.SingleValue);
 
-            CommandOption userOption = command.Option("--user|-u",
-                "The BLOB user name", CommandOptionType.SingleValue);
-            CommandOption pwdOption = command.Option("--pwd|-p",
-                "The BLOB user password", CommandOptionType.SingleValue);
-
-            CommandOption checkOption = command.Option("--check|-c",
+            CommandOption checkOption = app.Option("--check|-c",
                 "Check for file change before uploading. " +
                 "If no change occurred, nothing is done.",
                 CommandOptionType.NoValue);
 
-            CommandOption dryOption = command.Option("--dry|-d",
+            CommandOption dryOption = app.Option("--dry|-d",
                 "Dry run (do not write data)", CommandOptionType.NoValue);
 
-            command.OnExecute(() =>
+            app.OnExecute(() =>
             {
-                options.Command = new UploadCommand(new UploadCommandOptions
+                UploadCommandOptions co = new UploadCommandOptions
                 {
                     Configuration = options.Configuration,
                     Logger = options.Logger,
-                    UserId = userOption.Value(),
-                    Password = pwdOption.Value(),
                     InputDir = dirArgument.Value,
                     FileMask = maskArgument.Value,
                     IsRegexMask = regexOption.HasValue(),
@@ -102,7 +97,10 @@ namespace SimpleBlob.Cli.Commands
                     IsCheckEnabled = checkOption.HasValue(),
                     MimeType = mimeTypeOption.Value(),
                     MimeTypeList = mimeTypeListOption.Value()
-                });
+                };
+                CommandHelper.SetCredentialsOptions(app, co);
+                options.Command = new UploadCommand(co);
+
                 return 0;
             });
         }
@@ -223,14 +221,7 @@ namespace SimpleBlob.Cli.Commands
             ColorConsole.WriteWrappedHeader("Upload Files");
             _options.Logger.LogInformation("---UPLOAD---");
 
-            string apiRootUri = _options.Configuration
-                .GetSection("ApiRootUri")?.Value;
-            if (string.IsNullOrEmpty(apiRootUri))
-            {
-                ColorConsole.WriteError("Missing ApiUri in configuration");
-                return 2;
-            }
-            ColorConsole.WriteInfo("Target: " + apiRootUri);
+            string apiRootUri = CommandHelper.GetAndNotifyApiRootUri(_options);
 
             // load types if required
             if (!string.IsNullOrEmpty(_options.MimeTypeList))

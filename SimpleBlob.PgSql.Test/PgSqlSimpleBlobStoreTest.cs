@@ -194,7 +194,7 @@ namespace SimpleBlob.PgSql.Test
             {
                 PageNumber = 1,
                 PageSize = 2,
-                Path = "odd/*"
+                Id = "odd/*"
             });
             Assert.Equal(3, page.Total);
             Assert.Equal("odd/1", page.Items[0].Id);

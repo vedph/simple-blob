@@ -40,11 +40,11 @@ namespace SimpleBlob.PgSql
             int n = 0;
 
             // path
-            if (!string.IsNullOrEmpty(filter.Path))
+            if (!string.IsNullOrEmpty(filter.Id))
             {
-                if (filter.Path.Contains('*') || filter.Path.Contains('?'))
+                if (filter.Id.Contains('*') || filter.Id.Contains('?'))
                 {
-                    string path = filter.Path.Replace('*', '%').Replace('?', '_');
+                    string path = filter.Id.Replace('*', '%').Replace('?', '_');
 
                     SqlSimpleBlobStore.AddParameter(
                         "@path", DbType.String, path, cmd);
@@ -53,7 +53,7 @@ namespace SimpleBlob.PgSql
                 else
                 {
                     SqlSimpleBlobStore.AddParameter(
-                        "@path", DbType.String, filter.Path, cmd);
+                        "@path", DbType.String, filter.Id, cmd);
                     AppendClause(++n, "id", "=", "@path", tail);
                 }
             }

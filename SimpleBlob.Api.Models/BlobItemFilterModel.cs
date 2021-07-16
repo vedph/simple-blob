@@ -23,11 +23,11 @@ namespace SimpleBlob.Api.Models
         public int PageSize { get; set; }
 
         /// <summary>
-        /// Gets or sets the virtual path to match. A path can use <c>*</c>=any
+        /// Gets or sets the ID to match. You can use <c>*</c>=any
         /// character 0-N times, <c>?</c>=any character 0-1 times.
         /// </summary>
         [MaxLength(300)]
-        public string Path { get; set; }
+        public string Id { get; set; }
 
         /// <summary>
         /// Gets or sets the MIME type of the content.
@@ -79,7 +79,7 @@ namespace SimpleBlob.Api.Models
             {
                 PageNumber = PageNumber,
                 PageSize = PageSize,
-                Path = Path,
+                Id = Id,
                 MimeType = MimeType,
                 MinDateModified = MinDateModified,
                 MaxDateModified = MaxDateModified,
