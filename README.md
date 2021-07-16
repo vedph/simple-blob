@@ -178,13 +178,15 @@ This command adds the specified properties to a BLOB item. The properties can be
 Syntax:
 
 ```ps1
-./blob add-props <ItemId> [-o <Name>=<Value>] [-f MetadataFilePath] [--meta-sep MetaSeparator] [-r]
+./blob add-props <ItemId> [-o <Name>=<Value>] [-f MetadataFilePath] [--meta-sep MetaSeparator] [-r] [-u UserName] [-p Password]
 ```
 
 - `-o` the property. Each property has format name`=`value. Repeat `-o` for multiple properties.
 - `-f` the optional metadata file path. If specified, properties will be loaded from that file. This is a delimited file without header.
 - `--meta-sep` the separator used for the metadata file. The default is comma (`,`).
 - `-r` remove all the existing properties before adding the new ones (if any).
+- `-u` the user name. If not specified, you will be prompted for it.
+- `-p` the password. If not specified, you will be prompted for it.
 
 If both the metadata file and `-o` are used to specify properties, these will be combined together.
 
@@ -192,4 +194,29 @@ Sample:
 
 ```ps1
 ./blob add-props samples|fam-ge-tro-ric711-000000_01 -o category=test -u zeus -p P4ss-W0rd!
+```
+
+### List Users Command
+
+This command lists the registered users.
+
+Syntax:
+
+```ps1
+./blob list-users [-n PageNumber] [-z PageSize] [-m NameOrIdFilter] [-f OutputFilePath] [-u UserName] [-p Password]
+```
+
+where:
+
+- `-n` the page number (1-N). Default=1.
+- `-z` the page size. Default=20.
+- `-m` the user name or ID filter. Any portion of the name/ID must match the filter.
+- `-f` the output file path. If not specified, the output will be displayed.
+- `-u` the user name. If not specified, you will be prompted for it.
+- `-p` the password. If not specified, you will be prompted for it.
+
+Sample:
+
+```ps1
+./blob list-users -u zeus -p P4ss-W0rd!
 ```

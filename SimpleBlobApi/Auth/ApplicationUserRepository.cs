@@ -80,7 +80,8 @@ namespace SimpleBlobApi.Auth
             List<UserWithRoles<ApplicationUser>> results =
                 new List<UserWithRoles<ApplicationUser>>();
             foreach (ApplicationUser user in users.Skip(filter.GetSkipCount())
-                .Take(filter.PageSize == 0 ? total : filter.PageSize))
+                .Take(filter.PageSize == 0 ? total : filter.PageSize)
+                .ToList())
             {
                 UserWithRoles<ApplicationUser> result =
                     await GetUserWithRolesAsync(user);

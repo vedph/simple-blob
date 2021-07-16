@@ -2,7 +2,7 @@
   "profiles": {
     "blob": {
       "commandName": "Project",
-      "commandLineArgs": "delete samples|fam-ge-tro-ric711-000000_01 -c -u zeus -p P4ss-W0rd!"
+      "commandLineArgs": "list-users -u zeus -p P4ss-W0rd!"
     }
   }
 }

@@ -43,6 +43,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SimpleBlob.Api.Models\SimpleBlob.Api.Models.csproj" />
+    <ProjectReference Include="..\SimpleBlobApi\SimpleBlobApi.csproj" />
   </ItemGroup>
 
 </Project>
