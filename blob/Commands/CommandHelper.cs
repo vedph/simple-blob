@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.CommandLineUtils;
 using SimpleBlob.Cli.Services;
 using System;
+using System.Collections.Specialized;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using System.Web;
 
 namespace SimpleBlob.Cli.Commands
 {
@@ -67,11 +69,11 @@ namespace SimpleBlob.Cli.Commands
         {
             if (app == null) throw new ArgumentNullException(nameof(app));
 
-            CommandOption userOption = app.Option("--user|-u",
-                "The BLOB user name", CommandOptionType.SingleValue);
+            app.Option("--user|-u", "The BLOB user name",
+                CommandOptionType.SingleValue);
 
-            CommandOption pwdOption = app.Option("--pwd|-p",
-                "The BLOB user password", CommandOptionType.SingleValue);
+            app.Option("--pwd|-p", "The BLOB user password",
+                CommandOptionType.SingleValue);
         }
 
         public static void SetCredentialsOptions(CommandLineApplication app,
@@ -82,6 +84,43 @@ namespace SimpleBlob.Cli.Commands
 
             options.UserId = app.Options.Find(o => o.ShortName == "u")?.Value();
             options.Password = app.Options.Find(o => o.ShortName == "p")?.Value();
+        }
+
+        public static string BuildItemListQueryString(ItemListOptions options)
+        {
+            if (options == null) throw new ArgumentNullException(nameof(options));
+
+            // https://stackoverflow.com/questions/17096201/build-query-string-for-system-net-httpclient-get
+            NameValueCollection query = HttpUtility.ParseQueryString("");
+            query["PageNumber"] = options.PageNumber.ToString();
+            query["PageSize"] = options.PageSize.ToString();
+
+            if (!string.IsNullOrEmpty(options.Id)) query["Id"] = options.Id;
+
+            if (!string.IsNullOrEmpty(options.MimeType))
+                query["MimeType"] = options.Id;
+
+            if (options.MinDateModified != null)
+            {
+                query["MinDateModified"] = options.MinDateModified
+                    .Value.ToString("yyyy-MM-dd");
+            }
+            if (options.MaxDateModified != null)
+            {
+                query["MaxDateModified"] = options.MaxDateModified
+                    .Value.ToString("yyyy-MM-dd");
+            }
+
+            if (options.MinSize > 0) query["MinSize"] = options.MinSize.ToString();
+            if (options.MaxSize > 0) query["MaxSize"] = options.MaxSize.ToString();
+
+            if (!string.IsNullOrEmpty(options.LastUserId))
+                query["UserId"] = options.LastUserId;
+
+            if (!string.IsNullOrEmpty(options.Properties))
+                query["Properties"] = options.Properties;
+
+            return query.ToString();
         }
     }
 }

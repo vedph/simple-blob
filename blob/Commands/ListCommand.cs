@@ -4,12 +4,14 @@ using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
 using SimpleBlob.Core;
 using System;
+using System.Collections.Specialized;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Web;
 
 namespace SimpleBlob.Cli.Commands
 {
@@ -151,10 +153,11 @@ namespace SimpleBlob.Cli.Commands
             using HttpClient client = ClientHelper.GetClient(apiRootUri,
                 _login.Token);
 
-            // https://stackoverflow.com/questions/17096201/build-query-string-for-system-net-httpclient-get
-            // TODO
-            var page = await client.GetFromJsonAsync<DataPage<BlobItem>>("items");
+            // get page
+            var page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
+                "items?" + CommandHelper.BuildItemListQueryString(_options));
 
+            // write page
             TextWriter writer;
             if (!string.IsNullOrEmpty(_options.OutputPath))
             {
@@ -170,18 +173,8 @@ namespace SimpleBlob.Cli.Commands
         }
     }
 
-    public sealed class ListCommandOptions : CommandOptions
+    public sealed class ListCommandOptions : ItemListOptions
     {
-        public int PageNumber { get; set; }
-        public int PageSize { get; set; }
-        public string Id { get; set; }
-        public string MimeType { get; set; }
-        public DateTime? MinDateModified { get; set; }
-        public DateTime? MaxDateModified { get; set; }
-        public long MinSize { get; set; }
-        public long MaxSize { get; set; }
-        public string LastUserId { get; set; }
-        public string Properties { get; set; }
         public string OutputPath { get; set; }
     }
 }
