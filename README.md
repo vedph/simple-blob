@@ -23,6 +23,8 @@ docker build . -t vedph2020/simple-blob-api:1.0.0 -t vedph2020/simple-blob-api:l
 
 ## CLI Tool
 
+Note: when using `*` in UNIX-based OS (Linux, MacOS) remember to escape it with a backslash (e.g. `\*.xml`).
+
 ### List Command
 
 This command gets a paged list of BLOB items.
@@ -30,7 +32,7 @@ This command gets a paged list of BLOB items.
 Syntax:
 
 ```ps1
-./blob list [-u UserName] [-p Password]
+./blob list [-n PageNumber] [-z PageSize] [-i IdFilter] [-m MimeType] [-d MinDate:MaxDate] [-s MinSize:MaxSize] [-l LastUser] [-o PropName=PropValue] [-f OutputFilePath] [-u UserName] [-p Password]
 ```
 
 where:
