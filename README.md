@@ -49,6 +49,12 @@ where:
 - `-u` the user name. If not specified, you will be prompted for it.
 - `-p` the password. If not specified, you will be prompted for it.
 
+Sample:
+
+```ps1
+./blob list -n 1 -z 10 -u zeus -p P4ss-W0rd!
+```
+
 ### Upload Command
 
 This command uploads a set of files, as defined from an input folder and a files mask. The mask can be a regular file system mask, or a regular expression. Also, files can optionally be recursively searched starting from the input folder.

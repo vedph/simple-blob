@@ -151,6 +151,8 @@ namespace SimpleBlob.Cli.Commands
             using HttpClient client = ClientHelper.GetClient(apiRootUri,
                 _login.Token);
 
+            // https://stackoverflow.com/questions/17096201/build-query-string-for-system-net-httpclient-get
+            // TODO
             var page = await client.GetFromJsonAsync<DataPage<BlobItem>>("items");
 
             TextWriter writer;
