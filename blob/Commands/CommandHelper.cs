@@ -26,13 +26,14 @@ namespace SimpleBlob.Cli.Commands
 
         public static int GetOptionValue(CommandOption option, int defValue)
         {
-            if (!option.HasValue()) return defValue;
+            if (option?.HasValue() != true) return defValue;
+
             return int.TryParse(option.Value(), out int n) ? n : defValue;
         }
 
         public static DateTime GetOptionValue(CommandOption option, DateTime defValue)
         {
-            if (!option.HasValue()) return defValue;
+            if (option?.HasValue() != true) return defValue;
 
             DateTime? d = ParseDate(option.Value());
             return d ?? defValue;
@@ -84,6 +85,33 @@ namespace SimpleBlob.Cli.Commands
 
             options.UserId = app.Options.Find(o => o.ShortName == "u")?.Value();
             options.Password = app.Options.Find(o => o.ShortName == "p")?.Value();
+        }
+
+        public static void AddItemListOptions(CommandLineApplication app)
+        {
+            if (app == null) throw new ArgumentNullException(nameof(app));
+
+            app.Option("--page-nr|-n", "The page number (1-N)",
+                CommandOptionType.SingleValue);
+            app.Option("--page-sz|-z", "The page size",
+                CommandOptionType.SingleValue);
+
+            app.Option("--id|-i", "The ID filter (wildcards ? and *)",
+                CommandOptionType.SingleValue);
+
+            app.Option("--mime|-m", "The mime type", CommandOptionType.SingleValue);
+
+            app.Option("--dates|-d", "The dates range (min:max, min:, :max)",
+                CommandOptionType.SingleValue);
+
+            app.Option("--sizes|-s", "The sizes range (min:max, min:, :max)",
+                CommandOptionType.SingleValue);
+
+            app.Option("--last-user|-l", "The last user who modified the item",
+                CommandOptionType.SingleValue);
+
+            app.Option("--prop|-o", "A name=value property to match (repeatable)",
+                CommandOptionType.MultipleValue);
         }
 
         public static string BuildItemListQueryString(ItemListOptions options)

@@ -4,7 +4,9 @@ using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
 using SimpleBlob.Core;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
@@ -13,16 +15,12 @@ using System.Threading.Tasks;
 
 namespace SimpleBlob.Cli.Commands
 {
-    /// <summary>
-    /// List BLOB items.
-    /// </summary>
-    /// <seealso cref="ICommand" />
-    public sealed class ListCommand : ICommand
+    public sealed class DownloadCommand : ICommand
     {
-        private readonly ListCommandOptions _options;
+        private readonly DownloadCommandOptions _options;
         private ApiLogin _login;
 
-        public ListCommand(ListCommandOptions options)
+        public DownloadCommand(DownloadCommandOptions options)
         {
             _options = options;
         }
@@ -37,11 +35,19 @@ namespace SimpleBlob.Cli.Commands
                 "the specified filters.";
             app.HelpOption("-?|-h|--help");
 
+            CommandArgument outputDirArgument = app.Argument("[output-dir]",
+                "The output directory");
+
             CommandHelper.AddCredentialsOptions(app);
             CommandHelper.AddItemListOptions(app);
 
-            CommandOption fileOption = app.Option("--file|-f",
-                "The path to the output file (if not set, output will be displayed)",
+            CommandOption metaExtOption = app.Option("--meta|-e",
+                "The extension appended to the content filename " +
+                "to represent its metadata in a correspondent file",
+                CommandOptionType.SingleValue);
+
+            CommandOption idDelimOption = app.Option("--idsep|-l",
+                "The conventional separator used in BLOB IDs",
                 CommandOptionType.SingleValue);
 
             app.OnExecute(() =>
@@ -50,7 +56,7 @@ namespace SimpleBlob.Cli.Commands
                 CommandOption sizeOption = app.Options.Find(o => o.ShortName == "s");
                 CommandOption propOption = app.Options.Find(o => o.ShortName == "o");
 
-                ListCommandOptions co = new ListCommandOptions
+                DownloadCommandOptions co = new DownloadCommandOptions
                 {
                     Configuration = options.Configuration,
                     Logger = options.Logger,
@@ -64,7 +70,11 @@ namespace SimpleBlob.Cli.Commands
                     Properties = propOption.Values.Count > 0
                         ? string.Join(",", propOption.Values)
                         : null,
-                    OutputPath = fileOption.Value()
+                    OutputDir = outputDirArgument.Value,
+                    MetaExtension = metaExtOption.HasValue()
+                        ? metaExtOption.Value() : ".meta",
+                    IdDelimiter = idDelimOption.HasValue()
+                        ? idDelimOption.Value() : "|",
                 };
                 CommandHelper.SetCredentialsOptions(app, co);
 
@@ -96,31 +106,16 @@ namespace SimpleBlob.Cli.Commands
                     }
                 }
 
-                options.Command = new ListCommand(co);
+                options.Command = new DownloadCommand(co);
 
                 return 0;
             });
         }
 
-        private static void WritePage(TextWriter writer, DataPage<BlobItem> page)
-        {
-            writer.WriteLine($"--- {page.PageNumber}/{page.PageCount}");
-
-            int n = (page.PageNumber - 1) * page.PageSize;
-            foreach (BlobItem item in page.Items)
-            {
-                writer.WriteLine($"[{++n}]");
-                writer.WriteLine($"  - ID: {item.Id}");
-                writer.WriteLine($"  - User ID: {item.UserId}");
-                writer.WriteLine($"  - Modified: {item.DateModified}");
-                writer.WriteLine();
-            }
-        }
-
         public async Task<int> Run()
         {
-            ColorConsole.WriteWrappedHeader("List Items");
-            _options.Logger.LogInformation("---LIST ITEMS---");
+            ColorConsole.WriteWrappedHeader("Download Items");
+            _options.Logger.LogInformation("---DOWNLOAD ITEMS---");
 
             string apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
             if (apiRootUri == null) return 2;
@@ -138,28 +133,67 @@ namespace SimpleBlob.Cli.Commands
             using HttpClient client = ClientHelper.GetClient(apiRootUri,
                 _login.Token);
 
-            // get page
+            // get 1st page
             var page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
                 "items?" + CommandHelper.BuildItemListQueryString(_options));
 
-            // write page
-            TextWriter writer;
-            if (!string.IsNullOrEmpty(_options.OutputPath))
+            ColorConsole.WriteInfo("Items to download: " + page.Total);
+            if (page.Total == 0) return 0;
+
+            if (!Directory.Exists(_options.OutputDir))
+                Directory.CreateDirectory(_options.OutputDir);
+
+            int pageNr = 1, itemNr = 0;
+            do
             {
-                writer = new StreamWriter(new FileStream(_options.OutputPath,
-                    FileMode.Create, FileAccess.Write, FileShare.Read),
-                    Encoding.UTF8);
-            }
-            else writer = Console.Out;
-            WritePage(writer, page);
-            writer.Flush();
+                foreach (BlobItem item in page.Items)
+                {
+                    itemNr++;
+                    _options.Logger?.LogInformation($"{itemNr} {item}");
+                    ColorConsole.WriteEmbeddedColorLine(
+                        $"[green]{itemNr}[/green] {item}");
+
+                    // get stream
+                    HttpResponseMessage response =
+                        await client.GetAsync("contents/{id}");
+                    using Stream input = await response.Content.ReadAsStreamAsync();
+
+                    // save to file
+                    string file = item.Id.Replace(_options.IdDelimiter,
+                        new string(Path.DirectorySeparatorChar, 1));
+                    string dir = Path.GetDirectoryName(file);
+                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                    string path = Path.Combine(dir, file);
+
+                    using FileStream output = new FileStream(path, FileMode.Create,
+                        FileAccess.Write, FileShare.Read);
+                    input.CopyTo(output);
+                    output.Flush();
+
+                    // load metadata
+                    List<Tuple<string, string>> metadata =
+                        new List<Tuple<string, string>>();
+                    metadata.Add(Tuple.Create("id", item.Id));
+
+                    var props = await client.GetFromJsonAsync<BlobItemProperty[]>(
+                        $"properties/{item.Id}");
+                    foreach (var p in props)
+                        metadata.Add(Tuple.Create(p.Name, p.Value));
+
+                    // save metadata to path
+                    path += _options.MetaExtension;
+                    // TODO
+                }
+            } while (++pageNr <= page.PageCount);
 
             return 0;
         }
     }
 
-    public sealed class ListCommandOptions : ItemListOptions
+    public sealed class DownloadCommandOptions : ItemListOptions
     {
-        public string OutputPath { get; set; }
+        public string OutputDir { get; set; }
+        public string MetaExtension { get; set; }
+        public string IdDelimiter { get; set; }
     }
 }
