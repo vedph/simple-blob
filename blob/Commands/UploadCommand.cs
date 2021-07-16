@@ -61,11 +61,11 @@ namespace SimpleBlob.Cli.Commands
                 "The extension appended to the content filename " +
                 "to represent its metadata in a correspondent file",
                 CommandOptionType.SingleValue);
-            CommandOption metaDelimOption = app.Option("--metasep|-s",
+            CommandOption metaDelimOption = app.Option("--meta-sep",
                 "The separator used in delimited metadata files",
                 CommandOptionType.SingleValue);
 
-            CommandOption idDelimOption = app.Option("--idsep|-l",
+            CommandOption idDelimOption = app.Option("--id-sep",
                 "The conventional separator used in BLOB IDs",
                 CommandOptionType.SingleValue);
 
@@ -238,7 +238,7 @@ namespace SimpleBlob.Cli.Commands
             _login = CommandHelper.LoginAndNotify(apiRootUri, credentials);
 
             // setup the metadata services
-            CsvMetadataReader metaReader = new CsvMetadataReader
+            CsvMetadataFile metaFile = new CsvMetadataFile
             {
                 Delimiter = _options.MetaDelimiter
             };
@@ -264,7 +264,7 @@ namespace SimpleBlob.Cli.Commands
                 // load metadata if any
                 string metaPath = path + _options.MetaExtension;
                 IList<Tuple<string, string>> metadata = null;
-                if (File.Exists(metaPath)) metadata = metaReader.Read(metaPath);
+                if (File.Exists(metaPath)) metadata = metaFile.Read(metaPath);
                 string id = metadata?.FirstOrDefault(t => t.Item1 == "id")
                     ?.Item2 ?? SanitizePath(path, _options.IdDelimiter);
 

@@ -78,8 +78,8 @@ where:
 - `-t` specifies the MIME type for _all_ the files matched. Do not specify this option if you want the type to be derived (when possible) from the file's extension.
 - `-m` the extension expected to be found for metadata files. The default is `.meta`.
 - `-e` the optional CSV MIME types file path, when you want to override the default list of MIME types.
-- `-s` the separator used for the metadata CSV MIME types file. The default is comma (`,`).
-- `-l` the separator used in BLOB IDs in a file-system like convention. The default is pipe (`|`). Slashes (`/` or `\`) automatically get converted into this separator when using file paths as IDs.
+- `--meta-sep` the separator used for the metadata file. The default is comma (`,`).
+- `--id-sep` the separator used in BLOB IDs in a file-system like convention. The default is pipe (`|`). Slashes (`/` or `\`) automatically get converted into this separator when using file paths as IDs.
 - `-c` to theck the file before uploading it. If the file size and CRC32C are the same, its metadata and properties are uploaded, but its content is not. This speeds up the process when some of the files have not changed.
 - `-d` dry run (do not write to service).
 - `-u` the user name. If not specified, you will be prompted for it.
@@ -89,4 +89,36 @@ Sample:
 
 ```ps1
 ./blob upload c:\users\dfusi\desktop\ *.json -t application/json -u zeus -p P4ss-W0rd! -c
+```
+
+### Download Command
+
+This command downloads all the files matching the specified filters into a root directory, together with their metadata companion file. If the file IDs include a path separator character, the same directory structure gets created under the output root folder.
+
+Syntax:
+
+```ps1
+./blob list [-n PageNumber] [-z PageSize] [-i IdFilter] [-m MimeType] [-d MinDate:MaxDate] [-s MinSize:MaxSize] [-l LastUser] [-o PropName=PropValue] [- OutputFilePath] [-u UserName] [-p Password]
+```
+
+where:
+
+- `-n` the page number (1-N). Default=1.
+- `-z` the page size. Default=20.
+- `-i` the BLOB ID filter. You can use wildcards `*` and `?`.
+- `-m` the MIME type filter.
+- `-d` the dates range filter: each date has format `YYYY-MM-DD`. You can specify the minimum date only (followed by `:`), the maximum date only (preceded by `:`), or both (min`:`max).
+- `-s` the size range filter: each size is in bytes. You can specify the minimum size only (followed by `:`), the maximum size only (preceded by `:`), or both (min`:`max).
+- `-l` the user filter. This is the user who last modified the item.
+- `-o` the property filter. Each property has format name`=`value. Repeat `-o` for multiple properties; just any of them should be matched.
+- `-e` The metadata file extension. Default is `.meta`.
+- `--meta-sep` the metadata file delimiter. Default is comma.
+- `--id-sep` the virtual path separator used in item IDs. The default is pipe (`|`).
+- `-u` the user name. If not specified, you will be prompted for it.
+- `-p` the password. If not specified, you will be prompted for it.
+
+Sample:
+
+```ps1
+./blob list -n 1 -z 10 -u zeus -p P4ss-W0rd!
 ```

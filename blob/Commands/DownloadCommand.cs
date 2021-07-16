@@ -6,10 +6,8 @@ using SimpleBlob.Core;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
@@ -45,8 +43,11 @@ namespace SimpleBlob.Cli.Commands
                 "The extension appended to the content filename " +
                 "to represent its metadata in a correspondent file",
                 CommandOptionType.SingleValue);
+            CommandOption metaDelimOption = app.Option("--meta-sep",
+                "The separator used in delimited metadata files",
+                CommandOptionType.SingleValue);
 
-            CommandOption idDelimOption = app.Option("--idsep|-l",
+            CommandOption idDelimOption = app.Option("--id-sep",
                 "The conventional separator used in BLOB IDs",
                 CommandOptionType.SingleValue);
 
@@ -75,6 +76,8 @@ namespace SimpleBlob.Cli.Commands
                         ? metaExtOption.Value() : ".meta",
                     IdDelimiter = idDelimOption.HasValue()
                         ? idDelimOption.Value() : "|",
+                    MetaDelimiter = metaDelimOption.HasValue()
+                        ? metaDelimOption.Value() : ","
                 };
                 CommandHelper.SetCredentialsOptions(app, co);
 
@@ -143,9 +146,11 @@ namespace SimpleBlob.Cli.Commands
             if (!Directory.Exists(_options.OutputDir))
                 Directory.CreateDirectory(_options.OutputDir);
 
-            int pageNr = 1, itemNr = 0;
-            do
+            int itemNr = 0;
+            while (true)
             {
+                ColorConsole.WriteInfo($"Page {_options.PageNumber} of {page.PageCount}");
+
                 foreach (BlobItem item in page.Items)
                 {
                     itemNr++;
@@ -162,9 +167,10 @@ namespace SimpleBlob.Cli.Commands
                     string file = item.Id.Replace(_options.IdDelimiter,
                         new string(Path.DirectorySeparatorChar, 1));
                     string dir = Path.GetDirectoryName(file);
-                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
                     string path = Path.Combine(dir, file);
+                    Console.WriteLine(" => " + path);
 
+                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
                     using FileStream output = new FileStream(path, FileMode.Create,
                         FileAccess.Write, FileShare.Read);
                     input.CopyTo(output);
@@ -182,9 +188,19 @@ namespace SimpleBlob.Cli.Commands
 
                     // save metadata to path
                     path += _options.MetaExtension;
-                    // TODO
+                    Console.WriteLine(" => " + path);
+                    CsvMetadataFile metaFile = new CsvMetadataFile
+                    {
+                        Delimiter = _options.MetaDelimiter
+                    };
+                    metaFile.Write(metadata, path);
                 }
-            } while (++pageNr <= page.PageCount);
+
+                // next page
+                if (++_options.PageNumber > page.PageCount) break;
+                page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
+                    "items?" + CommandHelper.BuildItemListQueryString(_options));
+            }
 
             return 0;
         }
@@ -194,6 +210,7 @@ namespace SimpleBlob.Cli.Commands
     {
         public string OutputDir { get; set; }
         public string MetaExtension { get; set; }
+        public string MetaDelimiter { get; set; }
         public string IdDelimiter { get; set; }
     }
 }

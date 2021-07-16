@@ -4,20 +4,21 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace SimpleBlob.Cli.Services
 {
     /// <summary>
-    /// CSV-based metadata reader.
+    /// CSV-based metadata file.
     /// </summary>
-    public sealed class CsvMetadataReader
+    public sealed class CsvMetadataFile
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CsvMetadataReader"/>
+        /// Initializes a new instance of the <see cref="CsvMetadataFile"/>
         /// class.
         /// </summary>
-        public CsvMetadataReader()
+        public CsvMetadataFile()
         {
             Delimiter = ",";
         }
@@ -71,6 +72,47 @@ namespace SimpleBlob.Cli.Services
 
             using StreamReader reader = new StreamReader(path, Encoding.UTF8);
             return Read(reader);
+        }
+
+        /// <summary>
+        /// Writes the specified metadata to the specified writer.
+        /// </summary>
+        /// <param name="metadata">The metadata.</param>
+        /// <param name="writer">The writer.</param>
+        /// <exception cref="ArgumentNullException">metadata or writer</exception>
+        public void Write(IList<Tuple<string,string>> metadata, TextWriter writer)
+        {
+            if (metadata == null) throw new ArgumentNullException(nameof(metadata));
+            if (writer == null) throw new ArgumentNullException(nameof(writer));
+
+            using CsvWriter csv = new CsvWriter(writer, new CsvConfiguration(
+                CultureInfo.InvariantCulture)
+            {
+                Delimiter = Delimiter,
+                HasHeaderRecord = false
+            });
+            foreach (var m in metadata.OrderBy(t => t.Item1).ThenBy(t => t.Item2))
+            {
+                csv.WriteField(m.Item1);
+                csv.WriteField(m.Item2);
+                csv.NextRecord();
+            }
+            csv.Flush();
+        }
+
+        /// <summary>
+        /// Writes the specified metadata to a file with the specified path.
+        /// </summary>
+        /// <param name="metadata">The metadata.</param>
+        /// <param name="path">The file path.</param>
+        /// <exception cref="ArgumentNullException">metadata or path</exception>
+        public void Write(IList<Tuple<string, string>> metadata, string path)
+        {
+            if (metadata == null) throw new ArgumentNullException(nameof(metadata));
+            if (path == null) throw new ArgumentNullException(nameof(path));
+
+            using StreamWriter writer = new StreamWriter(path, false, Encoding.UTF8);
+            Write(metadata, writer);
         }
     }
 }
