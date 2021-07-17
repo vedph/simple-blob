@@ -169,5 +169,48 @@ namespace SimpleBlobApi.Controllers
 
             return Ok();
         }
+
+        /// <summary>
+        /// Adds the user to the specified roles.
+        /// </summary>
+        /// <param name="name">The user name.</param>
+        /// <param name="roles">The roles.</param>
+        /// <returns></returns>
+        [HttpPost("users/{name}/roles")]
+        [ProducesResponseType(200)]
+        [Authorize(Roles = "admin")]
+        public async Task<ActionResult> AddUserToRoles([FromRoute] string name,
+            [FromBody] string[] roles)
+        {
+            if (!ModelState.IsValid) return BadRequest();
+
+            _logger.LogInformation("User {UserName} updating user {UpdatedUser}",
+                User.Identity.Name,
+                name);
+
+            await _repository.AddUserToRolesAsync(name, roles);
+            return Ok();
+        }
+
+        /// <summary>
+        /// Removes the user from the specified roles.
+        /// </summary>
+        /// <param name="name">The name.</param>
+        /// <param name="roles">The roles.</param>
+        [HttpDelete("users/{name}/roles")]
+        [ProducesResponseType(200)]
+        [Authorize(Roles = "admin")]
+        public async Task<ActionResult> RemoveUserFromRoles([FromRoute] string name,
+            [FromBody] string[] roles)
+        {
+            if (!ModelState.IsValid) return BadRequest();
+
+            _logger.LogInformation("User {UserName} updating user {UpdatedUser}",
+                User.Identity.Name,
+                name);
+
+            await _repository.RemoveUserFromRolesAsync(name, roles);
+            return Ok();
+        }
     }
 }
