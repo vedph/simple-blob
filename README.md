@@ -326,7 +326,7 @@ This commands deletes the specified user from the BLOB service.
 Syntax:
 
 ```ps1
-./blob delete-user <Name> [-c]
+./blob delete-user <Name> [-c] [-u UserName] [-p Password]
 ```
 
 where:
@@ -339,7 +339,7 @@ where:
 Sample:
 
 ```ps1
-./blob delete-user tester -c
+./blob delete-user tester -c -u zeus -p P4ss-W0rd!
 ```
 
 ### Add User Roles Command
@@ -349,7 +349,7 @@ This commands adds the specified roles to a user.
 Syntax:
 
 ```ps1
-./blob add-user-roles <Name> [-r RoleName]
+./blob add-user-roles <Name> [-r RoleName] [-u UserName] [-p Password]
 ```
 
 where:
@@ -362,7 +362,7 @@ where:
 Sample:
 
 ```ps1
-./blob add-user-roles tester -r admin
+./blob add-user-roles tester -r admin -u zeus -p P4ss-W0rd!
 ```
 
 ### Delete User Roles Command
@@ -372,7 +372,7 @@ This commands deletes the specified roles of a user.
 Syntax:
 
 ```ps1
-./blob delete-user-roles <Name> [-r RoleName]
+./blob delete-user-roles <Name> [-r RoleName] [-u UserName] [-p Password]
 ```
 
 where:
@@ -385,5 +385,5 @@ where:
 Sample:
 
 ```ps1
-./blob delete-user-roles tester -r admin
+./blob delete-user-roles tester -r admin -u zeus -p P4ss-W0rd!
 ```
