@@ -269,3 +269,49 @@ Sample:
 ```ps1
 ./blob delete-user tester -c
 ```
+
+### Add User Roles Command
+
+This commands adds the specified roles to a user.
+
+Syntax:
+
+```ps1
+./blob add-user-roles <Name> [-r RoleName]
+```
+
+where:
+
+- `Name` the name of the user to delete.
+- `-r` the name of the role to add. Repeat this option for all the roles you want to add.
+- `-u` the user name. If not specified, you will be prompted for it.
+- `-p` the password. If not specified, you will be prompted for it.
+
+Sample:
+
+```ps1
+./blob add-user-roles tester -r admin
+```
+
+### Delete User Roles Command
+
+This commands deletes the specified roles of a user.
+
+Syntax:
+
+```ps1
+./blob delete-user-roles <Name> [-r RoleName]
+```
+
+where:
+
+- `Name` the name of the user to delete.
+- `-r` the name of the role to delete. Repeat this option for all the roles you want to delete.
+- `-u` the user name. If not specified, you will be prompted for it.
+- `-p` the password. If not specified, you will be prompted for it.
+
+Sample:
+
+```ps1
+./blob delete-user-roles tester -r admin
+```

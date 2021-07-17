@@ -25,6 +25,8 @@ namespace SimpleBlob.Cli.Commands
             app.Command("list-users", c => ListUsersCommand.Configure(c, options));
             app.Command("add-user", c => AddUserCommand.Configure(c, options));
             app.Command("delete-user", c => DeleteUserCommand.Configure(c, options));
+            app.Command("add-user-roles", c => AddUserRolesCommand.Configure(c, options));
+            app.Command("delete-user-roles", c => DeleteUserRolesCommand.Configure(c, options));
 
             app.OnExecute(() =>
             {

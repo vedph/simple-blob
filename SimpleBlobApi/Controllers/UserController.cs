@@ -61,8 +61,6 @@ namespace SimpleBlobApi.Controllers
         public async Task<ActionResult<DataPage<UserModel>>> GetUsers(
             [FromQuery] UserFilterModel filter)
         {
-            if (!ModelState.IsValid) return BadRequest();
-
             DataPage<UserWithRoles<ApplicationUser>> page =
                 await _repository.GetUsersAsync(filter);
 
@@ -145,8 +143,6 @@ namespace SimpleBlobApi.Controllers
         [Authorize(Roles = "admin")]
         public async Task<ActionResult> UpdateUser([FromBody] UserBindingModel model)
         {
-            if (!ModelState.IsValid) return BadRequest();
-
             _logger.LogInformation("User {UserName} updating user {UpdatedUser}",
                 User.Identity.Name,
                 model.UserName);
@@ -182,8 +178,6 @@ namespace SimpleBlobApi.Controllers
         public async Task<ActionResult> AddUserToRoles([FromRoute] string name,
             [FromBody] string[] roles)
         {
-            if (!ModelState.IsValid) return BadRequest();
-
             _logger.LogInformation("User {UserName} updating user {UpdatedUser}",
                 User.Identity.Name,
                 name);
@@ -196,21 +190,19 @@ namespace SimpleBlobApi.Controllers
         /// Removes the user from the specified roles.
         /// </summary>
         /// <param name="name">The name.</param>
-        /// <param name="roles">The roles.</param>
+        /// <param name="roles">The roles (comma-delimited).</param>
         [HttpDelete("users/{name}/roles")]
         [ProducesResponseType(200)]
         [Authorize(Roles = "admin")]
-        public async Task<ActionResult> RemoveUserFromRoles([FromRoute] string name,
-            [FromBody] string[] roles)
+        public async Task RemoveUserFromRoles([FromRoute] string name,
+            [FromQuery] string roles)
         {
-            if (!ModelState.IsValid) return BadRequest();
-
             _logger.LogInformation("User {UserName} updating user {UpdatedUser}",
                 User.Identity.Name,
                 name);
 
-            await _repository.RemoveUserFromRolesAsync(name, roles);
-            return Ok();
+            await _repository.RemoveUserFromRolesAsync(name,
+                roles.Split(',', StringSplitOptions.RemoveEmptyEntries));
         }
     }
 }
