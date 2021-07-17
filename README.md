@@ -23,6 +23,78 @@ docker build . -t vedph2020/simple-blob-api:1.0.0 -t vedph2020/simple-blob-api:l
 
 (replace with the current version).
 
+## API
+
+### Account
+
+`GET /api/accounts/emailexists/{email}`: Check if the specified email address is already registered.
+
+`GET /api/accounts/nameexists/{name}`: Check if the specified user name is already registered.
+
+`POST /api/accounts/register`: Registers the specified user.
+
+`GET /api/accounts/resendconfirm/{email}`: Resends the confirmation email.
+
+`GET /api/accounts/confirm`: Confirms the registration.
+
+`POST /api/accounts/changepassword`: Changes the user's password.
+
+`POST /api/accounts/resetpassword/request`: Requests the password reset. This generates an email message to the requester, with a special link to follow to effectively reset his password.
+
+`GET /api/accounts/resetpassword/apply`: Resets the password using the received token.
+
+`DELETE /api/accounts/{name}`: Delete the user with the specified username.
+
+### Authentication
+
+`POST /api/auth/login`: Logins the specified user.
+
+`GET /api/auth/logout`: Logs the user out.
+
+### Item
+
+`GET /api/items`: Gets the items matching the specified filter.
+
+`POST /api/items`: Adds or updates the specified item.
+
+`GET /api/items/{id}`: Gets the item with the specified ID.
+
+`DELETE /api/items/{id}`: Deletes the item with the specified ID.
+
+### ItemContent
+
+`POST /api/contents/{id}`: Uploads the BLOB item's content.
+
+`GET /api/contents/{id}`: Downloads the BLOB item's content.
+
+`GET /api/contents/{id}/meta`: Gets the BLOB item's content metadata.
+
+### ItemProperty
+
+`GET /api/properties/{id}`: Gets the properties of the item with the specified ID.
+
+`DELETE /api/properties/{id}`: Deletes all the properties of the BLOB item with the specified ID.
+
+`POST /api/properties/{id}/add`: Adds the specified properties to a BLOB item.
+
+`POST /api/properties/{id}/set`: Sets the specified properties for a BLOB item.
+
+### User
+
+`GET /api/users`: Gets the specified page from the list of registered users. Use page size=0 to get all the users at once.
+
+`PUT /api/users`: Update the specified user data.
+
+`GET /api/users/{name}`: Gets the details about the user with the specified ID.
+
+`GET /api/user-info`: Gets the details about the current user.
+
+`GET /api/users-from-names`: Gets information about all the users whose names are specified.
+
+`POST /users/{name}/roles`: Adds the user to the specified roles.
+
+`DELETE /users/{name}/roles`: Removes the user from the specified roles.
+
 ## CLI Tool
 
 Note: when using `*` in UNIX-based OS (Linux, MacOS) remember to escape it with a backslash (e.g. `\*.xml`).
