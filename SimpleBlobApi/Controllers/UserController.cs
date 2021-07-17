@@ -171,15 +171,16 @@ namespace SimpleBlobApi.Controllers
         /// </summary>
         /// <param name="name">The user name.</param>
         /// <param name="roles">The roles.</param>
-        /// <returns></returns>
-        [HttpPost("users/{name}/roles")]
+        [HttpPost("api/users/{name}/roles")]
         [ProducesResponseType(200)]
         [Authorize(Roles = "admin")]
         public async Task<ActionResult> AddUserToRoles([FromRoute] string name,
             [FromBody] string[] roles)
         {
-            _logger.LogInformation("User {UserName} updating user {UpdatedUser}",
+            _logger.LogInformation("User {UserName} adding roles {Roles} " +
+                "to user {UpdatedUser}",
                 User.Identity.Name,
+                roles,
                 name);
 
             await _repository.AddUserToRolesAsync(name, roles);
@@ -191,14 +192,16 @@ namespace SimpleBlobApi.Controllers
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="roles">The roles (comma-delimited).</param>
-        [HttpDelete("users/{name}/roles")]
+        [HttpDelete("api/users/{name}/roles")]
         [ProducesResponseType(200)]
         [Authorize(Roles = "admin")]
         public async Task RemoveUserFromRoles([FromRoute] string name,
             [FromQuery] string roles)
         {
-            _logger.LogInformation("User {UserName} updating user {UpdatedUser}",
+            _logger.LogInformation("User {UserName} deleting roles {Roles} " +
+                "from user {UpdatedUser}",
                 User.Identity.Name,
+                roles,
                 name);
 
             await _repository.RemoveUserFromRolesAsync(name,

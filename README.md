@@ -91,9 +91,9 @@ docker build . -t vedph2020/simple-blob-api:1.0.0 -t vedph2020/simple-blob-api:l
 
 `GET /api/users-from-names`: Gets information about all the users whose names are specified.
 
-`POST /users/{name}/roles`: Adds the user to the specified roles.
+`POST /api/users/{name}/roles`: Adds the user to the specified roles.
 
-`DELETE /users/{name}/roles`: Removes the user from the specified roles.
+`DELETE /api/users/{name}/roles`: Removes the user from the specified roles.
 
 ## CLI Tool
 

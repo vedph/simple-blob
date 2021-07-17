@@ -83,7 +83,7 @@ namespace SimpleBlob.Cli.Commands
 
             Console.Write($"Adding user {_options.UserName}... ");
             HttpResponseMessage response = await client.PostAsJsonAsync(
-                $"users/{_options.UserName}", new RegisterBindingModel
+                $"accounts/register", new RegisterBindingModel
                 {
                     Name = _options.UserName,
                     Password = _options.UserPassword,

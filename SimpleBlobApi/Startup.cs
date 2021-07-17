@@ -27,6 +27,7 @@ using System.Globalization;
 using MessagingApi;
 using Microsoft.Extensions.Options;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Identity;
 
 namespace SimpleBlobApi
 {
@@ -107,7 +108,8 @@ namespace SimpleBlobApi
             });
 
             services.AddIdentity<ApplicationUser, ApplicationRole>()
-                .AddEntityFrameworkStores<ApplicationDbContext>();
+                .AddEntityFrameworkStores<ApplicationDbContext>()
+                .AddDefaultTokenProviders();
 
             // authentication service
             services
@@ -204,6 +206,13 @@ namespace SimpleBlobApi
             });
         }
 
+        private static void ConfigureMessagingServices(IServiceCollection services)
+        {
+            services.AddScoped<IMailerService, DotNetMailerService>();
+            services.AddScoped<IMessageBuilderService,
+                FileMessageBuilderService>();
+        }
+
         /// <summary>
         /// Configures the services.
         /// </summary>
@@ -227,11 +236,14 @@ namespace SimpleBlobApi
                 })
                 .SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
 
+            // configuration
+            services.AddSingleton(_ => Configuration);
+
             // authentication
             ConfigureAuthServices(services);
 
-            // configuration
-            services.AddSingleton(_ => Configuration);
+            // messaging
+            ConfigureMessagingServices(services);
 
             // user repository service
             services.AddScoped<IUserRepository<ApplicationUser>,

@@ -146,8 +146,6 @@ namespace SimpleBlobApi.Controllers
         public async Task<IActionResult> Register(
             [FromBody] RegisterBindingModel model)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
             _logger.LogInformation(
                 "[ACCOUNT] {UserName} registering user {RegisteredUserName} " +
                 "from {IP} ",
@@ -301,8 +299,6 @@ namespace SimpleBlobApi.Controllers
         public async Task<IActionResult> ChangePassword(
             ChangePasswordBindingModel model)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
             _logger.LogInformation("Change password request for {UserEmail}",
                 model.Email);
 
@@ -345,8 +341,6 @@ namespace SimpleBlobApi.Controllers
         public async Task<IActionResult> RequestPasswordReset(
             ResetPasswordRequestBindingModel model)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
             _logger.LogInformation("Reset password request for {UserEmail}",
                 model.Email);
 

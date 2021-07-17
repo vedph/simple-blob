@@ -2,7 +2,7 @@
   "profiles": {
     "blob": {
       "commandName": "Project",
-      "commandLineArgs": "list-users -u zeus -p P4ss-W0rd!"
+      "commandLineArgs": "add-user tester P4ss-W0rd! tester@somewhere.org -f Mario -l Rossi -u zeus -p P4ss-W0rd!"
     }
   }
 }
