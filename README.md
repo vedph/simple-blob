@@ -220,3 +220,52 @@ Sample:
 ```ps1
 ./blob list-users -u zeus -p P4ss-W0rd!
 ```
+
+### Add User Command
+
+This command adds a new user to the BLOB service.
+
+Syntax:
+
+```ps1
+./blob add-user <Name> <Password> <Email> [-f FirstName] [-l LastName] [-u UserName] [-p Password]
+```
+
+where:
+
+- `Name` the name of the user to add. This is the username and must be unique in the service.
+- `Password` the password for the user being added.
+- `Email` the email address of the user being added.
+- `-f` the first name of the user being added.
+- `-l` the last name of the user being added.
+- `-u` the user name. If not specified, you will be prompted for it.
+- `-p` the password. If not specified, you will be prompted for it.
+
+Sample:
+
+```ps1
+./blob add-user tester P4ss-W0rd! tester@somewhere.org -f Mario -l Rossi -u zeus -p P4ss-W0rd!
+```
+
+### Delete User Command
+
+This commands deletes the specified user from the BLOB service.
+
+Syntax:
+
+```ps1
+./blob delete-user <Name> [-c]
+```
+
+where:
+
+- `Name` the name of the user to delete.
+- `-c` skips the confirmation prompt.
+- `-u` the user name. If not specified, you will be prompted for it.
+- `-p` the password. If not specified, you will be prompted for it.
+
+Sample:
+
+```ps1
+./blob delete-user tester -c
+```
