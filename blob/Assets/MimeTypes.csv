@@ -43,6 +43,7 @@ tar,application/x-tar,.tar,Tape Archive (TAR)
 tif,,.tif,
 tiff,image/tiff,.tiff,Tagged Image File Format (TIFF)
 ttf,font/ttf,.ttf,TrueType Font
+txt,text/plain,.txt,Plain Text
 vsd,application/vnd.visio,.vsd,Microsft Visio
 wav,audio/x-wav,.wav,Waveform Audio Format
 weba,audio/webm,.weba,WEBM audio

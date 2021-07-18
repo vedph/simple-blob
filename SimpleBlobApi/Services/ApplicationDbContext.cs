@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Fusi.Api.Auth.Models;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using SimpleBlobApi.Models;
 
-namespace SimpleBlobApi.Auth
+namespace SimpleBlobApi.Services
 {
     /// <summary>
     /// Application identity DB context.
@@ -60,7 +63,7 @@ namespace SimpleBlobApi.Auth
         /// aspects of the model that are specific to a given database.</param>
         /// <remarks>
         /// If a model is explicitly set on the options for this context (via
-        /// <see cref="M:Microsoft.EntityFrameworkCore.DbContextOptionsBuilder.UseModel(Microsoft.EntityFrameworkCore.Metadata.IModel)" />)
+        /// <see cref="M:MicrosoftDbContextOptionsBuilder.UseModel(Microsoft.EntityFrameworkCore.Metadata.IModel)" />)
         /// then this method will not be run.
         /// </remarks>
         protected override void OnModelCreating(ModelBuilder modelBuilder)

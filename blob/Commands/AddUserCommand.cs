@@ -1,7 +1,7 @@
-﻿using Microsoft.Extensions.CommandLineUtils;
+﻿using Fusi.Api.Auth.Controllers;
+using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
-using SimpleBlobApi.Models;
 using System;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -83,7 +83,7 @@ namespace SimpleBlob.Cli.Commands
 
             Console.Write($"Adding user {_options.UserName}... ");
             HttpResponseMessage response = await client.PostAsJsonAsync(
-                $"accounts/register", new RegisterBindingModel
+                $"accounts/register", new NamedRegisterBindingModel
                 {
                     Name = _options.UserName,
                     Password = _options.UserPassword,

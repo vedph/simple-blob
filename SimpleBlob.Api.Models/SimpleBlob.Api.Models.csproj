@@ -1,7 +1,18 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <Authors>Daniele Fusi</Authors>
+    <Company>Fusi</Company>
+    <Product>Simple BLOB</Product>
+    <Description>Simple BLOB API models.</Description>
+    <Copyright>by Daniele Fusi 2021</Copyright>
+    <Version>1.0.0</Version>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+    <PackageTags>BLOB</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>

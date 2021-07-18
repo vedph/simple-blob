@@ -16,7 +16,6 @@ using System.Reflection;
 using System.Text.Json;
 using SimpleBlob.PgSql;
 using SimpleBlob.Core;
-using SimpleBlobApi.Auth;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -28,6 +27,9 @@ using MessagingApi;
 using Microsoft.Extensions.Options;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
+using Fusi.Api.Auth.Models;
+using Fusi.Api.Auth.Services;
+using SimpleBlobApi.Models;
 
 namespace SimpleBlobApi
 {
@@ -247,7 +249,7 @@ namespace SimpleBlobApi
 
             // user repository service
             services.AddScoped<IUserRepository<ApplicationUser>,
-                ApplicationUserRepository>();
+                UserRepository<ApplicationUser, ApplicationRole>>();
 
             // BLOB services
             services.AddScoped<ISimpleBlobStore>(_ =>

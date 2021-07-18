@@ -1,5 +1,27 @@
 # Simple BLOB Store
 
+- [Simple BLOB Store](#simple-blob-store)
+  - [Docker](#docker)
+  - [API](#api)
+    - [Account](#account)
+    - [Auth](#auth)
+    - [Item](#item)
+    - [ItemContent](#itemcontent)
+    - [ItemProperty](#itemproperty)
+    - [User](#user)
+  - [CLI Tool](#cli-tool)
+    - [List Command](#list-command)
+    - [GetInfo Command](#getinfo-command)
+    - [Delete Command](#delete-command)
+    - [Upload Command](#upload-command)
+    - [Download Command](#download-command)
+    - [Add Properties Command](#add-properties-command)
+    - [List Users Command](#list-users-command)
+    - [Add User Command](#add-user-command)
+    - [Delete User Command](#delete-user-command)
+    - [Add User Roles Command](#add-user-roles-command)
+    - [Delete User Roles Command](#delete-user-roles-command)
+
 A very simple BLOB store with minimal dependencies. This is used internally, as a support subsystem for other projects, but can eventually be used as a standalone utility service.
 
 Currently the only implemented RDBMS is PostgreSQL, but others may follow.
@@ -45,7 +67,7 @@ docker build . -t vedph2020/simple-blob-api:1.0.0 -t vedph2020/simple-blob-api:l
 
 `DELETE /api/accounts/{name}`: Delete the user with the specified username.
 
-### Authentication
+### Auth
 
 `POST /api/auth/login`: Logins the specified user.
 

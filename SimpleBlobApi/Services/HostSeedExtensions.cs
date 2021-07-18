@@ -1,13 +1,10 @@
-﻿using Fusi.DbManager.PgSql;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Polly;
-using SimpleBlob.PgSql;
 using System;
 using System.Data.Common;
-using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 

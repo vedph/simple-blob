@@ -26,6 +26,8 @@ namespace SimpleBlob.Cli.Services
                     Delimiter = ",",
                     HasHeaderRecord = true
                 });
+            csv.Read(); // required before reading header
+            csv.ReadHeader();
             while (csv.Read())
             {
                 _types[csv.GetField("extension").ToLowerInvariant()] =

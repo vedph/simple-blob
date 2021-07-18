@@ -268,7 +268,9 @@ namespace SimpleBlob.Cli.Commands
                 IList<Tuple<string, string>> metadata = null;
                 if (File.Exists(metaPath)) metadata = metaFile.Read(metaPath);
                 string id = metadata?.FirstOrDefault(t => t.Item1 == "id")
-                    ?.Item2 ?? SanitizePath(path, _options.IdDelimiter);
+                    ?.Item2
+                    ?? SanitizePath(Path.GetRelativePath(_options.InputDir, path),
+                        _options.IdDelimiter);
 
                 // add/update item
                 string error = await AddItemAsync(id, client);

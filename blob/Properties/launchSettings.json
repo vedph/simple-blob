@@ -2,7 +2,7 @@
   "profiles": {
     "blob": {
       "commandName": "Project",
-      "commandLineArgs": "delete-user-roles tester -r admin -u zeus -p P4ss-W0rd!"
+      "commandLineArgs": "upload c:\\users\\dfusi\\desktop\\demo\\up\\ *.* -u zeus -p P4ss-W0rd!"
     }
   }
 }

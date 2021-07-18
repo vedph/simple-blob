@@ -1,8 +1,8 @@
-﻿using Fusi.Tools.Data;
+﻿using Fusi.Api.Auth.Controllers;
+using Fusi.Tools.Data;
 using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
-using SimpleBlobApi.Models;
 using System;
 using System.Collections.Specialized;
 using System.IO;
@@ -72,12 +72,12 @@ namespace SimpleBlob.Cli.Commands
             });
         }
 
-        private static void WritePage(TextWriter writer, DataPage<UserModel> page)
+        private static void WritePage(TextWriter writer, DataPage<NamedUserModel> page)
         {
             writer.WriteLine($"--- {page.PageNumber}/{page.PageCount}");
 
             int n = (page.PageNumber - 1) * page.PageSize;
-            foreach (UserModel item in page.Items)
+            foreach (var item in page.Items)
             {
                 writer.WriteLine($"[{++n}]");
                 writer.WriteLine($"  - User name: {item.UserName}");
@@ -132,7 +132,7 @@ namespace SimpleBlob.Cli.Commands
                 _login.Token);
 
             // get page
-            var page = await client.GetFromJsonAsync<DataPage<UserModel>>(
+            var page = await client.GetFromJsonAsync<DataPage<NamedUserModel>>(
                 "users?" + BuildQueryString());
 
             // write page

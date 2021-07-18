@@ -6,7 +6,8 @@
     <RootNamespace>SimpleBlob.Cli</RootNamespace>
     <Authors>Daniele Fusi</Authors>
     <Company>Fusi</Company>
-    <Description>Pinakes Indexing CLI tool</Description>
+    <Product>Simple BLOB</Product>
+    <Description>Simple BLOB CLI client</Description>
     <NeutralLanguage>en-US</NeutralLanguage>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <Copyright>by Daniele Fusi</Copyright>
