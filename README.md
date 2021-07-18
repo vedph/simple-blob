@@ -2,6 +2,7 @@
 
 - [Simple BLOB Store](#simple-blob-store)
   - [Docker](#docker)
+  - [Quick Start](#quick-start)
   - [API](#api)
     - [Account](#account)
     - [Auth](#auth)
@@ -40,10 +41,28 @@ Projects:
 Quick Docker image build:
 
 ```bash
-docker build . -t vedph2020/simple-blob-api:1.0.0 -t vedph2020/simple-blob-api:latest
+docker build . -t vedph2020/simple-blob-api:1.0.1 -t vedph2020/simple-blob-api:latest
 ```
 
 (replace with the current version).
+
+## Quick Start
+
+1. download `docker-compose.yml` in some folder.
+
+2. run it with `docker-compose up` (prefix `sudo` for Linux/MacOS).
+
+You can use the CLI client from project `blob`. This is for Windows, Linux, or MacOS.
+
+If you want to test the functions, use the batch in `demo.zip`. In this case:
+
+1. unzip the full archive with its files and folders in some folder, e.g. `blob`. For Windows you will run `demo.bat`, for Linux `demo.sh`. For MacOS, it's easier to rename `demo.sh` in `demo.command`. Also, for non-Windows OSes ensure that you have execution rights on this file (e.g. `chmod 777 ./demo.sh`).
+
+2. place the CLI binaries under a `cli` subfolder in the `blob` folder (or whatever you named it). Here too, ensure that for non-Windows OSes ensure you have execution rights on the `blob` file.
+
+3. ensure that the BLOB service is running (see above for `docker-compose.yml`).
+
+4. run the batch. This will tour you along the main functions provided by the CLI, step by step.
 
 ## API
 

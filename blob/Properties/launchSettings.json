@@ -2,7 +2,7 @@
   "profiles": {
     "blob": {
       "commandName": "Project",
-      "commandLineArgs": "get-info aeneis.txt -u zeus -p P4ss-W0rd!"
+      "commandLineArgs": "download c:\\users\\dfusi\\desktop\\demo\\dn\\ -u zeus -p P4ss-W0rd!"
     }
   }
 }
