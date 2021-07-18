@@ -13,6 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleBlob.PgSql.Test", "Si
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3FEB36D5-5715-4443-AEFF-1E9D40A33C81}"
 	ProjectSection(SolutionItems) = preProject
+		demo.zip = demo.zip
 		docker-compose.yml = docker-compose.yml
 		Dockerfile = Dockerfile
 		README.md = README.md
@@ -22,7 +23,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleBlobApi", "SimpleBlob
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "blob", "blob\blob.csproj", "{EA9AB3A9-363F-421F-9278-5E235F6FAE09}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleBlob.Api.Models", "SimpleBlob.Api.Models\SimpleBlob.Api.Models.csproj", "{E819AAC8-C0B0-4DCF-BE8B-DD9AD642FDDD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SimpleBlob.Api.Models", "SimpleBlob.Api.Models\SimpleBlob.Api.Models.csproj", "{E819AAC8-C0B0-4DCF-BE8B-DD9AD642FDDD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
