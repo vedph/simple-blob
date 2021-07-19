@@ -72,14 +72,50 @@ namespace SimpleBlobApi.Services
             modelBuilder.HasDefaultSchema("public");
             base.OnModelCreating(modelBuilder);
 
-            // rename Identity tables to lowercase
-            foreach (var entity in modelBuilder.Model.GetEntityTypes())
+            // rename identity tables
+            modelBuilder.Entity<ApplicationUser>(b =>
             {
-                var currentTableName = modelBuilder.Entity(entity.Name)
-                    .Metadata.GetDefaultTableName();
-                modelBuilder.Entity(entity.Name).ToTable(
-                    currentTableName.ToLowerInvariant());
-            }
+                b.ToTable("appuser");
+            });
+
+            modelBuilder.Entity<IdentityUserClaim<string>>(b =>
+            {
+                b.ToTable("appuserclaim");
+            });
+
+            modelBuilder.Entity<IdentityUserLogin<string>>(b =>
+            {
+                b.ToTable("appuserlogin");
+            });
+
+            modelBuilder.Entity<IdentityUserToken<string>>(b =>
+            {
+                b.ToTable("appusertoken");
+            });
+
+            modelBuilder.Entity<ApplicationRole>(b =>
+            {
+                b.ToTable("approle");
+            });
+
+            modelBuilder.Entity<IdentityRoleClaim<string>>(b =>
+            {
+                b.ToTable("approleclaim");
+            });
+
+            modelBuilder.Entity<IdentityUserRole<string>>(b =>
+            {
+                b.ToTable("appuserrole");
+            });
+
+            // rename Identity tables to lowercase
+            //foreach (var entity in modelBuilder.Model.GetEntityTypes())
+            //{
+            //    var currentTableName = modelBuilder.Entity(entity.Name)
+            //        .Metadata.GetDefaultTableName();
+            //    modelBuilder.Entity(entity.Name).ToTable(
+            //        currentTableName.ToLowerInvariant());
+            //}
         }
     }
 }
