@@ -50,7 +50,9 @@ docker build . -t vedph2020/simple-blob-api:1.0.1 -t vedph2020/simple-blob-api:l
 
 1. download `docker-compose.yml` in some folder.
 
-2. run it with `docker-compose up` (prefix `sudo` for Linux/MacOS).
+2. create a folder `var/db/pgsql` in the host to hold the database files. You can change the path in the script.
+
+3. run it with `docker-compose up` (prefix `sudo` for Linux/MacOS).
 
 You can use the CLI client from project `blob`. This is for Windows, Linux, or MacOS.
 
