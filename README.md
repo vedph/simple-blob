@@ -41,7 +41,7 @@ Projects:
 Quick Docker image build:
 
 ```bash
-docker build . -t vedph2020/simple-blob-api:1.0.2 -t vedph2020/simple-blob-api:latest
+docker build . -t vedph2020/simple-blob-api:1.0.3 -t vedph2020/simple-blob-api:latest
 ```
 
 (replace with the current version).
@@ -65,6 +65,14 @@ If you want to test the functions, use the batch in `demo.zip`. In this case:
 3. ensure that the BLOB service is running (see above for `docker-compose.yml`).
 
 4. run the batch. This will tour you along the main functions provided by the CLI, step by step.
+
+## Database Schema
+
+In the current implementation, BLOBs are saved in a RDBMS. This fits the usual deployment scenario where your service has easy access to data services, but runs on a limited space host.
+
+The schema is very simple and essentially includes just 3 tables (the auth tables come from the .NET Framework): `item` for each BLOB item metadata; `item_property` for custom metadata; `item_content` for its content.
+
+![schema](./schema.png)
 
 ## API
 

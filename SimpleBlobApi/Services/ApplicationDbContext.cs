@@ -48,7 +48,7 @@ namespace SimpleBlobApi.Services
         /// typically define extension methods on this object that allow you to
         /// configure the context.</param>
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-            => optionsBuilder.UseLowerCaseNamingConvention();
+            => optionsBuilder.UseSnakeCaseNamingConvention();
 
         /// <summary>
         /// Override this method to further configure the model that was
@@ -75,37 +75,37 @@ namespace SimpleBlobApi.Services
             // rename identity tables
             modelBuilder.Entity<ApplicationUser>(b =>
             {
-                b.ToTable("appuser");
+                b.ToTable("app_user");
             });
 
             modelBuilder.Entity<IdentityUserClaim<string>>(b =>
             {
-                b.ToTable("appuserclaim");
+                b.ToTable("app_user_claim");
             });
 
             modelBuilder.Entity<IdentityUserLogin<string>>(b =>
             {
-                b.ToTable("appuserlogin");
+                b.ToTable("app_user_login");
             });
 
             modelBuilder.Entity<IdentityUserToken<string>>(b =>
             {
-                b.ToTable("appusertoken");
+                b.ToTable("app_user_token");
             });
 
             modelBuilder.Entity<ApplicationRole>(b =>
             {
-                b.ToTable("approle");
+                b.ToTable("app_role");
             });
 
             modelBuilder.Entity<IdentityRoleClaim<string>>(b =>
             {
-                b.ToTable("approleclaim");
+                b.ToTable("app_role_claim");
             });
 
             modelBuilder.Entity<IdentityUserRole<string>>(b =>
             {
-                b.ToTable("appuserrole");
+                b.ToTable("app_user_role");
             });
 
             // rename Identity tables to lowercase

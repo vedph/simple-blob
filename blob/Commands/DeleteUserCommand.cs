@@ -29,6 +29,7 @@ namespace SimpleBlob.Cli.Commands
             CommandOption confirmOption = app.Option("--confirm|-c",
                 "Confirm the operation without prompt",
                 CommandOptionType.NoValue);
+            CommandHelper.AddCredentialsOptions(app);
 
             app.OnExecute(() =>
             {

@@ -47,14 +47,14 @@ namespace SimpleBlob.PgSql
                     string path = filter.Id.Replace('*', '%').Replace('?', '_');
 
                     SqlSimpleBlobStore.AddParameter(
-                        "@path", DbType.String, path, cmd);
-                    AppendClause(++n, "id", "LIKE", "@path", tail);
+                        "@id", DbType.String, path, cmd);
+                    AppendClause(++n, "id", "LIKE", "@id", tail);
                 }
                 else
                 {
                     SqlSimpleBlobStore.AddParameter(
-                        "@path", DbType.String, filter.Id, cmd);
-                    AppendClause(++n, "id", "=", "@path", tail);
+                        "@id", DbType.String, filter.Id, cmd);
+                    AppendClause(++n, "id", "=", "@id", tail);
                 }
             }
 
@@ -63,26 +63,26 @@ namespace SimpleBlob.PgSql
             {
                 fromContent = true;
                 head.Append("\nINNER JOIN ").Append(SqlSimpleBlobStore.T_CONT)
-                    .Append(" AS ic ON i.id=ic.itemid");
+                    .Append(" AS ic ON i.id=ic.item_id");
                 SqlSimpleBlobStore.AddParameter(
-                    "@mimetype", DbType.String, filter.MimeType, cmd);
-                AppendClause(++n, "ic.mimetype", "=", "@mimetype", tail);
+                    "@mime_type", DbType.String, filter.MimeType, cmd);
+                AppendClause(++n, "ic.mime_type", "=", "@mime_type", tail);
             }
 
             // min date
             if (filter.MinDateModified != null)
             {
-                SqlSimpleBlobStore.AddParameter("@mindate", DbType.DateTime,
+                SqlSimpleBlobStore.AddParameter("@min_date", DbType.DateTime,
                     filter.MinDateModified.Value, cmd);
-                AppendClause(++n, "i.datemodified", ">=", "@mindate", tail);
+                AppendClause(++n, "i.date_modified", ">=", "@min_date", tail);
             }
 
             // max date
             if (filter.MaxDateModified != null)
             {
-                SqlSimpleBlobStore.AddParameter("@maxdate", DbType.DateTime,
+                SqlSimpleBlobStore.AddParameter("@max_date", DbType.DateTime,
                     filter.MaxDateModified.Value, cmd);
-                AppendClause(++n, "i.datemodified", "<=", "@maxdate", tail);
+                AppendClause(++n, "i.date_modified", "<=", "@max_date", tail);
             }
 
             // min size
@@ -91,12 +91,12 @@ namespace SimpleBlob.PgSql
                 if (!fromContent)
                 {
                     head.Append("\nINNER JOIN ").Append(SqlSimpleBlobStore.T_CONT)
-                        .Append(" AS ic ON i.id=ic.itemid");
+                        .Append(" AS ic ON i.id=ic.item_id");
                     fromContent = true;
                 }
                 SqlSimpleBlobStore.AddParameter(
-                    "@minsize", DbType.Int64, filter.MinSize, cmd);
-                AppendClause(++n, "ic.size", ">=", "@minsize", tail);
+                    "@min_size", DbType.Int64, filter.MinSize, cmd);
+                AppendClause(++n, "ic.size", ">=", "@min_size", tail);
             }
 
             // max size
@@ -105,12 +105,12 @@ namespace SimpleBlob.PgSql
                 if (!fromContent)
                 {
                     head.Append("\nINNER JOIN ").Append(SqlSimpleBlobStore.T_CONT)
-                        .Append(" AS ic ON i.id=ic.itemid");
+                        .Append(" AS ic ON i.id=ic.item_id");
                     fromContent = true;
                 }
                 SqlSimpleBlobStore.AddParameter(
-                    "@maxsize", DbType.Int64, filter.MaxSize, cmd);
-                AppendClause(++n, "ic.size", "<=", "@maxsize", tail);
+                    "@max_size", DbType.Int64, filter.MaxSize, cmd);
+                AppendClause(++n, "ic.size", "<=", "@max_size", tail);
             }
 
             // user ID
@@ -119,13 +119,13 @@ namespace SimpleBlob.PgSql
                 if (!fromContent)
                 {
                     head.Append("\nINNER JOIN ").Append(SqlSimpleBlobStore.T_CONT)
-                        .Append(" AS ic ON i.id=ic.itemid");
+                        .Append(" AS ic ON i.id=ic.item_id");
                 }
-                SqlSimpleBlobStore.AddParameter("@userid", DbType.String,
+                SqlSimpleBlobStore.AddParameter("@user_id", DbType.String,
                     filter.UserId, cmd);
 
                 tail.Append(n == 1 ? "\nWHERE\n" : "\nAND\n")
-                    .Append("(i.userid=@userid OR ic.userid=@userid)");
+                    .Append("(i.user_id=@user_id OR ic.user_id=@user_id)");
             }
 
             // properties
@@ -145,7 +145,7 @@ namespace SimpleBlob.PgSql
                         pn, DbType.String, filter.Properties[i].Item1, cmd);
                     SqlSimpleBlobStore.AddParameter(
                         pv, DbType.String, filter.Properties[i].Item2, cmd);
-                    sub.Append("(ip.itemid=i.id AND ip.name=").Append(pn)
+                    sub.Append("(ip.item_id=i.id AND ip.name=").Append(pn)
                        .Append(" AND ip.value LIKE ").Append(pv).Append(')');
                 }
                 if (++n > 1) tail.Append(" AND ");
@@ -153,7 +153,7 @@ namespace SimpleBlob.PgSql
             }
 
             StringBuilder data = new StringBuilder();
-            data.Append("SELECT i.id,i.userid,i.datemodified FROM ");
+            data.Append("SELECT i.id,i.user_id,i.date_modified FROM ");
             data.Append(head);
             if (tail.Length > 0) data.Append(tail);
             data.Append("\nORDER BY i.id OFFSET ").Append(filter.GetSkipCount())

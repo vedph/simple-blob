@@ -78,8 +78,8 @@ namespace SimpleBlob.PgSql
                 items.Add(new BlobItem
                 {
                     Id = reader.GetString(reader.GetOrdinal("id")),
-                    UserId = reader.GetString(reader.GetOrdinal("userid")),
-                    DateModified = reader.GetDateTime(reader.GetOrdinal("datemodified"))
+                    UserId = reader.GetString(reader.GetOrdinal("user_id")),
+                    DateModified = reader.GetDateTime(reader.GetOrdinal("date_modified"))
                 });
             }
             return new DataPage<BlobItem>(filter.PageNumber, filter.PageSize,
@@ -98,14 +98,14 @@ namespace SimpleBlob.PgSql
             // do an upsert as PostgreSql now supports this
             // https://www.postgresql.org/docs/current/sql-insert.html#SQL-ON-CONFLICT
             IDbCommand cmd = Connection.CreateCommand();
-            cmd.CommandText = $"INSERT INTO {T_ITEM}(id,userid,datemodified)\n" +
-                "VALUES(@id,@userid,@datemodified)\n" +
+            cmd.CommandText = $"INSERT INTO {T_ITEM}(id,user_id,date_modified)\n" +
+                "VALUES(@id,@user_id,@date_modified)\n" +
                 "ON CONFLICT(id) DO UPDATE " +
-                "SET userid=@userid,datemodified=@datemodified;";
+                "SET user_id=@user_id,date_modified=@date_modified;";
 
             AddParameter("@id", DbType.String, item.Id, cmd);
-            AddParameter("@userid", DbType.String, item.UserId, cmd);
-            AddParameter("@datemodified", DbType.DateTime, DateTime.UtcNow, cmd);
+            AddParameter("@user_id", DbType.String, item.UserId, cmd);
+            AddParameter("@date_modified", DbType.DateTime, DateTime.UtcNow, cmd);
 
             cmd.ExecuteNonQuery();
         }
@@ -121,7 +121,7 @@ namespace SimpleBlob.PgSql
             if (id == null) throw new ArgumentNullException(nameof(id));
 
             IDbCommand cmd = Connection.CreateCommand();
-            cmd.CommandText = $"SELECT id,userid,datemodified FROM {T_ITEM}\n" +
+            cmd.CommandText = $"SELECT id,user_id,date_modified FROM {T_ITEM}\n" +
                 "WHERE id=@id;";
             AddParameter("@id", DbType.String, id, cmd);
             using IDataReader reader = cmd.ExecuteReader();
@@ -163,19 +163,19 @@ namespace SimpleBlob.PgSql
 
             var t = ReadContent(content.Content);
             NpgsqlCommand cmd = new NpgsqlCommand(
-                $"INSERT INTO {T_CONT}(itemid,mimetype,hash,size," +
-                $"userid,datemodified,content)\n" +
-                "VALUES(@itemid,@mimetype,@hash,@size,@userid,@datemodified,@content)\n" +
-                "ON CONFLICT(itemid) DO UPDATE SET mimetype=@mimetype,hash=@hash," +
-                "size=@size,userid=@userid,datemodified=@datemodified," +
+                $"INSERT INTO {T_CONT}(item_id,mime_type,hash,size," +
+                $"user_id,date_modified,content)\n" +
+                "VALUES(@item_id,@mime_type,@hash,@size,@user_id,@date_modified,@content)\n" +
+                "ON CONFLICT(item_id) DO UPDATE SET mime_type=@mime_type,hash=@hash," +
+                "size=@size,user_id=@user_id,date_modified=@date_modified," +
                 "content=@content;", (NpgsqlConnection)Connection);
 
-            AddParameter("@itemid", DbType.String, content.ItemId, cmd);
-            AddParameter("@mimetype", DbType.String, content.MimeType, cmd);
+            AddParameter("@item_id", DbType.String, content.ItemId, cmd);
+            AddParameter("@mime_type", DbType.String, content.MimeType, cmd);
             AddParameter("@hash", DbType.Int64, t.Item2, cmd);
             AddParameter("@size", DbType.Int64, t.Item1.Length, cmd);
-            AddParameter("@userid", DbType.String, content.UserId, cmd);
-            AddParameter("@datemodified", DbType.DateTime, DateTime.UtcNow, cmd);
+            AddParameter("@user_id", DbType.String, content.UserId, cmd);
+            AddParameter("@date_modified", DbType.DateTime, DateTime.UtcNow, cmd);
 
             // https://stackoverflow.com/questions/46128132/how-to-insert-and-retrieve-image-from-postgresql-using-c-sharp
             NpgsqlParameter p = cmd.CreateParameter();
@@ -203,10 +203,10 @@ namespace SimpleBlob.PgSql
             if (metadataOnly)
             {
                 IDbCommand cmd = Connection.CreateCommand();
-                cmd.CommandText = "SELECT itemid,mimetype,hash,size," +
-                    $"userid,datemodified FROM {T_CONT}\n" +
-                    "WHERE itemid=@itemid;";
-                AddParameter("@itemid", DbType.String, id, cmd);
+                cmd.CommandText = "SELECT item_id,mime_type,hash,size," +
+                    $"user_id,date_modified FROM {T_CONT}\n" +
+                    "WHERE item_id=@item_id;";
+                AddParameter("@item_id", DbType.String, id, cmd);
                 using IDataReader reader = cmd.ExecuteReader();
                 if (!reader.Read()) return null;
                 return new BlobItemContent
@@ -221,12 +221,12 @@ namespace SimpleBlob.PgSql
             }
             else
             {
-                NpgsqlCommand cmd = new NpgsqlCommand("SELECT itemid,mimetype," +
-                    "hash,size,userid,datemodified,content\n" +
-                    $"FROM {T_CONT} WHERE itemid=@itemid;",
+                NpgsqlCommand cmd = new NpgsqlCommand("SELECT item_id,mime_type," +
+                    "hash,size,user_id,date_modified,content\n" +
+                    $"FROM {T_CONT} WHERE item_id=@item_id;",
                     (NpgsqlConnection)Connection);
 
-                AddParameter("@itemid", DbType.String, id, cmd);
+                AddParameter("@item_id", DbType.String, id, cmd);
 
                 using NpgsqlDataReader reader = cmd.ExecuteReader();
 
@@ -234,12 +234,12 @@ namespace SimpleBlob.PgSql
 
                 return new BlobItemContent
                 {
-                    ItemId = reader.GetString("itemid"),
-                    MimeType = reader.GetString("mimetype"),
+                    ItemId = reader.GetString("item_id"),
+                    MimeType = reader.GetString("mime_type"),
                     Hash = reader.GetInt64("hash"),
                     Size = reader.GetInt64("size"),
-                    UserId = reader.GetString("userid"),
-                    DateModified = reader.GetDateTime("datemodified"),
+                    UserId = reader.GetString("user_id"),
+                    DateModified = reader.GetDateTime("date_modified"),
                     Content = new MemoryStream((byte[])reader["content"])
                 };
             }
@@ -257,8 +257,8 @@ namespace SimpleBlob.PgSql
 
             IDbCommand cmd = Connection.CreateCommand();
             cmd.CommandText = $"SELECT id,name,value FROM {T_PROP}\n" +
-                "WHERE itemid=@itemid ORDER BY name,value;";
-            AddParameter("@itemid", DbType.String, id, cmd);
+                "WHERE item_id=@item_id ORDER BY name,value;";
+            AddParameter("@item_id", DbType.String, id, cmd);
 
             using IDataReader reader = cmd.ExecuteReader();
             List<BlobItemProperty> properties = new List<BlobItemProperty>();
@@ -284,15 +284,15 @@ namespace SimpleBlob.PgSql
 
             IDbCommand cmd = Connection.CreateCommand();
             cmd.Transaction = trans;
-            cmd.CommandText = $"INSERT INTO {T_PROP}(itemid,name,value)\n" +
-                "VALUES(@itemid,@name,@value);";
-            AddParameter("@itemid", DbType.String, null, cmd);
+            cmd.CommandText = $"INSERT INTO {T_PROP}(item_id,name,value)\n" +
+                "VALUES(@item_id,@name,@value);";
+            AddParameter("@item_id", DbType.String, null, cmd);
             AddParameter("@name", DbType.String, null, cmd);
             AddParameter("@value", DbType.String, null, cmd);
 
             foreach (var prop in properties)
             {
-                ((DbParameter)cmd.Parameters["itemid"]).Value = id;
+                ((DbParameter)cmd.Parameters["item_id"]).Value = id;
                 ((DbParameter)cmd.Parameters["name"]).Value = prop.Name;
                 ((DbParameter)cmd.Parameters["value"]).Value = prop.Value;
                 cmd.ExecuteNonQuery();
@@ -360,8 +360,8 @@ namespace SimpleBlob.PgSql
         {
             IDbCommand cmd = Connection.CreateCommand();
             cmd.Transaction = trans;
-            cmd.CommandText = $"DELETE FROM {T_PROP} WHERE itemid=@id;";
-            AddParameter("@id", DbType.String, id, cmd);
+            cmd.CommandText = $"DELETE FROM {T_PROP} WHERE item_id=@item_id;";
+            AddParameter("@item_id", DbType.String, id, cmd);
             cmd.ExecuteNonQuery();
         }
 
