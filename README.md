@@ -41,7 +41,7 @@ Projects:
 Quick Docker image build:
 
 ```bash
-docker build . -t vedph2020/simple-blob-api:1.0.3 -t vedph2020/simple-blob-api:latest
+docker build . -t vedph2020/simple-blob-api:1.0.4 -t vedph2020/simple-blob-api:latest
 ```
 
 (replace with the current version).
