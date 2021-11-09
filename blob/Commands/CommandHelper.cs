@@ -4,6 +4,7 @@ using System;
 using System.Collections.Specialized;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using System.Web;
 
 namespace SimpleBlob.Cli.Commands
@@ -52,12 +53,12 @@ namespace SimpleBlob.Cli.Commands
             return apiRootUri;
         }
 
-        public static ApiLogin LoginAndNotify(string apiRootUri,
+        public static async Task<ApiLogin> LoginAndNotify(string apiRootUri,
             LoginCredentials credentials)
         {
             Console.Write("Logging in... ");
             ApiLogin login = new ApiLogin(apiRootUri);
-            if (!login.Login(credentials.UserName, credentials.Password))
+            if (!await login.Login(credentials.UserName, credentials.Password))
             {
                 ColorConsole.WriteError("Unable to login");
                 return null;

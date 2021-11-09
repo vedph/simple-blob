@@ -1,5 +1,6 @@
 ﻿using Fusi.Tools.Data;
 using Npgsql;
+using NpgsqlTypes;
 using SimpleBlob.Core;
 using SimpleBlob.Sql;
 using System;
@@ -105,7 +106,8 @@ namespace SimpleBlob.PgSql
 
             AddParameter("@id", DbType.String, item.Id, cmd);
             AddParameter("@user_id", DbType.String, item.UserId, cmd);
-            AddParameter("@date_modified", DbType.DateTime, DateTime.UtcNow, cmd);
+            AddParameter("@date_modified", DbType.DateTime,
+                new DateTime(DateTime.UtcNow.Ticks), cmd);
 
             cmd.ExecuteNonQuery();
         }
@@ -175,7 +177,8 @@ namespace SimpleBlob.PgSql
             AddParameter("@hash", DbType.Int64, t.Item2, cmd);
             AddParameter("@size", DbType.Int64, t.Item1.Length, cmd);
             AddParameter("@user_id", DbType.String, content.UserId, cmd);
-            AddParameter("@date_modified", DbType.DateTime, DateTime.UtcNow, cmd);
+            AddParameter("@date_modified", DbType.DateTime,
+                new DateTime(DateTime.UtcNow.Ticks), cmd);
 
             // https://stackoverflow.com/questions/46128132/how-to-insert-and-retrieve-image-from-postgresql-using-c-sharp
             NpgsqlParameter p = cmd.CreateParameter();

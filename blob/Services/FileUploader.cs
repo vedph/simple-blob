@@ -29,6 +29,9 @@ namespace SimpleBlob.Cli.Services
             if (path == null)
                 throw new ArgumentNullException(nameof(path));
 
+            // TODO: replace with HttpClient
+            // https://stackoverflow.com/questions/16416601/c-sharp-httpclient-4-5-multipart-form-data-upload
+
             HttpWebRequest request = WebRequest.CreateHttp(uri);
             // boundary will separate each parameter
             string boundary = $"{Guid.NewGuid():N}";

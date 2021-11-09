@@ -93,7 +93,7 @@ namespace SimpleBlob.Cli.Commands
             credentials.PromptIfRequired();
 
             // login
-            _login = CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            _login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
 
             // setup client
             using HttpClient client = ClientHelper.GetClient(apiRootUri,

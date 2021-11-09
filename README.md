@@ -3,6 +3,7 @@
 - [Simple BLOB Store](#simple-blob-store)
   - [Docker](#docker)
   - [Quick Start](#quick-start)
+  - [Database Schema](#database-schema)
   - [API](#api)
     - [Account](#account)
     - [Auth](#auth)
@@ -22,6 +23,7 @@
     - [Delete User Command](#delete-user-command)
     - [Add User Roles Command](#add-user-roles-command)
     - [Delete User Roles Command](#delete-user-roles-command)
+  - [History](#history)
 
 A very simple BLOB store with minimal dependencies. This is used internally, as a support subsystem for other projects, but can eventually be used as a standalone utility service.
 
@@ -41,7 +43,7 @@ Projects:
 Quick Docker image build:
 
 ```bash
-docker build . -t vedph2020/simple-blob-api:1.0.4 -t vedph2020/simple-blob-api:latest
+docker build . -t vedph2020/simple-blob-api:2.0.0 -t vedph2020/simple-blob-api:latest
 ```
 
 (replace with the current version).
@@ -438,3 +440,7 @@ Sample:
 ```ps1
 ./blob delete-user-roles tester -r admin -u zeus -p P4ss-W0rd!
 ```
+
+## History
+
+- 2021-11-09: migrated to .NET 6.

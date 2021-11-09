@@ -235,8 +235,8 @@ namespace SimpleBlobApi
                 {
                     options.JsonSerializerOptions.PropertyNamingPolicy =
                         JsonNamingPolicy.CamelCase;
-                })
-                .SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
+                });
+                //.SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
 
             // configuration
             services.AddSingleton(_ => Configuration);

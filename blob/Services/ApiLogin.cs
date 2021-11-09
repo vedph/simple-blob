@@ -1,7 +1,9 @@
 ﻿using System;
-using System.IO;
-using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 namespace SimpleBlob.Cli.Services
 {
@@ -33,16 +35,22 @@ namespace SimpleBlob.Cli.Services
         }
 
         /// <summary>
-        /// Logs the currently logged user out.
+        /// Logs the currently logged user (if any) out.
         /// </summary>
-        public void Logout()
+        public async Task Logout()
         {
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(
-                _apiRoot + "auth/logout");
-            AddAuthHeader(request);
-            request.ContentType = "application/json";
-            request.Method = "GET";
-            request.GetResponse();
+            if (Token == null) return;
+
+            HttpClient client = new();
+            AddAuthHeader(client);
+            await client.GetAsync(_apiRoot + "auth/logout");
+
+            //HttpWebRequest request = (HttpWebRequest)WebRequest.Create(
+            //    _apiRoot + "auth/logout");
+            //AddAuthHeader(request);
+            //request.ContentType = "application/json";
+            //request.Method = "GET";
+            //request.GetResponse();
 
             Token = null;
             _expiration = null;
@@ -55,32 +63,42 @@ namespace SimpleBlob.Cli.Services
         /// <param name="password">The password.</param>
         /// <returns>True on success.</returns>
         /// <exception cref="ArgumentNullException">user or password</exception>
-        public bool Login(string user, string password)
+        public async Task<bool> Login(string user, string password)
         {
             if (user == null) throw new ArgumentNullException(nameof(user));
             if (password == null) throw new ArgumentNullException(nameof(password));
 
-            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(
-                _apiRoot + "auth/login");
-            request.ContentType = "application/json";
-            request.Method = "POST";
+            HttpClient client = new();
+            HttpResponseMessage response = await client.PostAsync(
+                _apiRoot + "auth/login",
+                new StringContent(JsonSerializer.Serialize(new
+                {
+                    username = user,
+                    password = password
+                }), Encoding.UTF8, "application/json"));
+            response.EnsureSuccessStatusCode();
 
-            using (StreamWriter writer =
-                new StreamWriter(request.GetRequestStream()))
-            {
-                writer.Write("{\"username\":\"" + user + "\"," +
-                            "\"password\":\"" + password + "\"}");
-                writer.Flush();
-            }
+            //HttpWebRequest request = (HttpWebRequest)WebRequest.Create(
+            //    _apiRoot + "auth/login");
+            //request.ContentType = "application/json";
+            //request.Method = "POST";
 
-            HttpWebResponse httpResponse = (HttpWebResponse)request.GetResponse();
-            string response;
-            using (StreamReader reader = new StreamReader(
-                httpResponse.GetResponseStream()))
-            {
-                response = reader.ReadToEnd();
-            }
-            JsonDocument doc = JsonDocument.Parse(response);
+            //using (StreamWriter writer =
+            //    new StreamWriter(request.GetRequestStream()))
+            //{
+            //    writer.Write("{\"username\":\"" + user + "\"," +
+            //                "\"password\":\"" + password + "\"}");
+            //    writer.Flush();
+            //}
+
+            //HttpWebResponse httpResponse = (HttpWebResponse)request.GetResponse();
+            //string response;
+            //using (StreamReader reader = new StreamReader(
+            //    httpResponse.GetResponseStream()))
+            //{
+            //    response = reader.ReadToEnd();
+            //}
+            JsonDocument doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             if (doc.RootElement.TryGetProperty("token", out JsonElement tokenElem))
             {
                 Token = tokenElem.GetString();
@@ -93,11 +111,14 @@ namespace SimpleBlob.Cli.Services
         /// <summary>
         /// Adds the authentication header to <paramref name="request"/>.
         /// </summary>
-        /// <param name="request">The request.</param>
-        public void AddAuthHeader(HttpWebRequest request)
+        /// <param name="client">The client.</param>
+        public void AddAuthHeader(HttpClient client)
         {
             if (Token != null)
-                request.Headers.Add("Authentication", "Bearer " + Token);
+            {
+                client.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Bearer", Token);
+            }
         }
     }
 }
