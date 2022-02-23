@@ -31,6 +31,7 @@
 
   <ItemGroup>
     <PackageReference Include="CsvHelper" Version="27.2.1" />
+    <PackageReference Include="Fusi.Api.Auth.Controllers" Version="2.0.0" />
     <PackageReference Include="Microsoft.Extensions.CommandLineUtils" Version="1.1.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="6.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="6.0.0" />
@@ -44,7 +45,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SimpleBlob.Api.Models\SimpleBlob.Api.Models.csproj" />
-    <ProjectReference Include="..\SimpleBlobApi\SimpleBlobApi.csproj" />
   </ItemGroup>
 
 </Project>
