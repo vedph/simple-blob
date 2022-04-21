@@ -55,7 +55,7 @@ namespace SimpleBlob.Cli.Commands
 
             app.OnExecute(() =>
             {
-                DownloadCommandOptions co = new DownloadCommandOptions
+                DownloadCommandOptions co = new()
                 {
                     Configuration = options.Configuration,
                     Logger = options.Logger,
@@ -87,7 +87,7 @@ namespace SimpleBlob.Cli.Commands
             if (apiRootUri == null) return 2;
 
             // prompt for userID/password if required
-            LoginCredentials credentials = new LoginCredentials(
+            LoginCredentials credentials = new(
                 _options.UserId,
                 _options.Password);
             credentials.PromptIfRequired();
@@ -136,14 +136,14 @@ namespace SimpleBlob.Cli.Commands
                     string path = Path.Combine(dir, Path.GetFileName(itemPath));
                     Console.WriteLine(" => " + path);
 
-                    using FileStream output = new FileStream(path, FileMode.Create,
+                    using FileStream output = new(path, FileMode.Create,
                         FileAccess.Write, FileShare.Read);
                     input.CopyTo(output);
                     output.Flush();
 
                     // load metadata
                     List<Tuple<string, string>> metadata =
-                        new List<Tuple<string, string>>();
+                        new();
 
                     var props = await client.GetFromJsonAsync<BlobItemProperty[]>(
                         $"properties/{item.Id}");
@@ -158,7 +158,7 @@ namespace SimpleBlob.Cli.Commands
                     // save metadata to path
                     path += _options.MetaExtension;
                     Console.WriteLine(" => " + path);
-                    CsvMetadataFile metaFile = new CsvMetadataFile
+                    CsvMetadataFile metaFile = new()
                     {
                         Delimiter = _options.MetaDelimiter
                     };

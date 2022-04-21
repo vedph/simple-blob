@@ -40,7 +40,7 @@ namespace SimpleBlob.Cli.Services
             request.Method = "POST";
 
             using (Stream requestStream = request.GetRequestStream())
-            using (StreamWriter writer = new StreamWriter(requestStream))
+            using (StreamWriter writer = new(requestStream))
             {
                 // put all POST data into request
                 if (postData?.Count > 0)

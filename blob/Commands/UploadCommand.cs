@@ -80,7 +80,7 @@ namespace SimpleBlob.Cli.Commands
 
             app.OnExecute(() =>
             {
-                UploadCommandOptions co = new UploadCommandOptions
+                UploadCommandOptions co = new()
                 {
                     Configuration = options.Configuration,
                     Logger = options.Logger,
@@ -124,7 +124,7 @@ namespace SimpleBlob.Cli.Commands
             if (_options.IsDryRun || metadata == null || metadata.Count == 0)
                 return null;
 
-            BlobItemPropertiesModel model = new BlobItemPropertiesModel
+            BlobItemPropertiesModel model = new()
             {
                 ItemId = id,
                 Properties = metadata.Select(t => new BlobItemPropertyModel
@@ -143,9 +143,9 @@ namespace SimpleBlob.Cli.Commands
 
         private static long GetCrc(string path)
         {
-            using FileStream stream = new FileStream(path, FileMode.Open,
+            using FileStream stream = new(path, FileMode.Open,
                 FileAccess.Read, FileShare.Read);
-            BinaryReader reader = new BinaryReader(stream);
+            BinaryReader reader = new(stream);
             uint crc = 0;
             while (true)
             {
@@ -167,7 +167,7 @@ namespace SimpleBlob.Cli.Commands
                     $"Error getting content metadata for item {id}");
             }
 
-            FileInfo info = new FileInfo(path);
+            FileInfo info = new(path);
             BlobItemContentMetaModel meta = await r.Content
                 .ReadFromJsonAsync<BlobItemContentMetaModel>();
 
@@ -231,7 +231,7 @@ namespace SimpleBlob.Cli.Commands
                 _typeMap.Load(_options.MimeTypeList);
 
             // prompt for userID/password if required
-            LoginCredentials credentials = new LoginCredentials(
+            LoginCredentials credentials = new(
                 _options.UserId,
                 _options.Password);
             credentials.PromptIfRequired();
@@ -240,7 +240,7 @@ namespace SimpleBlob.Cli.Commands
             _login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
 
             // setup the metadata services
-            CsvMetadataFile metaFile = new CsvMetadataFile
+            CsvMetadataFile metaFile = new()
             {
                 Delimiter = _options.MetaDelimiter
             };
@@ -264,7 +264,7 @@ namespace SimpleBlob.Cli.Commands
                 ColorConsole.WriteEmbeddedColorLine($"[green]{count:0000}[/green] {path}");
 
                 // load metadata if any
-                string metaPath = path + _options.MetaExtension;
+                string metaPath = Path.ChangeExtension(path, _options.MetaExtension);
                 IList<Tuple<string, string>> metadata = null;
                 if (File.Exists(metaPath)) metadata = metaFile.Read(metaPath);
                 string id = metadata?.FirstOrDefault(t => t.Item1 == "id")

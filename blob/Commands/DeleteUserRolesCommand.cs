@@ -37,7 +37,7 @@ namespace SimpleBlob.Cli.Commands
 
             app.OnExecute(() =>
             {
-                UserRolesCommandOptions co = new UserRolesCommandOptions
+                UserRolesCommandOptions co = new()
                 {
                     Configuration = options.Configuration,
                     Logger = options.Logger,
@@ -61,7 +61,7 @@ namespace SimpleBlob.Cli.Commands
             if (apiRootUri == null) return 2;
 
             // prompt for userID/password if required
-            LoginCredentials credentials = new LoginCredentials(
+            LoginCredentials credentials = new(
                 _options.UserId,
                 _options.Password);
             credentials.PromptIfRequired();

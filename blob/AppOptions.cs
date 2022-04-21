@@ -22,7 +22,7 @@ namespace SimpleBlob.Cli
 
         private void BuildConfiguration()
         {
-            ConfigurationBuilder cb = new ConfigurationBuilder();
+            ConfigurationBuilder cb = new();
             Configuration = cb
                 .AddJsonFile("appsettings.json")
                 .AddEnvironmentVariables()
@@ -36,8 +36,8 @@ namespace SimpleBlob.Cli
         {
             if (args == null) throw new ArgumentNullException(nameof(args));
 
-            AppOptions options = new AppOptions();
-            CommandLineApplication app = new CommandLineApplication
+            AppOptions options = new();
+            CommandLineApplication app = new()
             {
                 Name = "Simple BLOB Tool",
                 FullName = "Simple BLOB CLI - "

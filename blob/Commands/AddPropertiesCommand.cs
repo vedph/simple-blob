@@ -53,7 +53,7 @@ namespace SimpleBlob.Cli.Commands
 
             app.OnExecute(() =>
             {
-                AddPropertiesCommandOptions co = new AddPropertiesCommandOptions
+                AddPropertiesCommandOptions co = new()
                 {
                     Configuration = options.Configuration,
                     Logger = options.Logger,
@@ -83,7 +83,7 @@ namespace SimpleBlob.Cli.Commands
             if (apiRootUri == null) return 2;
 
             // prompt for userID/password if required
-            LoginCredentials credentials = new LoginCredentials(
+            LoginCredentials credentials = new(
                 _options.UserId,
                 _options.Password);
             credentials.PromptIfRequired();
@@ -96,7 +96,7 @@ namespace SimpleBlob.Cli.Commands
                 _login.Token);
 
             // collect properties
-            List<BlobItemPropertyModel> props = new List<BlobItemPropertyModel>();
+            List<BlobItemPropertyModel> props = new();
 
             // get properties from file if any
             if (!string.IsNullOrEmpty(_options.MetaPath))
@@ -114,7 +114,7 @@ namespace SimpleBlob.Cli.Commands
             {
                 foreach (string pair in _options.Properties)
                 {
-                    BlobItemPropertyModel prop = new BlobItemPropertyModel();
+                    BlobItemPropertyModel prop = new();
                     int i = pair.IndexOf('=');
                     if (i == -1)
                     {

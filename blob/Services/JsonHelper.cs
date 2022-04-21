@@ -9,7 +9,7 @@ namespace SimpleBlob.Cli.Services
         {
             if (s == null) throw new ArgumentNullException(nameof(s));
 
-            StringBuilder sb = new StringBuilder();
+            StringBuilder sb = new();
             foreach (char c in s)
             {
                 switch (c)

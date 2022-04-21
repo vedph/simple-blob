@@ -17,7 +17,7 @@ namespace SimpleBlob.Cli.Services
         /// <returns>Client.</returns>
         public static HttpClient GetClient(string apiRootUri, string token)
         {
-            HttpClient client = new HttpClient
+            HttpClient client = new()
             {
                 BaseAddress = new Uri(apiRootUri)
             };

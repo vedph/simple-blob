@@ -40,9 +40,9 @@ namespace SimpleBlob.Cli.Services
         {
             if (reader == null) throw new ArgumentNullException(nameof(reader));
 
-            List<Tuple<string, string>> metadata = new List<Tuple<string, string>>();
+            List<Tuple<string, string>> metadata = new();
 
-            using CsvReader csv = new CsvReader(reader,
+            using CsvReader csv = new(reader,
                 new CsvConfiguration(CultureInfo.InvariantCulture)
                 {
                     Delimiter = Delimiter,
@@ -70,7 +70,7 @@ namespace SimpleBlob.Cli.Services
         {
             if (path == null) throw new ArgumentNullException(nameof(path));
 
-            using StreamReader reader = new StreamReader(path, Encoding.UTF8);
+            using StreamReader reader = new(path, Encoding.UTF8);
             return Read(reader);
         }
 
@@ -85,7 +85,7 @@ namespace SimpleBlob.Cli.Services
             if (metadata == null) throw new ArgumentNullException(nameof(metadata));
             if (writer == null) throw new ArgumentNullException(nameof(writer));
 
-            using CsvWriter csv = new CsvWriter(writer, new CsvConfiguration(
+            using CsvWriter csv = new(writer, new CsvConfiguration(
                 CultureInfo.InvariantCulture)
             {
                 Delimiter = Delimiter,
@@ -111,7 +111,7 @@ namespace SimpleBlob.Cli.Services
             if (metadata == null) throw new ArgumentNullException(nameof(metadata));
             if (path == null) throw new ArgumentNullException(nameof(path));
 
-            using StreamWriter writer = new StreamWriter(path, false, Encoding.UTF8);
+            using StreamWriter writer = new(path, false, Encoding.UTF8);
             Write(metadata, writer);
         }
     }

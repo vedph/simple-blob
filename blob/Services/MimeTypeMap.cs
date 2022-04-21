@@ -20,7 +20,7 @@ namespace SimpleBlob.Cli.Services
             if (_types == null) _types = new Dictionary<string, string>();
             else _types.Clear();
 
-            using CsvReader csv = new CsvReader(reader,
+            using CsvReader csv = new(reader,
                 new CsvConfiguration(CultureInfo.InvariantCulture)
                 {
                     Delimiter = ",",
@@ -39,7 +39,7 @@ namespace SimpleBlob.Cli.Services
         {
             if (path == null) throw new ArgumentNullException(nameof(path));
 
-            using StreamReader reader = new StreamReader(path, Encoding.UTF8);
+            using StreamReader reader = new(path, Encoding.UTF8);
             Load(reader);
         }
 

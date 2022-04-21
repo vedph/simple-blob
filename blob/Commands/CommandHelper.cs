@@ -57,7 +57,7 @@ namespace SimpleBlob.Cli.Commands
             LoginCredentials credentials)
         {
             Console.Write("Logging in... ");
-            ApiLogin login = new ApiLogin(apiRootUri);
+            ApiLogin login = new(apiRootUri);
             if (!await login.Login(credentials.UserName, credentials.Password))
             {
                 ColorConsole.WriteError("Unable to login");
@@ -136,7 +136,7 @@ namespace SimpleBlob.Cli.Commands
                 ? string.Join(",", propOption.Values)
                 : null;
 
-            Regex rngRegex = new Regex("^(?<a>[^:]+)?:(?<b>.+)?");
+            Regex rngRegex = new("^(?<a>[^:]+)?:(?<b>.+)?");
 
             // dates
             if (dateOption.HasValue())

@@ -44,7 +44,7 @@ namespace SimpleBlob.Cli.Services
                     : SearchOption.TopDirectoryOnly)
                     .OrderBy(s => s);
             }
-            Regex r = new Regex(mask, RegexOptions.IgnoreCase);
+            Regex r = new(mask, RegexOptions.IgnoreCase);
             return from file in Directory.EnumerateFiles(directory,
                 "*", recursive ? SearchOption.AllDirectories
                              : SearchOption.TopDirectoryOnly)

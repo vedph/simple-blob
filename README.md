@@ -248,7 +248,7 @@ where:
 - `-x` specifies that `FileMask` is a regular expression pattern.
 - `-r` recurses subdirectories.
 - `-t` specifies the MIME type for _all_ the files matched. Do not specify this option if you want the type to be derived (when possible) from the file's extension.
-- `-m` the extension expected to be found for metadata files. The default is `.meta`.
+- `-m` the extension expected to be found for metadata files. The default is `.meta`. This assumes that each input file has a corresponding file under the same directory, with the same name but extension `.meta` or whatever other value you set with this option.
 - `-e` the optional CSV MIME types file path, when you want to override the default list of MIME types.
 - `--meta-sep` the separator used for the metadata file. The default is comma (`,`).
 - `--id-sep` the separator used in BLOB IDs in a file-system like convention. The default is pipe (`|`). Slashes (`/` or `\`) automatically get converted into this separator when using file paths as IDs.
@@ -443,5 +443,6 @@ Sample:
 
 ## History
 
+- 2022-04-21: fixed metadata extension in upload command.
 - 2022-04-18: updated packages.
 - 2021-11-09: migrated to .NET 6.

@@ -10,7 +10,6 @@ namespace SimpleBlob.Cli.Commands
     public sealed class DeleteUserCommand : ICommand
     {
         private readonly DeleteUserCommandOptions _options;
-        private ApiLogin _login;
 
         public DeleteUserCommand(DeleteUserCommandOptions options)
         {
@@ -33,7 +32,7 @@ namespace SimpleBlob.Cli.Commands
 
             app.OnExecute(() =>
             {
-                DeleteUserCommandOptions co = new DeleteUserCommandOptions
+                DeleteUserCommandOptions co = new()
                 {
                     Configuration = options.Configuration,
                     Logger = options.Logger,
@@ -58,13 +57,13 @@ namespace SimpleBlob.Cli.Commands
             if (apiRootUri == null) return 2;
 
             // prompt for userID/password if required
-            LoginCredentials credentials = new LoginCredentials(
+            LoginCredentials credentials = new(
                 _options.UserId,
                 _options.Password);
             credentials.PromptIfRequired();
 
             // login
-            _login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            ApiLogin login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
 
             // prompt for confirmation if required
             if (!_options.IsConfirmed &&
@@ -75,7 +74,7 @@ namespace SimpleBlob.Cli.Commands
 
             // setup client
             using HttpClient client = ClientHelper.GetClient(apiRootUri,
-                _login.Token);
+                login.Token);
 
             // delete
             HttpResponseMessage response =
