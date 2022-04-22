@@ -52,7 +52,7 @@ docker build . -t vedph2020/simple-blob-api:2.0.0 -t vedph2020/simple-blob-api:l
 
 1. download `docker-compose.yml` in some folder.
 
-2. create a folder `var/db/pgsql` in the host to hold the database files. You can change the path in the script.
+2. create a folder `var/db/pgsql` in the host to hold the database files. If you desire, you can change the path in the script.
 
 3. run it with `docker-compose up` (prefix `sudo` for Linux/MacOS).
 
@@ -62,11 +62,18 @@ If you want to test the functions, use the batch in `demo.zip`. In this case:
 
 1. unzip the full archive with its files and folders in some folder, e.g. `blob`. For Windows you will run `demo.bat`, for Linux `demo.sh`. For MacOS, it's easier to rename `demo.sh` in `demo.command`. Also, for non-Windows OSes ensure that you have execution rights on this file (e.g. `chmod 777 ./demo.sh`).
 
-2. place the CLI binaries under a `cli` subfolder in the `blob` folder (or whatever you named it). Here too, ensure that for non-Windows OSes ensure you have execution rights on the `blob` file.
+2. place the CLI binaries under a `cli` subfolder in the `blob` folder (or whatever you named it). Here too, ensure that for non-Windows OSes you have execution rights on the `blob` file.
 
 3. ensure that the BLOB service is running (see above for `docker-compose.yml`).
 
 4. run the batch. This will tour you along the main functions provided by the CLI, step by step.
+
+When you deploy the API to some server, you must change the base API URI in the `appsettings.json` file of the CLI client application, so that it reflects the server location. Also, on the server side:
+
+- _ensure you change the default user's API password_, as the default one used in this repository is of course just for the purpose of playing with the system.
+- check the CORS allowed locations to eventually add your own.
+
+In both cases, the easiest way to change these settings is setting them (via environment variables) in the Docker compose script.
 
 ## Database Schema
 
