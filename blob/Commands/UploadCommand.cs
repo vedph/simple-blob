@@ -59,15 +59,24 @@ namespace SimpleBlob.Cli.Commands
                 CommandOptionType.SingleValue);
 
             CommandOption metaExtOption = app.Option("--meta|-m",
-                "The extension appended to the content filename " +
-                "to represent its metadata in a correspondent file",
+                "The extension to replace to that of the content filename " +
+                "to build the correspondent metadata filename.",
                 CommandOptionType.SingleValue);
+            CommandOption metaExtPrefixOption = app.Option("--meta-p",
+                "The prefix inserted before the content filename's extension " +
+                "to build the correspondent metadata filename.",
+                CommandOptionType.SingleValue);
+            CommandOption metaExtSuffixOption = app.Option("--meta-s",
+                "The suffix appended after the content filename's extension " +
+                "to represent its metadata in a correspondent file.",
+                CommandOptionType.SingleValue);
+
             CommandOption metaDelimOption = app.Option("--meta-sep",
-                "The separator used in delimited metadata files",
+                "The separator used in delimited metadata files (default=,).",
                 CommandOptionType.SingleValue);
 
             CommandOption idDelimOption = app.Option("--id-sep",
-                "The conventional separator used in BLOB IDs",
+                "The conventional separator used in BLOB IDs.",
                 CommandOptionType.SingleValue);
 
             CommandOption checkOption = app.Option("--check|-c",
@@ -76,7 +85,7 @@ namespace SimpleBlob.Cli.Commands
                 CommandOptionType.NoValue);
 
             CommandOption dryOption = app.Option("--dry|-d",
-                "Dry run (do not write data)", CommandOptionType.NoValue);
+                "Dry run (do not write data).", CommandOptionType.NoValue);
 
             app.OnExecute(() =>
             {
@@ -88,8 +97,10 @@ namespace SimpleBlob.Cli.Commands
                     FileMask = maskArgument.Value,
                     IsRegexMask = regexOption.HasValue(),
                     IsRecursive = recurseOption.HasValue(),
+                    MetaPrefix = metaExtPrefixOption.Value(),
                     MetaExtension = metaExtOption.HasValue()
                         ? metaExtOption.Value() : ".meta",
+                    MetaSuffix = metaExtSuffixOption.Value(),
                     MetaDelimiter = metaDelimOption.HasValue()
                         ? metaDelimOption.Value() : ",",
                     IdDelimiter = idDelimOption.HasValue()
@@ -218,6 +229,27 @@ namespace SimpleBlob.Cli.Commands
             return path.Replace("\\", sep);
         }
 
+        private string GetMetadataPath(string path)
+        {
+            string result = path;
+
+            if (!string.IsNullOrEmpty(_options.MetaExtension))
+                result = Path.ChangeExtension(result, _options.MetaExtension);
+
+            if (!string.IsNullOrEmpty(_options.MetaPrefix))
+            {
+                result = Path.Combine(
+                    Path.GetFileNameWithoutExtension(result),
+                    _options.MetaPrefix,
+                    Path.GetExtension(result));
+            }
+
+            if (!string.IsNullOrEmpty(_options.MetaSuffix))
+                result = path + _options.MetaSuffix;
+
+            return result;
+        }
+
         public async Task<int> Run()
         {
             ColorConsole.WriteWrappedHeader("Upload Files");
@@ -264,9 +296,14 @@ namespace SimpleBlob.Cli.Commands
                 ColorConsole.WriteEmbeddedColorLine($"[green]{count:0000}[/green] {path}");
 
                 // load metadata if any
-                string metaPath = Path.ChangeExtension(path, _options.MetaExtension);
+                string metaPath = GetMetadataPath(path);
+
                 IList<Tuple<string, string>> metadata = null;
-                if (File.Exists(metaPath)) metadata = metaFile.Read(metaPath);
+                if (File.Exists(metaPath))
+                {
+                    ColorConsole.WriteInfo(metaPath);
+                    metadata = metaFile.Read(metaPath);
+                }
                 string id = metadata?.FirstOrDefault(t => t.Item1 == "id")
                     ?.Item2
                     ?? SanitizePath(Path.GetRelativePath(_options.InputDir, path),
@@ -316,7 +353,9 @@ namespace SimpleBlob.Cli.Commands
         public string MimeTypeList { get; set; }
         public bool IsRegexMask { get; set; }
         public bool IsRecursive { get; set; }
+        public string MetaPrefix { get; set; }
         public string MetaExtension { get; set; }
+        public string MetaSuffix { get; set; }
         public string MetaDelimiter { get; set; }
         public string IdDelimiter { get; set; }
         public bool IsDryRun { get; set; }

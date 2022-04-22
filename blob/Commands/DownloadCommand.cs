@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace SimpleBlob.Cli.Commands
@@ -16,7 +15,6 @@ namespace SimpleBlob.Cli.Commands
     public sealed class DownloadCommand : ICommand
     {
         private readonly DownloadCommandOptions _options;
-        private ApiLogin _login;
 
         public DownloadCommand(DownloadCommandOptions options)
         {
@@ -93,11 +91,11 @@ namespace SimpleBlob.Cli.Commands
             credentials.PromptIfRequired();
 
             // login
-            _login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            ApiLogin login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
 
             // setup client
             using HttpClient client = ClientHelper.GetClient(apiRootUri,
-                _login.Token);
+                login.Token);
 
             // get 1st page
             var page = await client.GetFromJsonAsync<DataPage<BlobItem>>(

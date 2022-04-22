@@ -161,7 +161,9 @@ Note: when using `*` in UNIX-based OS (Linux, MacOS) remember to escape it with 
 
 ### List Command
 
-This command gets a paged list of BLOB items.
+- roles: `admin`, `browser`
+
+This command gets a paged list of BLOB items. Note that for added security a user with reader/writer role but without the `browser` (or `admin`) role cannot get the list of items. This way, he can just retrieve a file if he has its name.
 
 Syntax:
 
@@ -191,6 +193,8 @@ Sample:
 
 ### GetInfo Command
 
+- roles: all
+
 This command gets information about an item.
 
 Syntax:
@@ -212,6 +216,8 @@ Sample:
 ```
 
 ### Delete Command
+
+- roles: `admin`, `browser`, `writer`
 
 This command deletes the specified BLOB item.
 
@@ -236,6 +242,8 @@ Sample:
 
 ### Upload Command
 
+- roles: `admin`, `browser`, `writer`
+
 This command uploads a set of files, as defined from an input folder and a files mask. The mask can be a regular file system mask, or a regular expression. Also, files can optionally be recursively searched starting from the input folder.
 
 It is assumed that each file matching the mask has in the same location a corresponding metadata file, with the same name suffixed with a custom extension. By default this extension is `.meta`. So, if a file to upload is `test.txt`, then the corresponding metadata file should be placed in the same directory with name `test.txt.meta`.
@@ -255,7 +263,9 @@ where:
 - `-x` specifies that `FileMask` is a regular expression pattern.
 - `-r` recurses subdirectories.
 - `-t` specifies the MIME type for _all_ the files matched. Do not specify this option if you want the type to be derived (when possible) from the file's extension.
-- `-m` the extension expected to be found for metadata files. The default is `.meta`. This assumes that each input file has a corresponding file under the same directory, with the same name but extension `.meta` or whatever other value you set with this option.
+- `-m` or `--meta`: the extension to replace to that of the content filename to build the correspondent metadata filename.
+- `--meta-p`: the prefix inserted before the content filename's extension to build the correspondent metadata filename.
+- `--meta-s`: the suffix appended after the content filename's extension to build the correspondent metadata filename.
 - `-e` the optional CSV MIME types file path, when you want to override the default list of MIME types.
 - `--meta-sep` the separator used for the metadata file. The default is comma (`,`).
 - `--id-sep` the separator used in BLOB IDs in a file-system like convention. The default is pipe (`|`). Slashes (`/` or `\`) automatically get converted into this separator when using file paths as IDs.
@@ -264,6 +274,8 @@ where:
 - `-u` the user name. If not specified, you will be prompted for it.
 - `-p` the password. If not specified, you will be prompted for it.
 
+Note that you can variously combine the `meta` options to build the metadata filename starting from the content filename.
+
 Sample:
 
 ```ps1
@@ -271,6 +283,8 @@ Sample:
 ```
 
 ### Download Command
+
+- roles: all
 
 This command downloads all the files matching the specified filters into a root directory, together with their metadata companion file. If the file IDs include a path separator character, the same directory structure gets created under the output root folder.
 
@@ -305,6 +319,8 @@ Sample:
 
 ### Add Properties Command
 
+- roles: `admin`, `browser`, `writer`
+
 This command adds the specified properties to a BLOB item. The properties can be just added, or can replace all the existing properties of the item, according to the option chosen. So, you can also use this command to remove all the properties from an item.
 
 Syntax:
@@ -330,6 +346,8 @@ Sample:
 
 ### List Users Command
 
+- roles: all
+
 This command lists the registered users.
 
 Syntax:
@@ -354,6 +372,8 @@ Sample:
 ```
 
 ### Add User Command
+
+- roles: `admin`
 
 This command adds a new user to the BLOB service.
 
@@ -381,6 +401,8 @@ Sample:
 
 ### Delete User Command
 
+- roles: `admin`
+
 This commands deletes the specified user from the BLOB service.
 
 Syntax:
@@ -403,6 +425,8 @@ Sample:
 ```
 
 ### Add User Roles Command
+
+- roles: `admin`
 
 This commands adds the specified roles to a user.
 
@@ -427,7 +451,14 @@ Sample:
 
 ### Delete User Roles Command
 
-This commands deletes the specified roles of a user.
+- roles: `admin`
+
+This commands deletes the specified roles of a user. Available roles are:
+
+- `admin`: administrator, can do everything and manage accounts.
+- `browser`: is a writer and a reader, with the added ability of browsing the BLOB store.
+- `writer`: is a reader, with the added ability of writing (upload/delete files) to the BLOB store.
+- `reader`: can only read a file from the BLOB store.
 
 Syntax:
 

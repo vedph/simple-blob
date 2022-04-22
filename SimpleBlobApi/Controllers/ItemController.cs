@@ -30,7 +30,7 @@ namespace SimpleBlobApi.Controllers
         /// <param name="filter">The filter.</param>
         /// <returns>Page of matching items.</returns>
         [HttpGet("api/items")]
-        [Authorize(Roles = "writer,browser,admin")]
+        [Authorize(Roles = "browser,admin")]
         [ProducesResponseType(200)]
         public ActionResult<DataPage<BlobItem>> GetItems(
             [FromQuery] BlobItemFilterModel filter)

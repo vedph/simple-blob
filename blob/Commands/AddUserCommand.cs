@@ -12,7 +12,6 @@ namespace SimpleBlob.Cli.Commands
     public sealed class AddUserCommand : ICommand
     {
         private readonly AddUserCommandOptions _options;
-        private ApiLogin _login;
 
         public AddUserCommand(AddUserCommandOptions options)
         {
@@ -75,15 +74,15 @@ namespace SimpleBlob.Cli.Commands
             credentials.PromptIfRequired();
 
             // login
-            _login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            ApiLogin login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
 
             // setup client
             using HttpClient client = ClientHelper.GetClient(apiRootUri,
-                _login.Token);
+                login.Token);
 
             Console.Write($"Adding user {_options.UserName}... ");
             HttpResponseMessage response = await client.PostAsJsonAsync(
-                $"accounts/register", new NamedRegisterBindingModel
+                "accounts/register", new NamedRegisterBindingModel
                 {
                     Name = _options.UserName,
                     Password = _options.UserPassword,
