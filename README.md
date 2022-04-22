@@ -25,7 +25,8 @@
     - [Delete User Roles Command](#delete-user-roles-command)
     - [Update User Command](#update-user-command)
   - [History](#history)
-    - [1.0.0](#100)
+    - [2.0.1](#201)
+    - [2.0.0](#200)
 
 A very simple BLOB store with minimal dependencies. This is used internally, as a support subsystem for other projects, but can eventually be used as a standalone utility service.
 
@@ -45,7 +46,7 @@ Projects:
 Quick Docker image build:
 
 ```bash
-docker build . -t vedph2020/simple-blob-api:2.0.0 -t vedph2020/simple-blob-api:latest
+docker build . -t vedph2020/simple-blob-api:2.0.1 -t vedph2020/simple-blob-api:latest
 ```
 
 (replace with the current version).
@@ -93,7 +94,7 @@ The schema is very simple and essentially includes just 3 tables (the auth table
 
 `GET /api/accounts/nameexists/{name}`: Check if the specified user name is already registered.
 
-`POST /api/accounts/register`: Registers the specified user.
+`POST /api/accounts/register?confirmed=true`: Registers the specified user (here we use `confirmed` to avoid email confirmation).
 
 `GET /api/accounts/resendconfirm/{email}`: Resends the confirmation email.
 
@@ -512,10 +513,12 @@ Sample:
 
 ## History
 
+### 2.0.1
+
 - 2022-04-22: added update-user, upgraded packages, set confirmed email in add-user, added options for metadata filename building in upload.
 - 2022-04-21: fixed metadata extension in upload command.
 
-### 1.0.0
+### 2.0.0
 
 - 2022-04-18: updated packages.
 - 2021-11-09: migrated to .NET 6.
