@@ -11,7 +11,6 @@ namespace SimpleBlob.Cli.Commands
     public sealed class AddUserRolesCommand : ICommand
     {
         private readonly UserRolesCommandOptions _options;
-        private ApiLogin _login;
 
         public AddUserRolesCommand(UserRolesCommandOptions options)
         {
@@ -66,11 +65,11 @@ namespace SimpleBlob.Cli.Commands
             credentials.PromptIfRequired();
 
             // login
-            _login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            ApiLogin login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
 
             // setup client
             using HttpClient client = ClientHelper.GetClient(apiRootUri,
-                _login.Token);
+                login.Token);
 
             Console.Write($"Adding roles to user {_options.UserName}... ");
             HttpResponseMessage response = await client.PostAsJsonAsync(
