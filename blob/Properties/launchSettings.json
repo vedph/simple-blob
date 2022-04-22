@@ -2,7 +2,7 @@
   "profiles": {
     "blob": {
       "commandName": "Project",
-      "commandLineArgs": "download c:\\users\\dfusi\\desktop\\demo\\dn\\ -u zeus -p P4ss-W0rd!"
+      "commandLineArgs": "add-user verdi P4ss-W0rd! verdi@music.org -f Giuseppe -l Verdi -u zeus -p P4ss-W0rd!"
     }
   }
 }

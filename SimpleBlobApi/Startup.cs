@@ -5,7 +5,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.AspNetCore.Mvc;
 using Serilog;
 using Serilog.Events;
 using Serilog.Exceptions;
@@ -236,7 +235,6 @@ namespace SimpleBlobApi
                     options.JsonSerializerOptions.PropertyNamingPolicy =
                         JsonNamingPolicy.CamelCase;
                 });
-                //.SetCompatibilityVersion(CompatibilityVersion.Version_3_0);
 
             // configuration
             services.AddSingleton(_ => Configuration);

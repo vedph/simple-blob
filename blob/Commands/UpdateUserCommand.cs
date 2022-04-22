@@ -9,11 +9,11 @@ using System.Threading.Tasks;
 
 namespace SimpleBlob.Cli.Commands
 {
-    public sealed class AddUserCommand : ICommand
+    public sealed class UpdateUserCommand : ICommand
     {
-        private readonly AddUserCommandOptions _options;
+        private readonly UpdateUserCommandOptions _options;
 
-        public AddUserCommand(AddUserCommandOptions options)
+        public UpdateUserCommand(UpdateUserCommandOptions options)
         {
             _options = options;
         }
@@ -24,13 +24,17 @@ namespace SimpleBlob.Cli.Commands
             if (app == null)
                 throw new ArgumentNullException(nameof(app));
 
-            app.Description = "Add a new user.";
+            app.Description = "Update user editable data.";
             app.HelpOption("-?|-h|--help");
 
             CommandArgument nameArgument = app.Argument("[name]", "The user name");
-            CommandArgument pwdArgument = app.Argument("[password]",
-                "The user password");
-            CommandArgument emailArgument = app.Argument("[email]", "The user email");
+
+            CommandOption emailOption = app.Option("--email|-e",
+                "The user's email address", CommandOptionType.SingleValue);
+            CommandOption emailConfOption = app.Option("--conf|-c",
+                "Confirm user's email address", CommandOptionType.NoValue);
+            CommandOption lockoutOption = app.Option("--lock|-k",
+                "Enable (1) or disable (0) lockout", CommandOptionType.SingleValue);
             CommandOption firstOption = app.Option("--first|-f",
                 "The user first name", CommandOptionType.SingleValue);
             CommandOption lastOption = app.Option("--last|-l",
@@ -41,28 +45,30 @@ namespace SimpleBlob.Cli.Commands
 
             app.OnExecute(() =>
             {
-                AddUserCommandOptions co = new()
+                UpdateUserCommandOptions co = new()
                 {
                     Configuration = options.Configuration,
                     Logger = options.Logger,
                     UserName = nameArgument.Value,
-                    UserPassword = pwdArgument.Value,
-                    UserEmail = emailArgument.Value,
-                    FirstName = firstOption.Value() ?? "",
-                    LastName = lastOption.Value() ?? ""
+                    UserEmail = emailOption.Value(),
+                    EmailConfirmed = emailConfOption.HasValue()? true : null,
+                    FirstName = firstOption.Value(),
+                    LastName = lastOption.Value(),
+                    LockoutEnabled = lockoutOption.HasValue()
+                        ? lockoutOption.Value() == "1" : null,
                 };
                 // credentials
                 CommandHelper.SetCredentialsOptions(app, co);
 
-                options.Command = new AddUserCommand(co);
+                options.Command = new UpdateUserCommand(co);
                 return 0;
             });
         }
 
         public async Task<int> Run()
         {
-            ColorConsole.WriteWrappedHeader("Add User");
-            _options.Logger.LogInformation("---ADD USER---");
+            ColorConsole.WriteWrappedHeader("Update User");
+            _options.Logger.LogInformation("---UPDATE USER---");
 
             string apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
             if (apiRootUri == null) return 2;
@@ -80,20 +86,27 @@ namespace SimpleBlob.Cli.Commands
             using HttpClient client = ClientHelper.GetClient(apiRootUri,
                 login.Token);
 
-            Console.Write($"Adding user {_options.UserName}... ");
-            HttpResponseMessage response = await client.PostAsJsonAsync(
-                "accounts/register?confirmed=true", new NamedRegisterBindingModel
-                {
-                    Name = _options.UserName,
-                    Password = _options.UserPassword,
-                    Email = _options.UserEmail,
-                    FirstName = _options.FirstName,
-                    LastName = _options.LastName
-                });
+            // get user
+            Console.WriteLine($"Getting user {_options.UserName}...");
+            NamedUserModel user = await client.GetFromJsonAsync<NamedUserModel>(
+                "users/" + _options.UserName);
+
+            Console.Write($"Updating user {_options.UserName}... ");
+            NamedUserBindingModel newUser = new()
+            {
+                UserName = _options.UserName,
+                Email = _options.UserEmail ?? user.Email,
+                EmailConfirmed = _options.EmailConfirmed ?? user.EmailConfirmed,
+                FirstName = _options.FirstName ?? user.FirstName,
+                LastName = _options.LastName ?? user.LastName,
+                LockoutEnabled = _options.LockoutEnabled ?? user.LockoutEnabled,
+            };
+            HttpResponseMessage response = await client.PutAsJsonAsync(
+                "users", newUser);
 
             if (!response.IsSuccessStatusCode)
             {
-                string error = $"Error adding user {_options.UserName}";
+                string error = $"Error updating user {_options.UserName}";
                 _options.Logger?.LogError(error);
                 ColorConsole.WriteError(error);
                 return 2;
@@ -103,12 +116,13 @@ namespace SimpleBlob.Cli.Commands
         }
     }
 
-    public sealed class AddUserCommandOptions : CommandOptions
+    public sealed class UpdateUserCommandOptions : CommandOptions
     {
         public string UserName { get; set; }
-        public string UserPassword { get; set; }
         public string UserEmail { get; set; }
+        public bool? EmailConfirmed { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
+        public bool? LockoutEnabled { get; set; }
     }
 }

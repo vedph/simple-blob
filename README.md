@@ -23,7 +23,9 @@
     - [Delete User Command](#delete-user-command)
     - [Add User Roles Command](#add-user-roles-command)
     - [Delete User Roles Command](#delete-user-roles-command)
+    - [Update User Command](#update-user-command)
   - [History](#history)
+    - [1.0.0](#100)
 
 A very simple BLOB store with minimal dependencies. This is used internally, as a support subsystem for other projects, but can eventually be used as a standalone utility service.
 
@@ -479,8 +481,41 @@ Sample:
 ./blob delete-user-roles tester -r admin -u zeus -p P4ss-W0rd!
 ```
 
+### Update User Command
+
+- roles: `admin`
+
+This commands updates the editable properties of a user. Only the properties explicitly specified with options will be updated.
+
+Syntax:
+
+```ps1
+./blob update-user <Name> [-u UserName] [-p Password]
+```
+
+where:
+
+- `Name` the name of the user to delete.
+- `-e` the user's email address.
+- `-c` confirm the user's email address.
+- `-k` set lockout enabled on (`1`)/off (`0`).
+- `-f` set first name.
+- `-l` set last name.
+- `-u` the user name. If not specified, you will be prompted for it.
+- `-p` the password. If not specified, you will be prompted for it.
+
+Sample:
+
+```ps1
+./blob update-user tester -c -u zeus -p P4ss-W0rd!
+```
+
 ## History
 
+- 2022-04-22: added update-user, upgraded packages, set confirmed email in add-user, added options for metadata filename building in upload.
 - 2022-04-21: fixed metadata extension in upload command.
+
+### 1.0.0
+
 - 2022-04-18: updated packages.
 - 2021-11-09: migrated to .NET 6.
