@@ -239,13 +239,14 @@ namespace SimpleBlob.Cli.Commands
             if (!string.IsNullOrEmpty(_options.MetaPrefix))
             {
                 result = Path.Combine(
-                    Path.GetFileNameWithoutExtension(result),
-                    _options.MetaPrefix,
+                    Path.GetDirectoryName(result),
+                    Path.GetFileNameWithoutExtension(result) +
+                    _options.MetaPrefix +
                     Path.GetExtension(result));
             }
 
             if (!string.IsNullOrEmpty(_options.MetaSuffix))
-                result = path + _options.MetaSuffix;
+                result += _options.MetaSuffix;
 
             return result;
         }

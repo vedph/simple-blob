@@ -2,7 +2,7 @@
   "profiles": {
     "blob": {
       "commandName": "Project",
-      "commandLineArgs": "add-user verdi P4ss-W0rd! verdi@music.org -f Giuseppe -l Verdi -u zeus -p P4ss-W0rd!"
+      "commandLineArgs": "upload c:\\users\\dfusi\\desktop\\bdm\\ corfu.xml -m .csv --meta-p _hdr -u zeus -p P4ss-W0rd! -c"
     }
   }
 }
