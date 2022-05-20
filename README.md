@@ -441,7 +441,7 @@ Syntax:
 
 where:
 
-- `Name` the name of the user to delete.
+- `Name` the name of the user to add roles to.
 - `-r` the name of the role to add. Repeat this option for all the roles you want to add.
 - `-u` the user name. If not specified, you will be prompted for it.
 - `-p` the password. If not specified, you will be prompted for it.
@@ -471,7 +471,7 @@ Syntax:
 
 where:
 
-- `Name` the name of the user to delete.
+- `Name` the name of the user to delete roles from.
 - `-r` the name of the role to delete. Repeat this option for all the roles you want to delete.
 - `-u` the user name. If not specified, you will be prompted for it.
 - `-p` the password. If not specified, you will be prompted for it.
@@ -496,7 +496,7 @@ Syntax:
 
 where:
 
-- `Name` the name of the user to delete.
+- `Name` the name of the user to update.
 - `-e` the user's email address.
 - `-c` confirm the user's email address.
 - `-k` set lockout enabled on (`1`)/off (`0`).
