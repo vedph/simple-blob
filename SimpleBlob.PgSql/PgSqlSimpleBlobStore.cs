@@ -43,7 +43,7 @@ namespace SimpleBlob.PgSql
         /// <returns>Code.</returns>
         public string GetSchema()
         {
-            using StreamReader reader = new StreamReader(
+            using StreamReader reader = new(
                 Assembly.GetExecutingAssembly()
                 .GetManifestResourceStream("SimpleBlob.PgSql.Assets.Schema.pgsql"),
                 Encoding.UTF8);
@@ -73,7 +73,7 @@ namespace SimpleBlob.PgSql
 
             cmd.CommandText = dataAndTot.Item1;
             using var reader = cmd.ExecuteReader();
-            List<BlobItem> items = new List<BlobItem>();
+            List<BlobItem> items = new();
             while (reader.Read())
             {
                 items.Add(new BlobItem
@@ -107,7 +107,7 @@ namespace SimpleBlob.PgSql
             AddParameter("@id", DbType.String, item.Id, cmd);
             AddParameter("@user_id", DbType.String, item.UserId, cmd);
             AddParameter("@date_modified", DbType.DateTime,
-                new DateTime(DateTime.UtcNow.Ticks), cmd);
+                DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc), cmd);
 
             cmd.ExecuteNonQuery();
         }
@@ -164,7 +164,7 @@ namespace SimpleBlob.PgSql
             if (GetItem(content.ItemId) == null) return false;
 
             var t = ReadContent(content.Content);
-            NpgsqlCommand cmd = new NpgsqlCommand(
+            NpgsqlCommand cmd = new(
                 $"INSERT INTO {T_CONT}(item_id,mime_type,hash,size," +
                 $"user_id,date_modified,content)\n" +
                 "VALUES(@item_id,@mime_type,@hash,@size,@user_id,@date_modified,@content)\n" +
@@ -178,7 +178,7 @@ namespace SimpleBlob.PgSql
             AddParameter("@size", DbType.Int64, t.Item1.Length, cmd);
             AddParameter("@user_id", DbType.String, content.UserId, cmd);
             AddParameter("@date_modified", DbType.DateTime,
-                new DateTime(DateTime.UtcNow.Ticks), cmd);
+                DateTime.SpecifyKind(DateTime.UtcNow, DateTimeKind.Utc), cmd);
 
             // https://stackoverflow.com/questions/46128132/how-to-insert-and-retrieve-image-from-postgresql-using-c-sharp
             NpgsqlParameter p = cmd.CreateParameter();
@@ -224,7 +224,7 @@ namespace SimpleBlob.PgSql
             }
             else
             {
-                NpgsqlCommand cmd = new NpgsqlCommand("SELECT item_id,mime_type," +
+                NpgsqlCommand cmd = new("SELECT item_id,mime_type," +
                     "hash,size,user_id,date_modified,content\n" +
                     $"FROM {T_CONT} WHERE item_id=@item_id;",
                     (NpgsqlConnection)Connection);
@@ -264,7 +264,7 @@ namespace SimpleBlob.PgSql
             AddParameter("@item_id", DbType.String, id, cmd);
 
             using IDataReader reader = cmd.ExecuteReader();
-            List<BlobItemProperty> properties = new List<BlobItemProperty>();
+            List<BlobItemProperty> properties = new();
 
             while (reader.Read())
             {

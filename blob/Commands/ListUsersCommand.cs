@@ -83,7 +83,7 @@ namespace SimpleBlob.Cli.Commands
                 writer.WriteLine($"  - User name: {item.UserName}");
                 writer.WriteLine($"  - Email: {item.Email}");
                 writer.WriteLine($"  - Conf.email: {item.EmailConfirmed}");
-                if (item.Roles?.Length > 0)
+                if (item.Roles?.Count > 0)
                 {
                     writer.WriteLine("  - Roles: " + string.Join(
                         ", ", item.Roles));

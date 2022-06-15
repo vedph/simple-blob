@@ -32,11 +32,11 @@ namespace SimpleBlob.PgSql
             bool fromContent = false;
 
             // head = ... item AS i
-            StringBuilder head = new StringBuilder();
+            StringBuilder head = new();
             head.Append(SqlSimpleBlobStore.T_ITEM).Append(" AS i");
 
             // tail will contain WHERE clauses
-            StringBuilder tail = new StringBuilder();
+            StringBuilder tail = new();
             int n = 0;
 
             // path
@@ -131,7 +131,7 @@ namespace SimpleBlob.PgSql
             // properties
             if (filter.Properties?.Count > 0)
             {
-                StringBuilder sub = new StringBuilder();
+                StringBuilder sub = new();
                 sub.Append("SELECT id FROM ").Append(SqlSimpleBlobStore.T_PROP)
                     .AppendLine(" AS ip WHERE");
 
@@ -152,14 +152,14 @@ namespace SimpleBlob.PgSql
                 tail.Append("EXISTS(").Append(sub).Append(')');
             }
 
-            StringBuilder data = new StringBuilder();
+            StringBuilder data = new();
             data.Append("SELECT i.id,i.user_id,i.date_modified FROM ");
             data.Append(head);
             if (tail.Length > 0) data.Append(tail);
             data.Append("\nORDER BY i.id OFFSET ").Append(filter.GetSkipCount())
                 .Append(" LIMIT ").Append(filter.PageSize).Append(';');
 
-            StringBuilder tot = new StringBuilder();
+            StringBuilder tot = new();
             tot.Append("SELECT COUNT(i.id) FROM ");
             tot.Append(head);
             if (tail.Length > 0) tot.Append(tail);

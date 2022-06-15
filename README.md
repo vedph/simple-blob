@@ -46,7 +46,7 @@ Projects:
 Quick Docker image build:
 
 ```bash
-docker build . -t vedph2020/simple-blob-api:2.0.1 -t vedph2020/simple-blob-api:latest
+docker build . -t vedph2020/simple-blob-api:2.0.2 -t vedph2020/simple-blob-api:latest
 ```
 
 (replace with the current version).
@@ -512,6 +512,10 @@ Sample:
 ```
 
 ## History
+
+### 2.0.2
+
+- 2022-06-15: updated packages. Ensured DateTime has kind when writing it (see [here](https://stackoverflow.com/questions/69961449/net6-and-datetime-problem-cannot-write-datetime-with-kind-utc-to-postgresql-ty)).
 
 ### 2.0.1
 
