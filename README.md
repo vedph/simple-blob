@@ -513,6 +513,8 @@ Sample:
 
 ## History
 
+- 2022-06-24: updated packages.
+
 ### 2.0.2
 
 - 2022-06-15: updated packages. Ensured DateTime has kind when writing it (see [here](https://stackoverflow.com/questions/69961449/net6-and-datetime-problem-cannot-write-datetime-with-kind-utc-to-postgresql-ty)).
