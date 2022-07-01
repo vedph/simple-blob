@@ -5,6 +5,7 @@ using SimpleBlob.Cli.Services;
 using SimpleBlob.Core;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -39,6 +40,10 @@ namespace SimpleBlob.Cli.Commands
             // items list
             CommandHelper.AddItemListOptions(app);
 
+            CommandOption pageCount = app.Option("--page-c",
+                "The maximum count of pages to retrieve",
+                CommandOptionType.SingleValue);
+
             CommandOption metaExtOption = app.Option("--meta|-e",
                 "The extension appended to the content filename " +
                 "to represent its metadata in a correspondent file",
@@ -58,6 +63,9 @@ namespace SimpleBlob.Cli.Commands
                     Configuration = options.Configuration,
                     Logger = options.Logger,
                     OutputDir = outputDirArgument.Value,
+                    PageCount = pageCount.HasValue()
+                        ? int.Parse(pageCount.Value(), CultureInfo.InvariantCulture)
+                        : 0,
                     MetaExtension = metaExtOption.HasValue()
                         ? metaExtOption.Value() : ".meta",
                     IdDelimiter = idDelimOption.HasValue()
@@ -101,16 +109,20 @@ namespace SimpleBlob.Cli.Commands
             var page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
                 "items?" + CommandHelper.BuildItemListQueryString(_options));
 
-            ColorConsole.WriteInfo("Items to download: " + page.Total);
+            ColorConsole.WriteInfo("Matching items: " + page.Total);
             if (page.Total == 0) return 0;
 
             if (!Directory.Exists(_options.OutputDir))
                 Directory.CreateDirectory(_options.OutputDir);
 
             int itemNr = 0;
+            int pageCount = _options.PageCount > 0
+                ? Math.Min(_options.PageCount, page.PageCount)
+                : page.PageCount;
+
             while (true)
             {
-                ColorConsole.WriteInfo($"Page {_options.PageNumber} of {page.PageCount}");
+                ColorConsole.WriteInfo($"Page {_options.PageNumber} of {pageCount}");
 
                 foreach (BlobItem item in page.Items)
                 {
@@ -140,8 +152,7 @@ namespace SimpleBlob.Cli.Commands
                     output.Flush();
 
                     // load metadata
-                    List<Tuple<string, string>> metadata =
-                        new();
+                    List<Tuple<string, string>> metadata = new();
 
                     var props = await client.GetFromJsonAsync<BlobItemProperty[]>(
                         $"properties/{item.Id}");
@@ -164,7 +175,7 @@ namespace SimpleBlob.Cli.Commands
                 }
 
                 // next page
-                if (++_options.PageNumber > page.PageCount) break;
+                if (++_options.PageNumber > pageCount) break;
                 page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
                     "items?" + CommandHelper.BuildItemListQueryString(_options));
             }
@@ -175,6 +186,7 @@ namespace SimpleBlob.Cli.Commands
 
     public sealed class DownloadCommandOptions : ItemListOptions
     {
+        public int PageCount { get; set; }
         public string OutputDir { get; set; }
         public string MetaExtension { get; set; }
         public string MetaDelimiter { get; set; }

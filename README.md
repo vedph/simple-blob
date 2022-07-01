@@ -301,6 +301,7 @@ where:
 
 - `-n` the page number to start from (1-N). Default=1.
 - `-z` the page size. Default=20.
+- `--page-c` the maximum count of pages to retrieve. Default=0, i.e. get all the pages.
 - `-i` the BLOB ID filter. You can use wildcards `*` and `?`.
 - `-m` the MIME type filter.
 - `-d` the dates range filter: each date has format `YYYY-MM-DD`. You can specify the minimum date only (followed by `:`), the maximum date only (preceded by `:`), or both (min`:`max).
@@ -513,6 +514,7 @@ Sample:
 
 ## History
 
+- 2022-07-01: added page count limit in download command.
 - 2022-06-24: updated packages.
 
 ### 2.0.2
