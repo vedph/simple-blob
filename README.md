@@ -514,6 +514,7 @@ Sample:
 
 ## History
 
+- 2022-12-08: updated to .NET 7.
 - 2022-07-01: added page count limit in download command.
 - 2022-06-24: updated packages.
 
