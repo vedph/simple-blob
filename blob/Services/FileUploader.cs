@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SimpleBlob.Cli.Services;
 
@@ -31,10 +28,7 @@ public static class FileUploader
         if (id == null) throw new ArgumentNullException(nameof(id));
         if (mimeType == null) throw new ArgumentNullException(nameof(mimeType));
 
-        // https://makolyte.com/csharp-how-to-send-a-file-with-httpclient/
-        // TODO: replace obsolete WebRequest with HttpClient request
-        // using a code like the commented one, which results in an empty IFormFile
-        /*
+        // https://makolyte.com/csharp-how-to-send-a-file-with-httpclient/        
         using MultipartFormDataContent mfc = new();
 
         // mimeType
@@ -44,7 +38,7 @@ public static class FileUploader
         // content
         StreamContent content = new(File.OpenRead(path));
         content.Headers.ContentType = new MediaTypeHeaderValue(mimeType);
-        mfc.Add(content, name: id, fileName: Path.GetFileName(path));
+        mfc.Add(content, name: "file", fileName: id);
 
         HttpClient client = new();
         client.DefaultRequestHeaders.Accept.Add(
@@ -55,8 +49,8 @@ public static class FileUploader
         HttpResponseMessage response = await client.PostAsync(uri, mfc);
         response.EnsureSuccessStatusCode();
         return await response.Content.ReadAsStringAsync();
-        */
-
+        
+        /*
         HttpWebRequest request = WebRequest.CreateHttp(uri);
         // boundary will separate each parameter
         string boundary = $"{Guid.NewGuid():N}";
@@ -97,5 +91,6 @@ public static class FileUploader
         if (responseStream == null) return "";
         using var reader = new StreamReader(responseStream);
         return await reader.ReadToEndAsync();
+        */
     }
 }

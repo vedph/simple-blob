@@ -33,7 +33,9 @@ namespace SimpleBlobApi.Controllers
         /// <param name="id">The BLOB item's identifier.</param>
         [Authorize(Roles = "admin,browser,writer")]
         [HttpPost("api/contents/{id}")]
-        public IActionResult UploadContent(IFormFile file,
+        public IActionResult UploadContent(
+            // https://stackoverflow.com/questions/52294830/iformfile-is-always-null-when-receiving-file-from-console-app
+            [FromForm(Name = "file")] IFormFile file,
             [FromForm] string mimeType,
             [FromForm] string id)
         {
