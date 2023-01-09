@@ -1,10 +1,13 @@
 ﻿using Force.Crc32;
+using Fusi.Cli;
+using Fusi.Cli.Commands;
 using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Api.Models;
 using SimpleBlob.Cli.Services;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
@@ -17,7 +20,6 @@ namespace SimpleBlob.Cli.Commands
     {
         private readonly UploadCommandOptions _options;
         private readonly MimeTypeMap _typeMap;
-        private ApiLogin _login;
 
         public UploadCommand(UploadCommandOptions options)
         {
@@ -26,7 +28,7 @@ namespace SimpleBlob.Cli.Commands
         }
 
         public static void Configure(CommandLineApplication app,
-            AppOptions options)
+            ICliAppContext context)
         {
             if (app == null)
                 throw new ArgumentNullException(nameof(app));
@@ -89,10 +91,8 @@ namespace SimpleBlob.Cli.Commands
 
             app.OnExecute(() =>
             {
-                UploadCommandOptions co = new()
+                UploadCommandOptions co = new(context)
                 {
-                    Configuration = options.Configuration,
-                    Logger = options.Logger,
                     InputDir = dirArgument.Value,
                     FileMask = maskArgument.Value,
                     IsRegexMask = regexOption.HasValue(),
@@ -112,13 +112,13 @@ namespace SimpleBlob.Cli.Commands
                 };
                 // credentials
                 CommandHelper.SetCredentialsOptions(app, co);
-                options.Command = new UploadCommand(co);
+                context.Command = new UploadCommand(co);
 
                 return 0;
             });
         }
 
-        private async Task<string> AddItemAsync(string id, HttpClient client)
+        private async Task<string?> AddItemAsync(string id, HttpClient client)
         {
             if (_options.IsDryRun) return null;
 
@@ -129,8 +129,8 @@ namespace SimpleBlob.Cli.Commands
                 : $"Error adding item {id}: {response.ReasonPhrase}";
         }
 
-        private async Task<string> SetItemPropertiesAsync(string id,
-            HttpClient client, IList<Tuple<string, string>> metadata)
+        private async Task<string?> SetItemPropertiesAsync(string id,
+            HttpClient client, IList<Tuple<string, string>>? metadata)
         {
             if (_options.IsDryRun || metadata == null || metadata.Count == 0)
                 return null;
@@ -167,7 +167,7 @@ namespace SimpleBlob.Cli.Commands
             return crc;
         }
 
-        private static async Task<Tuple<bool, string>> AreContentEqualAsync(
+        private static async Task<Tuple<bool, string?>> AreContentEqualAsync(
             string id, HttpClient client, string path)
         {
             HttpResponseMessage r = await client.GetAsync(
@@ -175,29 +175,30 @@ namespace SimpleBlob.Cli.Commands
             if (!r.IsSuccessStatusCode)
             {
                 return Tuple.Create(false,
-                    $"Error getting content metadata for item {id}");
+                    (string?)$"Error getting content metadata for item {id}");
             }
 
             FileInfo info = new(path);
-            BlobItemContentMetaModel meta = await r.Content
-                .ReadFromJsonAsync<BlobItemContentMetaModel>();
+            BlobItemContentMetaModel meta = (await r.Content
+                .ReadFromJsonAsync<BlobItemContentMetaModel>())!;
 
             // size must be equal
             if (info.Length != meta.Size)
-                return Tuple.Create(false, (string)null);
+                return Tuple.Create(false, (string?)null);
 
             // CRC32C must be equal
             long crc = GetCrc(path);
-            return Tuple.Create(crc == meta.Hash, (string)null);
+            return Tuple.Create(crc == meta.Hash, (string?)null);
         }
 
-        private async Task<string> SetItemContentAsync(string id,
-            HttpClient client, string path, string apiRootUri)
+        private async Task<string?> SetItemContentAsync(string id,
+            HttpClient client, string path, string apiRootUri,
+            ApiLogin login)
         {
             if (_options.IsDryRun) return null;
 
             string uri = apiRootUri + $"contents/{id}";
-            string mimeType = _options.MimeType;
+            string? mimeType = _options.MimeType;
             if (string.IsNullOrEmpty(mimeType))
             {
                 mimeType = _typeMap.GetType(Path.GetExtension(path));
@@ -212,13 +213,9 @@ namespace SimpleBlob.Cli.Commands
                 if (t.Item1) return null;
             }
 
-            string response = await FileUploader.UploadFile(uri, path,
-                _login.Token,
-                new Dictionary<string, object>
-                {
-                    { "mimeType", mimeType },
-                    { "id", id }
-                });
+            string? response = await FileUploader.UploadFile(uri, path,
+                login.Token, id, mimeType);
+            Debug.WriteLine(response);
             // TODO response
             return null;
         }
@@ -239,7 +236,7 @@ namespace SimpleBlob.Cli.Commands
             if (!string.IsNullOrEmpty(_options.MetaPrefix))
             {
                 result = Path.Combine(
-                    Path.GetDirectoryName(result),
+                    Path.GetDirectoryName(result) ?? "",
                     Path.GetFileNameWithoutExtension(result) +
                     _options.MetaPrefix +
                     Path.GetExtension(result));
@@ -254,9 +251,9 @@ namespace SimpleBlob.Cli.Commands
         public async Task<int> Run()
         {
             ColorConsole.WriteWrappedHeader("Upload Files");
-            _options.Logger.LogInformation("---UPLOAD---");
+            _options.Logger?.LogInformation("---UPLOAD---");
 
-            string apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
+            string? apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
             if (apiRootUri == null) return 2;
 
             // load types if required
@@ -270,36 +267,38 @@ namespace SimpleBlob.Cli.Commands
             credentials.PromptIfRequired();
 
             // login
-            _login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            ApiLogin? login =
+                await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            if (login == null) return 2;
 
             // setup the metadata services
             CsvMetadataFile metaFile = new()
             {
-                Delimiter = _options.MetaDelimiter
+                Delimiter = _options.MetaDelimiter ?? ""
             };
 
             // setup client
             using HttpClient client = ClientHelper.GetClient(apiRootUri,
-                _login.Token);
+                login.Token);
 
             // process files
             int count = 0;
 
             foreach (string path in FileEnumerator.Enumerate(
-                _options.InputDir, _options.FileMask, _options.IsRegexMask,
-                _options.IsRecursive))
+                _options.InputDir ?? "", _options.FileMask ?? "",
+                _options.IsRegexMask, _options.IsRecursive))
             {
                 // skip metadata files
                 if (Path.GetExtension(path) == _options.MetaExtension) continue;
 
                 count++;
-                _options.Logger.LogInformation($"{count} {path}");
+                _options.Logger?.LogInformation($"{count} {path}");
                 ColorConsole.WriteEmbeddedColorLine($"[green]{count:0000}[/green] {path}");
 
                 // load metadata if any
                 string metaPath = GetMetadataPath(path);
 
-                IList<Tuple<string, string>> metadata = null;
+                IList<Tuple<string, string>>? metadata = null;
                 if (File.Exists(metaPath))
                 {
                     ColorConsole.WriteInfo(metaPath);
@@ -307,14 +306,15 @@ namespace SimpleBlob.Cli.Commands
                 }
                 string id = metadata?.FirstOrDefault(t => t.Item1 == "id")
                     ?.Item2
-                    ?? SanitizePath(Path.GetRelativePath(_options.InputDir, path),
-                        _options.IdDelimiter);
+                    ?? SanitizePath(Path.GetRelativePath(
+                        _options.InputDir ?? "", path),
+                        _options.IdDelimiter ?? "");
 
                 // add/update item
-                string error = await AddItemAsync(id, client);
+                string? error = await AddItemAsync(id, client);
                 if (error != null)
                 {
-                    _options.Logger.LogError(error);
+                    _options.Logger?.LogError(error);
                     ColorConsole.WriteError(error);
                     return 2;
                 }
@@ -323,43 +323,49 @@ namespace SimpleBlob.Cli.Commands
                 error = await SetItemPropertiesAsync(id, client, metadata);
                 if (error != null)
                 {
-                    _options.Logger.LogError(error);
+                    _options.Logger?.LogError(error);
                     ColorConsole.WriteError(error);
                     return 2;
                 }
 
                 // set content
-                error = await SetItemContentAsync(id, client, path, apiRootUri);
+                error = await SetItemContentAsync(
+                    id, client, path, apiRootUri, login);
+
                 if (error != null)
                 {
-                    _options.Logger.LogError(error);
+                    _options.Logger?.LogError(error);
                     ColorConsole.WriteError(error);
                     return 2;
                 }
             }
 
             string info = "Upload complete: " + count;
-            _options.Logger.LogInformation(info);
+            _options.Logger?.LogInformation(info);
             ColorConsole.WriteInfo(info);
 
             return 0;
         }
     }
 
-    public sealed class UploadCommandOptions : CommandOptions
+    public sealed class UploadCommandOptions : AppCommandOptions
     {
-        public string InputDir { get; set; }
-        public string FileMask { get; set; }
-        public string MimeType { get; set; }
-        public string MimeTypeList { get; set; }
+        public string? InputDir { get; set; }
+        public string? FileMask { get; set; }
+        public string? MimeType { get; set; }
+        public string? MimeTypeList { get; set; }
         public bool IsRegexMask { get; set; }
         public bool IsRecursive { get; set; }
-        public string MetaPrefix { get; set; }
-        public string MetaExtension { get; set; }
-        public string MetaSuffix { get; set; }
-        public string MetaDelimiter { get; set; }
-        public string IdDelimiter { get; set; }
+        public string? MetaPrefix { get; set; }
+        public string? MetaExtension { get; set; }
+        public string? MetaSuffix { get; set; }
+        public string? MetaDelimiter { get; set; }
+        public string? IdDelimiter { get; set; }
         public bool IsDryRun { get; set; }
         public bool IsCheckEnabled { get; set; }
+
+        public UploadCommandOptions(ICliAppContext context) : base(context)
+        {
+        }
     }
 }

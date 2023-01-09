@@ -31,6 +31,7 @@ namespace SimpleBlob.Cli.Services
         public ApiLogin(string apiRootUri)
         {
             _apiRoot = apiRootUri ?? throw new ArgumentNullException(nameof(apiRootUri));
+            Token = "";
             if (!_apiRoot.EndsWith("/")) _apiRoot += "/";
         }
 
@@ -45,14 +46,7 @@ namespace SimpleBlob.Cli.Services
             AddAuthHeader(client);
             await client.GetAsync(_apiRoot + "auth/logout");
 
-            //HttpWebRequest request = (HttpWebRequest)WebRequest.Create(
-            //    _apiRoot + "auth/logout");
-            //AddAuthHeader(request);
-            //request.ContentType = "application/json";
-            //request.Method = "GET";
-            //request.GetResponse();
-
-            Token = null;
+            Token = "";
             _expiration = null;
         }
 
@@ -78,30 +72,10 @@ namespace SimpleBlob.Cli.Services
                 }), Encoding.UTF8, "application/json"));
             response.EnsureSuccessStatusCode();
 
-            //HttpWebRequest request = (HttpWebRequest)WebRequest.Create(
-            //    _apiRoot + "auth/login");
-            //request.ContentType = "application/json";
-            //request.Method = "POST";
-
-            //using (StreamWriter writer =
-            //    new StreamWriter(request.GetRequestStream()))
-            //{
-            //    writer.Write("{\"username\":\"" + user + "\"," +
-            //                "\"password\":\"" + password + "\"}");
-            //    writer.Flush();
-            //}
-
-            //HttpWebResponse httpResponse = (HttpWebResponse)request.GetResponse();
-            //string response;
-            //using (StreamReader reader = new StreamReader(
-            //    httpResponse.GetResponseStream()))
-            //{
-            //    response = reader.ReadToEnd();
-            //}
             JsonDocument doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             if (doc.RootElement.TryGetProperty("token", out JsonElement tokenElem))
             {
-                Token = tokenElem.GetString();
+                Token = tokenElem.GetString() ?? "";
                 _expiration = doc.RootElement.GetProperty("expiration").GetDateTime();
                 return true;
             }

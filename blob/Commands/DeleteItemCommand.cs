@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.CommandLineUtils;
+﻿using Fusi.Cli;
+using Fusi.Cli.Commands;
+using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
 using System;
@@ -10,7 +12,6 @@ namespace SimpleBlob.Cli.Commands
     public sealed class DeleteItemCommand : ICommand
     {
         private readonly DeleteItemCommandOptions _options;
-        private ApiLogin _login;
 
         public DeleteItemCommand(DeleteItemCommandOptions options)
         {
@@ -18,7 +19,7 @@ namespace SimpleBlob.Cli.Commands
         }
 
         public static void Configure(CommandLineApplication app,
-            AppOptions options)
+            ICliAppContext context)
         {
             if (app == null) throw new ArgumentNullException(nameof(app));
 
@@ -36,17 +37,15 @@ namespace SimpleBlob.Cli.Commands
 
             app.OnExecute(() =>
             {
-                DeleteItemCommandOptions co = new()
+                DeleteItemCommandOptions co = new(context)
                 {
-                    Configuration = options.Configuration,
-                    Logger = options.Logger,
                     Id = idArgument.Value,
                     IsConfirmed = confirmOption.HasValue()
                 };
                 // credentials
                 CommandHelper.SetCredentialsOptions(app, co);
 
-                options.Command = new DeleteItemCommand(co);
+                context.Command = new DeleteItemCommand(co);
 
                 return 0;
             });
@@ -55,9 +54,9 @@ namespace SimpleBlob.Cli.Commands
         public async Task<int> Run()
         {
             ColorConsole.WriteWrappedHeader("Delete Item");
-            _options.Logger.LogInformation("---DELETE ITEM---");
+            _options.Logger?.LogInformation("---DELETE ITEM---");
 
-            string apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
+            string? apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
             if (apiRootUri == null) return 2;
 
             // prompt for userID/password if required
@@ -67,7 +66,8 @@ namespace SimpleBlob.Cli.Commands
             credentials.PromptIfRequired();
 
             // login
-            _login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            ApiLogin? login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            if (login == null) return 2;
 
             // prompt for confirmation if required
             if (!_options.IsConfirmed &&
@@ -78,7 +78,7 @@ namespace SimpleBlob.Cli.Commands
 
             // setup client
             using HttpClient client = ClientHelper.GetClient(apiRootUri,
-                _login.Token);
+                login.Token);
 
             // delete
             HttpResponseMessage response =
@@ -97,9 +97,13 @@ namespace SimpleBlob.Cli.Commands
         }
     }
 
-    public sealed class DeleteItemCommandOptions : CommandOptions
+    public sealed class DeleteItemCommandOptions : AppCommandOptions
     {
-        public string Id { get; set; }
+        public string? Id { get; set; }
         public bool IsConfirmed { get; set; }
+
+        public DeleteItemCommandOptions(ICliAppContext context) : base(context)
+        {
+        }
     }
 }

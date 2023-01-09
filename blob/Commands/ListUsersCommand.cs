@@ -1,4 +1,6 @@
 ﻿using Fusi.Api.Auth.Controllers;
+using Fusi.Cli;
+using Fusi.Cli.Commands;
 using Fusi.Tools.Data;
 using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
@@ -17,7 +19,6 @@ namespace SimpleBlob.Cli.Commands
     public sealed class ListUsersCommand : ICommand
     {
         private readonly ListUsersCommandOptions _options;
-        private ApiLogin _login;
 
         public ListUsersCommand(ListUsersCommandOptions options)
         {
@@ -25,10 +26,9 @@ namespace SimpleBlob.Cli.Commands
         }
 
         public static void Configure(CommandLineApplication app,
-            AppOptions options)
+            ICliAppContext context)
         {
-            if (app == null)
-                throw new ArgumentNullException(nameof(app));
+            if (app == null) throw new ArgumentNullException(nameof(app));
 
             app.Description = "List the users matching " +
                 "the specified filters.";
@@ -55,10 +55,8 @@ namespace SimpleBlob.Cli.Commands
 
             app.OnExecute(() =>
             {
-                ListUsersCommandOptions co = new()
+                ListUsersCommandOptions co = new(context)
                 {
-                    Configuration = options.Configuration,
-                    Logger = options.Logger,
                     PageNumber = CommandHelper.GetOptionValue(pageNrOption, 1),
                     PageSize = CommandHelper.GetOptionValue(pageSzOption, 20),
                     Name = nameOption.Value(),
@@ -67,7 +65,7 @@ namespace SimpleBlob.Cli.Commands
                 // credentials
                 CommandHelper.SetCredentialsOptions(app, co);
 
-                options.Command = new ListUsersCommand(co);
+                context.Command = new ListUsersCommand(co);
                 return 0;
             });
         }
@@ -107,15 +105,15 @@ namespace SimpleBlob.Cli.Commands
 
             if (!string.IsNullOrEmpty(_options.Name)) query["Name"] = _options.Name;
 
-            return query.ToString();
+            return query.ToString() ?? "";
         }
 
         public async Task<int> Run()
         {
             ColorConsole.WriteWrappedHeader("List Users");
-            _options.Logger.LogInformation("---LIST USERS---");
+            _options.Logger?.LogInformation("---LIST USERS---");
 
-            string apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
+            string? apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
             if (apiRootUri == null) return 2;
 
             // prompt for userID/password if required
@@ -125,37 +123,40 @@ namespace SimpleBlob.Cli.Commands
             credentials.PromptIfRequired();
 
             // login
-            _login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            ApiLogin? login =
+                await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            if (login == null) return 1;
 
             // setup client
             using HttpClient client = ClientHelper.GetClient(apiRootUri,
-                _login.Token);
+                login.Token);
 
             // get page
             var page = await client.GetFromJsonAsync<DataPage<NamedUserModel>>(
                 "users?" + BuildQueryString());
 
             // write page
-            TextWriter writer;
-            if (!string.IsNullOrEmpty(_options.OutputPath))
-            {
-                writer = new StreamWriter(new FileStream(_options.OutputPath,
+            TextWriter writer = !string.IsNullOrEmpty(_options.OutputPath)
+                ? new StreamWriter(new FileStream(_options.OutputPath,
                     FileMode.Create, FileAccess.Write, FileShare.Read),
-                    Encoding.UTF8);
-            }
-            else writer = Console.Out;
-            WritePage(writer, page);
+                    Encoding.UTF8)
+                : Console.Out;
+            WritePage(writer, page!);
             writer.Flush();
 
             return 0;
         }
     }
 
-    public sealed class ListUsersCommandOptions : CommandOptions
+    public sealed class ListUsersCommandOptions : AppCommandOptions
     {
         public int PageNumber { get; set; }
         public int PageSize { get; set; }
-        public string Name { get; set; }
-        public string OutputPath { get; set; }
+        public string? Name { get; set; }
+        public string? OutputPath { get; set; }
+
+        public ListUsersCommandOptions(ICliAppContext context) : base(context)
+        {
+        }
     }
 }

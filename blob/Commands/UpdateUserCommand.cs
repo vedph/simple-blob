@@ -1,4 +1,6 @@
 ﻿using Fusi.Api.Auth.Controllers;
+using Fusi.Cli;
+using Fusi.Cli.Commands;
 using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
@@ -19,7 +21,7 @@ namespace SimpleBlob.Cli.Commands
         }
 
         public static void Configure(CommandLineApplication app,
-            AppOptions options)
+            ICliAppContext context)
         {
             if (app == null)
                 throw new ArgumentNullException(nameof(app));
@@ -45,10 +47,8 @@ namespace SimpleBlob.Cli.Commands
 
             app.OnExecute(() =>
             {
-                UpdateUserCommandOptions co = new()
+                UpdateUserCommandOptions co = new(context)
                 {
-                    Configuration = options.Configuration,
-                    Logger = options.Logger,
                     UserName = nameArgument.Value,
                     UserEmail = emailOption.Value(),
                     EmailConfirmed = emailConfOption.HasValue()? true : null,
@@ -60,7 +60,7 @@ namespace SimpleBlob.Cli.Commands
                 // credentials
                 CommandHelper.SetCredentialsOptions(app, co);
 
-                options.Command = new UpdateUserCommand(co);
+                context.Command = new UpdateUserCommand(co);
                 return 0;
             });
         }
@@ -68,9 +68,9 @@ namespace SimpleBlob.Cli.Commands
         public async Task<int> Run()
         {
             ColorConsole.WriteWrappedHeader("Update User");
-            _options.Logger.LogInformation("---UPDATE USER---");
+            _options.Logger?.LogInformation("---UPDATE USER---");
 
-            string apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
+            string? apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
             if (apiRootUri == null) return 2;
 
             // prompt for userID/password if required
@@ -80,7 +80,8 @@ namespace SimpleBlob.Cli.Commands
             credentials.PromptIfRequired();
 
             // login
-            ApiLogin login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            ApiLogin? login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            if (login == null) return 2;
 
             // setup client
             using HttpClient client = ClientHelper.GetClient(apiRootUri,
@@ -88,8 +89,13 @@ namespace SimpleBlob.Cli.Commands
 
             // get user
             Console.WriteLine($"Getting user {_options.UserName}...");
-            NamedUserModel user = await client.GetFromJsonAsync<NamedUserModel>(
+            NamedUserModel? user = await client.GetFromJsonAsync<NamedUserModel>(
                 "users/" + _options.UserName);
+            if (user == null)
+            {
+                ColorConsole.WriteError("User not found: " + _options.UserName);
+                return 2;
+            }
 
             Console.Write($"Updating user {_options.UserName}... ");
             NamedUserBindingModel newUser = new()
@@ -116,13 +122,17 @@ namespace SimpleBlob.Cli.Commands
         }
     }
 
-    public sealed class UpdateUserCommandOptions : CommandOptions
+    public sealed class UpdateUserCommandOptions : AppCommandOptions
     {
-        public string UserName { get; set; }
-        public string UserEmail { get; set; }
+        public string? UserName { get; set; }
+        public string? UserEmail { get; set; }
         public bool? EmailConfirmed { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
         public bool? LockoutEnabled { get; set; }
+
+        public UpdateUserCommandOptions(ICliAppContext context) : base(context)
+        {
+        }
     }
 }

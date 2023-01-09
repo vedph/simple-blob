@@ -2,7 +2,7 @@
   "profiles": {
     "blob": {
       "commandName": "Project",
-      "commandLineArgs": "upload c:\\users\\dfusi\\desktop\\bdm\\ corfu.xml -m .csv --meta-p _hdr -u zeus -p P4ss-W0rd! -c"
+      "commandLineArgs": "list -u zeus -p P4ss-W0rd!"
     }
   }
 }

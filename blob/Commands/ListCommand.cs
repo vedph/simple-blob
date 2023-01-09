@@ -1,4 +1,6 @@
-﻿using Fusi.Tools.Data;
+﻿using Fusi.Cli;
+using Fusi.Cli.Commands;
+using Fusi.Tools.Data;
 using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
@@ -19,7 +21,6 @@ namespace SimpleBlob.Cli.Commands
     public sealed class ListCommand : ICommand
     {
         private readonly ListCommandOptions _options;
-        private ApiLogin _login;
 
         public ListCommand(ListCommandOptions options)
         {
@@ -27,7 +28,7 @@ namespace SimpleBlob.Cli.Commands
         }
 
         public static void Configure(CommandLineApplication app,
-            AppOptions options)
+            ICliAppContext context)
         {
             if (app == null)
                 throw new ArgumentNullException(nameof(app));
@@ -47,10 +48,8 @@ namespace SimpleBlob.Cli.Commands
 
             app.OnExecute(() =>
             {
-                ListCommandOptions co = new()
+                ListCommandOptions co = new(context)
                 {
-                    Configuration = options.Configuration,
-                    Logger = options.Logger,
                     OutputPath = fileOption.Value()
                 };
                 // credentials
@@ -58,7 +57,7 @@ namespace SimpleBlob.Cli.Commands
                 // items list
                 CommandHelper.SetItemListOptions(app, co);
 
-                options.Command = new ListCommand(co);
+                context.Command = new ListCommand(co);
                 return 0;
             });
         }
@@ -81,9 +80,9 @@ namespace SimpleBlob.Cli.Commands
         public async Task<int> Run()
         {
             ColorConsole.WriteWrappedHeader("List Items");
-            _options.Logger.LogInformation("---LIST ITEMS---");
+            _options.Logger?.LogInformation("---LIST ITEMS---");
 
-            string apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
+            string? apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
             if (apiRootUri == null) return 2;
 
             // prompt for userID/password if required
@@ -93,15 +92,16 @@ namespace SimpleBlob.Cli.Commands
             credentials.PromptIfRequired();
 
             // login
-            _login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            ApiLogin? login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            if (login == null) return 2;
 
             // setup client
             using HttpClient client = ClientHelper.GetClient(apiRootUri,
-                _login.Token);
+                login.Token);
 
             // get page
             var page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
-                "items?" + CommandHelper.BuildItemListQueryString(_options));
+                "items?" + CommandHelper.BuildItemListQueryString(_options))!;
 
             // write page
             TextWriter writer;
@@ -112,7 +112,7 @@ namespace SimpleBlob.Cli.Commands
                     Encoding.UTF8);
             }
             else writer = Console.Out;
-            WritePage(writer, page);
+            WritePage(writer, page!);
             writer.Flush();
 
             return 0;
@@ -121,6 +121,10 @@ namespace SimpleBlob.Cli.Commands
 
     public sealed class ListCommandOptions : ItemListOptions
     {
-        public string OutputPath { get; set; }
+        public string? OutputPath { get; set; }
+
+        public ListCommandOptions(ICliAppContext context) : base(context)
+        {
+        }
     }
 }

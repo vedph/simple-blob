@@ -1,7 +1,10 @@
-﻿using Microsoft.Extensions.CommandLineUtils;
+﻿using Fusi.Cli;
+using Fusi.Cli.Commands;
+using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
 using System;
+using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
@@ -18,7 +21,7 @@ namespace SimpleBlob.Cli.Commands
         }
 
         public static void Configure(CommandLineApplication app,
-            AppOptions options)
+            ICliAppContext context)
         {
             if (app == null)
                 throw new ArgumentNullException(nameof(app));
@@ -35,17 +38,15 @@ namespace SimpleBlob.Cli.Commands
 
             app.OnExecute(() =>
             {
-                UserRolesCommandOptions co = new()
+                UserRolesCommandOptions co = new(context)
                 {
-                    Configuration = options.Configuration,
-                    Logger = options.Logger,
                     UserName = nameArgument.Value,
                     Roles = roleOption.Values.ToArray()
                 };
                 // credentials
                 CommandHelper.SetCredentialsOptions(app, co);
 
-                options.Command = new AddUserRolesCommand(co);
+                context.Command = new AddUserRolesCommand(co);
                 return 0;
             });
         }
@@ -53,9 +54,9 @@ namespace SimpleBlob.Cli.Commands
         public async Task<int> Run()
         {
             ColorConsole.WriteWrappedHeader("Add User Roles");
-            _options.Logger.LogInformation("---ADD USER ROLES---");
+            _options.Logger?.LogInformation("---ADD USER ROLES---");
 
-            string apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
+            string? apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
             if (apiRootUri == null) return 2;
 
             // prompt for userID/password if required
@@ -65,7 +66,9 @@ namespace SimpleBlob.Cli.Commands
             credentials.PromptIfRequired();
 
             // login
-            ApiLogin login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            ApiLogin? login =
+                await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            if (login == null) return 2;
 
             // setup client
             using HttpClient client = ClientHelper.GetClient(apiRootUri,
@@ -83,13 +86,18 @@ namespace SimpleBlob.Cli.Commands
                 return 2;
             }
             Console.WriteLine("done");
+
             return 0;
         }
     }
 
-    public sealed class UserRolesCommandOptions : CommandOptions
+    public sealed class UserRolesCommandOptions : AppCommandOptions
     {
-        public string UserName { get; set; }
-        public string[] Roles { get; set; }
+        public string? UserName { get; set; }
+        public IList<string>? Roles { get; set; }
+
+        public UserRolesCommandOptions(ICliAppContext context) : base(context)
+        {
+        }
     }
 }

@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.CommandLineUtils;
+﻿using Fusi.Cli;
+using Fusi.Cli.Commands;
+using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Api.Models;
 using SimpleBlob.Cli.Services;
@@ -15,7 +17,6 @@ namespace SimpleBlob.Cli.Commands
     public sealed class GetInfoCommand : ICommand
     {
         private readonly GetInfoCommandOptions _options;
-        private ApiLogin _login;
 
         public GetInfoCommand(GetInfoCommandOptions options)
         {
@@ -23,7 +24,7 @@ namespace SimpleBlob.Cli.Commands
         }
 
         public static void Configure(CommandLineApplication app,
-            AppOptions options)
+            ICliAppContext context)
         {
             if (app == null) throw new ArgumentNullException(nameof(app));
 
@@ -41,30 +42,28 @@ namespace SimpleBlob.Cli.Commands
 
             app.OnExecute(() =>
             {
-                GetInfoCommandOptions co = new()
+                GetInfoCommandOptions co = new(context)
                 {
-                    Configuration = options.Configuration,
-                    Logger = options.Logger,
                     Id = idArgument.Value,
                     OutputPath = fileOption.Value()
                 };
                 // credentials
                 CommandHelper.SetCredentialsOptions(app, co);
 
-                options.Command = new GetInfoCommand(co);
+                context.Command = new GetInfoCommand(co);
 
                 return 0;
             });
         }
 
         private static void WriteItemInfo(BlobItem item,
-            BlobItemProperty[] properties,
-            BlobItemContentMetaModel contentMeta,
+            BlobItemProperty[]? properties,
+            BlobItemContentMetaModel? contentMeta,
             TextWriter writer)
         {
             writer.WriteLine(item.ToString());
 
-            if (properties.Length > 0)
+            if (properties?.Length > 0)
             {
                 writer.WriteLine("  - properties:");
                 int n = 0;
@@ -86,9 +85,9 @@ namespace SimpleBlob.Cli.Commands
         public async Task<int> Run()
         {
             ColorConsole.WriteWrappedHeader("Get Item Info");
-            _options.Logger.LogInformation("---GET ITEM INFO---");
+            _options.Logger?.LogInformation("---GET ITEM INFO---");
 
-            string apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
+            string? apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
             if (apiRootUri == null) return 2;
 
             // prompt for userID/password if required
@@ -98,23 +97,30 @@ namespace SimpleBlob.Cli.Commands
             credentials.PromptIfRequired();
 
             // login
-            _login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            ApiLogin? login =
+                await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            if (login == null) return 2;
 
             // setup client
             using HttpClient client = ClientHelper.GetClient(apiRootUri,
-                _login.Token);
+                login.Token);
 
             // load item
-            BlobItem item = await client.GetFromJsonAsync<BlobItem>(
+            BlobItem? item = await client.GetFromJsonAsync<BlobItem>(
                 $"items/{_options.Id}");
+            if (item == null)
+            {
+                ColorConsole.WriteError("Item not found: " + _options.Id);
+                return 2;
+            }
 
             // load its properties
-            BlobItemProperty[] props =
+            BlobItemProperty[]? props =
                 await client.GetFromJsonAsync<BlobItemProperty[]>
                 ($"properties/{item.Id}");
 
             // load its content metadata
-            BlobItemContentMetaModel contentMeta =
+            BlobItemContentMetaModel? contentMeta =
                 await client.GetFromJsonAsync<BlobItemContentMetaModel>(
                     $"contents/{item.Id}/meta");
 
@@ -134,9 +140,13 @@ namespace SimpleBlob.Cli.Commands
         }
     }
 
-    public sealed class GetInfoCommandOptions : CommandOptions
+    public sealed class GetInfoCommandOptions : AppCommandOptions
     {
-        public string Id { get; set; }
-        public string OutputPath { get; set; }
+        public string? Id { get; set; }
+        public string? OutputPath { get; set; }
+
+        public GetInfoCommandOptions(ICliAppContext context) : base(context)
+        {
+        }
     }
 }
