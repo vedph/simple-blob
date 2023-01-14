@@ -1,76 +1,30 @@
 ﻿using Fusi.Api.Auth.Controllers;
-using Fusi.Cli;
-using Fusi.Cli.Commands;
-using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
-using System;
+using Spectre.Console;
+using Spectre.Console.Cli;
+using System.ComponentModel;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 
 namespace SimpleBlob.Cli.Commands;
 
-internal sealed class AddUserCommand : ICommand
+internal sealed class AddUserCommand : AsyncCommand<AddUserCommandSettings>
 {
-    private readonly AddUserCommandOptions _options;
-
-    private AddUserCommand(AddUserCommandOptions options)
+    public override async Task<int> ExecuteAsync(CommandContext context,
+        AddUserCommandSettings settings)
     {
-        _options = options;
-    }
+        AnsiConsole.MarkupLine("[yellow underline]ADD USER[/]");
+        CliAppContext.Logger?.LogInformation("---ADD USER---");
 
-    public static void Configure(CommandLineApplication app,
-        ICliAppContext context)
-    {
-        if (app == null)
-            throw new ArgumentNullException(nameof(app));
-
-        app.Description = "Add a new user.";
-        app.HelpOption("-?|-h|--help");
-
-        CommandArgument nameArgument = app.Argument("[name]", "The user name");
-        CommandArgument pwdArgument = app.Argument("[password]",
-            "The user password");
-        CommandArgument emailArgument = app.Argument("[email]", "The user email");
-        CommandOption firstOption = app.Option("--first|-f",
-            "The user first name", CommandOptionType.SingleValue);
-        CommandOption lastOption = app.Option("--last|-l",
-            "The user last name", CommandOptionType.SingleValue);
-
-        // credentials
-        CommandHelper.AddCredentialsOptions(app);
-
-        app.OnExecute(() =>
-        {
-            AddUserCommandOptions co = new(context)
-            {
-                UserName = nameArgument.Value,
-                UserPassword = pwdArgument.Value,
-                UserEmail = emailArgument.Value,
-                FirstName = firstOption.Value() ?? "",
-                LastName = lastOption.Value() ?? ""
-            };
-            // credentials
-            CommandHelper.SetCredentialsOptions(app, co);
-
-            context.Command = new AddUserCommand(co);
-            return 0;
-        });
-    }
-
-    public async Task<int> Run()
-    {
-        ColorConsole.WriteWrappedHeader("Add User");
-        _options.Logger?.LogInformation("---ADD USER---");
-
-        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
+        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify();
         if (apiRootUri == null) return 2;
 
         // prompt for userID/password if required
         LoginCredentials credentials = new(
-            _options.UserId,
-            _options.Password);
+            settings.User,
+            settings.Password);
         credentials.PromptIfRequired();
 
         // login
@@ -82,38 +36,54 @@ internal sealed class AddUserCommand : ICommand
         using HttpClient client = ClientHelper.GetClient(apiRootUri,
             login.Token);
 
-        Console.Write($"Adding user {_options.UserName}... ");
-        HttpResponseMessage response = await client.PostAsJsonAsync(
-            "accounts/register?confirmed=true", new NamedRegisterBindingModel
-            {
-                Name = _options.UserName,
-                Password = _options.UserPassword,
-                Email = _options.UserEmail,
-                FirstName = _options.FirstName,
-                LastName = _options.LastName
-            });
-
-        if (!response.IsSuccessStatusCode)
+        await AnsiConsole.Status().Start("Adding user...", async ctx =>
         {
-            string error = $"Error adding user {_options.UserName}";
-            _options.Logger?.LogError(error);
-            ColorConsole.WriteError(error);
-        }
-        Console.WriteLine("done");
+            ctx.Status(settings.UserName!);
+            ctx.Spinner(Spinner.Known.Star);
+            HttpResponseMessage response = await client.PostAsJsonAsync(
+                "accounts/register?confirmed=true", new NamedRegisterBindingModel
+            {
+                Name = settings.UserName,
+                Password = settings.UserPassword,
+                Email = settings.UserEmail,
+                FirstName = settings.FirstName,
+                LastName = settings.LastName
+            });
+            response.EnsureSuccessStatusCode();
+        });
+
+        AnsiConsole.MarkupLine($"[green] Added user {settings.UserName}.[/]");
 
         return 0;
     }
 }
 
-public sealed class AddUserCommandOptions : AppCommandOptions
+internal sealed class AddUserCommandSettings : AuthCommandSettings
 {
+    [CommandArgument(0, "<USER_NAME>")]
+    [Description("The user name")]
     public string? UserName { get; set; }
-    public string? UserPassword { get; set; }
-    public string? UserEmail { get; set; }
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
 
-    public AddUserCommandOptions(ICliAppContext context) : base(context)
+    [CommandArgument(1, "<USER_PWD>")]
+    [Description("The user password")]
+    public string? UserPassword { get; set; }
+
+    [CommandArgument(2, "<USER_EMAIL>")]
+    [Description("The user email address")]
+    public string? UserEmail { get; set; }
+
+    [CommandOption("-f|--first <NAME>")]
+    [Description("The user first name")]
+    [DefaultValue("")]
+    public string FirstName { get; set; }
+
+    [CommandOption("-l|--last <NAME>")]
+    [Description("The user last name")]
+    [DefaultValue("")]
+    public string LastName { get; set; }
+
+    public AddUserCommandSettings()
     {
+        FirstName = LastName = "";
     }
 }

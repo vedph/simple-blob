@@ -1,162 +1,161 @@
 ﻿using Fusi.Api.Auth.Controllers;
-using Fusi.Cli;
-using Fusi.Cli.Commands;
 using Fusi.Tools.Data;
-using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
+using Spectre.Console;
+using Spectre.Console.Cli;
 using System;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 
-namespace SimpleBlob.Cli.Commands
+namespace SimpleBlob.Cli.Commands;
+
+internal sealed class ListUsersCommand : AsyncCommand<ListUsersCommandSettings>
 {
-    public sealed class ListUsersCommand : ICommand
+    private static void WriteRichPage(DataPage<NamedUserModel> page)
     {
-        private readonly ListUsersCommandOptions _options;
+        Table table = new();
 
-        public ListUsersCommand(ListUsersCommandOptions options)
+        table.AddColumns("name", "email", "conf.", "roles", "first", "last", "lock");
+        foreach (NamedUserModel user in page.Items)
         {
-            _options = options;
+            table.AddRow(user.UserName ?? "",
+                user.Email ?? "",
+                user.EmailConfirmed? "1":"0",
+                user.Roles?.Count > 0 ? string.Join(" ", user.Roles) : "",
+                user.FirstName ?? "",
+                user.LastName ?? "",
+                user.LockoutEnabled ? "1" : "0");
         }
 
-        public static void Configure(CommandLineApplication app,
-            ICliAppContext context)
+        AnsiConsole.Write(table);
+    }
+
+    private static void WritePlainPage(DataPage<NamedUserModel> page,
+        TextWriter writer)
+    {
+        writer.WriteLine($"--- {page.PageNumber}/{page.PageCount}");
+
+        int n = (page.PageNumber - 1) * page.PageSize;
+        foreach (var item in page.Items)
         {
-            if (app == null) throw new ArgumentNullException(nameof(app));
-
-            app.Description = "List the users matching " +
-                "the specified filters.";
-            app.HelpOption("-?|-h|--help");
-
-            // credentials
-            CommandHelper.AddCredentialsOptions(app);
-
-            CommandOption pageNrOption = app.Option("--page-nr|-n",
-                "The page number (1-N)",
-                CommandOptionType.SingleValue);
-
-            CommandOption pageSzOption = app.Option("--page-sz|-z",
-                "The page size",
-                CommandOptionType.SingleValue);
-
-            CommandOption nameOption = app.Option("--name|-m",
-                "A portion of the user name or ID",
-                CommandOptionType.SingleValue);
-
-            CommandOption fileOption = app.Option("--file|-f",
-                "The path to the output file (if not set, the output will be displayed)",
-                CommandOptionType.SingleValue);
-
-            app.OnExecute(() =>
+            writer.WriteLine($"[{++n}]");
+            writer.WriteLine($"  - User name: {item.UserName}");
+            writer.WriteLine($"  - Email: {item.Email}");
+            writer.WriteLine($"  - Conf.email: {item.EmailConfirmed}");
+            if (item.Roles?.Count > 0)
             {
-                ListUsersCommandOptions co = new(context)
-                {
-                    PageNumber = CommandHelper.GetOptionValue(pageNrOption, 1),
-                    PageSize = CommandHelper.GetOptionValue(pageSzOption, 20),
-                    Name = nameOption.Value(),
-                    OutputPath = fileOption.Value()
-                };
-                // credentials
-                CommandHelper.SetCredentialsOptions(app, co);
-
-                context.Command = new ListUsersCommand(co);
-                return 0;
-            });
-        }
-
-        private static void WritePage(TextWriter writer, DataPage<NamedUserModel> page)
-        {
-            writer.WriteLine($"--- {page.PageNumber}/{page.PageCount}");
-
-            int n = (page.PageNumber - 1) * page.PageSize;
-            foreach (var item in page.Items)
-            {
-                writer.WriteLine($"[{++n}]");
-                writer.WriteLine($"  - User name: {item.UserName}");
-                writer.WriteLine($"  - Email: {item.Email}");
-                writer.WriteLine($"  - Conf.email: {item.EmailConfirmed}");
-                if (item.Roles?.Count > 0)
-                {
-                    writer.WriteLine("  - Roles: " + string.Join(
-                        ", ", item.Roles));
-                }
-                writer.WriteLine($"  - First name: {item.FirstName}");
-                writer.WriteLine($"  - Last name: {item.LastName}");
-                writer.WriteLine($"  - Lock enabled: {item.LockoutEnabled}");
-                if (item.LockoutEnd != null)
-                    writer.WriteLine($"  - Lock end: {item.LockoutEnd}");
-
-                writer.WriteLine();
+                writer.WriteLine("  - Roles: " + string.Join(
+                    ", ", item.Roles));
             }
-        }
+            writer.WriteLine($"  - First name: {item.FirstName}");
+            writer.WriteLine($"  - Last name: {item.LastName}");
+            writer.WriteLine($"  - Lock enabled: {item.LockoutEnabled}");
+            if (item.LockoutEnd != null)
+                writer.WriteLine($"  - Lock end: {item.LockoutEnd}");
 
-        private string BuildQueryString()
-        {
-            // https://stackoverflow.com/questions/17096201/build-query-string-for-system-net-httpclient-get
-            NameValueCollection query = HttpUtility.ParseQueryString("");
-            query["PageNumber"] = _options.PageNumber.ToString();
-            query["PageSize"] = _options.PageSize.ToString();
-
-            if (!string.IsNullOrEmpty(_options.Name)) query["Name"] = _options.Name;
-
-            return query.ToString() ?? "";
-        }
-
-        public async Task<int> Run()
-        {
-            ColorConsole.WriteWrappedHeader("List Users");
-            _options.Logger?.LogInformation("---LIST USERS---");
-
-            string? apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
-            if (apiRootUri == null) return 2;
-
-            // prompt for userID/password if required
-            LoginCredentials credentials = new(
-                _options.UserId,
-                _options.Password);
-            credentials.PromptIfRequired();
-
-            // login
-            ApiLogin? login =
-                await CommandHelper.LoginAndNotify(apiRootUri, credentials);
-            if (login == null) return 1;
-
-            // setup client
-            using HttpClient client = ClientHelper.GetClient(apiRootUri,
-                login.Token);
-
-            // get page
-            var page = await client.GetFromJsonAsync<DataPage<NamedUserModel>>(
-                "users?" + BuildQueryString());
-
-            // write page
-            TextWriter writer = !string.IsNullOrEmpty(_options.OutputPath)
-                ? new StreamWriter(new FileStream(_options.OutputPath,
-                    FileMode.Create, FileAccess.Write, FileShare.Read),
-                    Encoding.UTF8)
-                : Console.Out;
-            WritePage(writer, page!);
-            writer.Flush();
-
-            return 0;
+            writer.WriteLine();
         }
     }
 
-    public sealed class ListUsersCommandOptions : AppCommandOptions
+    private static string BuildQueryString(ListUsersCommandSettings settings)
     {
-        public int PageNumber { get; set; }
-        public int PageSize { get; set; }
-        public string? Name { get; set; }
-        public string? OutputPath { get; set; }
+        // https://stackoverflow.com/questions/17096201/build-query-string-for-system-net-httpclient-get
+        NameValueCollection query = HttpUtility.ParseQueryString("");
+        query["PageNumber"] = settings.PageNumber.ToString();
+        query["PageSize"] = settings.PageSize.ToString();
 
-        public ListUsersCommandOptions(ICliAppContext context) : base(context)
+        if (!string.IsNullOrEmpty(settings.Name)) query["Name"] = settings.Name;
+
+        return query.ToString() ?? "";
+    }
+
+    public override async Task<int> ExecuteAsync(CommandContext context,
+        ListUsersCommandSettings settings)
+    {
+        AnsiConsole.MarkupLine("[green underline]LIST USERS[/]");
+        CliAppContext.Logger?.LogInformation("---LIST USERS---");
+
+        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify();
+        if (apiRootUri == null) return 2;
+
+        // prompt for userID/password if required
+        LoginCredentials credentials = new(
+            settings.User,
+            settings.Password);
+        credentials.PromptIfRequired();
+
+        // login
+        ApiLogin? login =
+            await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+        if (login == null) return 1;
+
+        // setup client
+        using HttpClient client = ClientHelper.GetClient(apiRootUri,
+            login.Token);
+
+        // get page
+        DataPage<NamedUserModel>? page = null;
+        await AnsiConsole.Status().Start("Fetching users...", async ctx =>
         {
+            ctx.Spinner(Spinner.Known.Star);
+
+            page = (await client.GetFromJsonAsync<DataPage<NamedUserModel>>(
+                $"users?{BuildQueryString(settings)}"));
+        });
+
+        // write page
+        if (page != null)
+        {
+            if (!string.IsNullOrEmpty(settings.OutputPath))
+            {
+                TextWriter writer = new StreamWriter(
+                    new FileStream(settings.OutputPath,
+                        FileMode.Create, FileAccess.Write, FileShare.Read),
+                        Encoding.UTF8);
+                WritePlainPage(page!, writer);
+                writer.Flush();
+            }
+            else
+            {
+                WriteRichPage(page!);
+            }
         }
+
+        return 0;
+    }
+}
+
+internal sealed class ListUsersCommandSettings : AuthCommandSettings
+{
+    [CommandOption("-n|--pagenr <NUMBER>")]
+    [Description("The page number")]
+    [DefaultValue(1)]
+    public int PageNumber { get; set; }
+
+    [CommandOption("-z|--pagesz <SIZE>")]
+    [Description("The page size (1-N)")]
+    [DefaultValue(20)]
+    public int PageSize { get; set; }
+
+    [CommandOption("-m|--name <NAME>")]
+    [Description("Any portion of the user name or ID to match")]
+    public string? Name { get; set; }
+
+    [CommandOption("-f|--file <FILE_PATH>")]
+    [Description("The path to the output file (if not set, the output will be displayed)")]
+    public string? OutputPath { get; set; }
+
+    public ListUsersCommandSettings()
+    {
+        PageNumber = 1;
+        PageSize = 20;
     }
 }

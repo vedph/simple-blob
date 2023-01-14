@@ -1,5 +1,4 @@
-﻿using Fusi.Cli;
-using System;
+﻿using Spectre.Console;
 
 namespace SimpleBlob.Cli.Services;
 
@@ -18,23 +17,15 @@ public class LoginCredentials
         Password = password;
     }
 
-    private static string PromptRequired(string message)
-    {
-        ColorConsole.Write(message, ConsoleColor.Yellow);
-        string? s;
-        do
-        {
-            s = Console.ReadLine();
-        } while (string.IsNullOrEmpty(s));
-        return s;
-    }
-
     public void PromptIfRequired()
     {
         if (string.IsNullOrEmpty(UserName))
-            UserName = PromptRequired("Username: ");
+            UserName = AnsiConsole.Ask<string>("User name");
 
         if (string.IsNullOrEmpty(Password))
-            Password = PromptRequired("Password: ");
+        {
+            Password = AnsiConsole.Prompt(new TextPrompt<string>(
+                "Enter [green]password[/]?").Secret());
+        }
     }
 }

@@ -1,103 +1,72 @@
-﻿using Fusi.Cli;
-using Fusi.Cli.Commands;
-using Microsoft.Extensions.CommandLineUtils;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
+using Spectre.Console;
+using Spectre.Console.Cli;
 using System;
-using System.Collections.Generic;
+using System.ComponentModel;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 
-namespace SimpleBlob.Cli.Commands
+namespace SimpleBlob.Cli.Commands;
+
+internal sealed class AddUserRolesCommand : AsyncCommand<UserRolesCommandSettings>
 {
-    public sealed class AddUserRolesCommand : ICommand
+    public override async Task<int> ExecuteAsync(CommandContext context,
+        UserRolesCommandSettings settings)
     {
-        private readonly UserRolesCommandOptions _options;
+        if (settings.Roles.Length == 0) return 0;
 
-        public AddUserRolesCommand(UserRolesCommandOptions options)
+        AnsiConsole.MarkupLine("[yellow underline]ADD USER ROLES[/]");
+        CliAppContext.Logger?.LogInformation("---ADD USER ROLES---");
+
+        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify();
+        if (apiRootUri == null) return 2;
+
+        // prompt for userID/password if required
+        LoginCredentials credentials = new(
+            settings.User,
+            settings.Password);
+        credentials.PromptIfRequired();
+
+        // login
+        ApiLogin? login =
+            await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+        if (login == null) return 2;
+
+        // setup client
+        using HttpClient client = ClientHelper.GetClient(apiRootUri,
+            login.Token);
+
+        await AnsiConsole.Status().Start("Adding roles...", async ctx =>
         {
-            _options = options;
-        }
+            ctx.Status(settings.UserName!);
+            ctx.Spinner(Spinner.Known.Star);
 
-        public static void Configure(CommandLineApplication app,
-            ICliAppContext context)
-        {
-            if (app == null)
-                throw new ArgumentNullException(nameof(app));
-
-            app.Description = "Add the specified roles to a user.";
-            app.HelpOption("-?|-h|--help");
-
-            CommandArgument nameArgument = app.Argument("[name]", "The user name");
-            CommandOption roleOption = app.Option("--role|-r",
-                "The role (repeatable)", CommandOptionType.MultipleValue);
-
-            // credentials
-            CommandHelper.AddCredentialsOptions(app);
-
-            app.OnExecute(() =>
-            {
-                UserRolesCommandOptions co = new(context)
-                {
-                    UserName = nameArgument.Value,
-                    Roles = roleOption.Values.ToArray()
-                };
-                // credentials
-                CommandHelper.SetCredentialsOptions(app, co);
-
-                context.Command = new AddUserRolesCommand(co);
-                return 0;
-            });
-        }
-
-        public async Task<int> Run()
-        {
-            ColorConsole.WriteWrappedHeader("Add User Roles");
-            _options.Logger?.LogInformation("---ADD USER ROLES---");
-
-            string? apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
-            if (apiRootUri == null) return 2;
-
-            // prompt for userID/password if required
-            LoginCredentials credentials = new(
-                _options.UserId,
-                _options.Password);
-            credentials.PromptIfRequired();
-
-            // login
-            ApiLogin? login =
-                await CommandHelper.LoginAndNotify(apiRootUri, credentials);
-            if (login == null) return 2;
-
-            // setup client
-            using HttpClient client = ClientHelper.GetClient(apiRootUri,
-                login.Token);
-
-            Console.Write($"Adding roles to user {_options.UserName}... ");
             HttpResponseMessage response = await client.PostAsJsonAsync(
-                $"users/{_options.UserName}/roles", _options.Roles);
+                $"users/{settings.UserName}/roles", settings.Roles);
+            response.EnsureSuccessStatusCode();
+        });
 
-            if (!response.IsSuccessStatusCode)
-            {
-                string error = $"Error adding roles to user {_options.UserName}";
-                _options.Logger?.LogError(error);
-                ColorConsole.WriteError(error);
-                return 2;
-            }
-            Console.WriteLine("done");
+        AnsiConsole.MarkupLine($"[green] Added {settings.Roles.Length} role(s) " +
+            $"to user {settings.UserName}[/]");
 
-            return 0;
-        }
+        return 0;
     }
+}
 
-    public sealed class UserRolesCommandOptions : AppCommandOptions
+internal sealed class UserRolesCommandSettings : AuthCommandSettings
+{
+    [CommandArgument(0, "<USER_NAME>")]
+    [Description("The name of the user to add roles to")]
+    public string? UserName { get; set; }
+
+    [CommandArgument(1, "<USER_ROLE>")]
+    [Description("The user role(s) (repeatable)")]
+    public string[] Roles { get; set; }
+
+    public UserRolesCommandSettings()
     {
-        public string? UserName { get; set; }
-        public IList<string>? Roles { get; set; }
-
-        public UserRolesCommandOptions(ICliAppContext context) : base(context)
-        {
-        }
+        Roles = Array.Empty<string>();
     }
 }

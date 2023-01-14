@@ -1,130 +1,107 @@
-﻿using Fusi.Cli;
-using Fusi.Cli.Commands;
-using Fusi.Tools.Data;
-using Microsoft.Extensions.CommandLineUtils;
+﻿using Fusi.Tools.Data;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
 using SimpleBlob.Core;
-using System;
+using Spectre.Console;
+using Spectre.Console.Cli;
+using System.ComponentModel;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SimpleBlob.Cli.Commands
+namespace SimpleBlob.Cli.Commands;
+
+internal sealed class ListCommand : AsyncCommand<ListCommandSettings>
 {
-    /// <summary>
-    /// List BLOB items.
-    /// </summary>
-    /// <seealso cref="ICommand" />
-    public sealed class ListCommand : ICommand
+    private static void WriteRichPage(DataPage<BlobItem> page)
     {
-        private readonly ListCommandOptions _options;
+        Table table = new();
+        table.AddColumns("ID", "user", "modified");
 
-        public ListCommand(ListCommandOptions options)
+        foreach (BlobItem item in page.Items)
         {
-            _options = options;
+            table.AddRow(new Markup($"[cyan]{item.Id}[/]"),
+                new Markup(item.UserId),
+                new Markup(item.DateModified.ToString("yyyy-MM-dd HH:mm:ss")));
         }
 
-        public static void Configure(CommandLineApplication app,
-            ICliAppContext context)
+        AnsiConsole.Write(table);
+    }
+
+    private static void WritePlainPage(DataPage<BlobItem> page, TextWriter writer)
+    {
+        writer.WriteLine($"--- {page.PageNumber}/{page.PageCount}");
+
+        int n = (page.PageNumber - 1) * page.PageSize;
+        foreach (BlobItem item in page.Items)
         {
-            if (app == null)
-                throw new ArgumentNullException(nameof(app));
-
-            app.Description = "List the BLOB items matching " +
-                "the specified filters.";
-            app.HelpOption("-?|-h|--help");
-
-            // credentials
-            CommandHelper.AddCredentialsOptions(app);
-            // items list
-            CommandHelper.AddItemListOptions(app);
-
-            CommandOption fileOption = app.Option("--file|-f",
-                "The path to the output file (if not set, the output will be displayed)",
-                CommandOptionType.SingleValue);
-
-            app.OnExecute(() =>
-            {
-                ListCommandOptions co = new(context)
-                {
-                    OutputPath = fileOption.Value()
-                };
-                // credentials
-                CommandHelper.SetCredentialsOptions(app, co);
-                // items list
-                CommandHelper.SetItemListOptions(app, co);
-
-                context.Command = new ListCommand(co);
-                return 0;
-            });
+            writer.WriteLine($"[{++n}]");
+            writer.WriteLine($"  - ID: {item.Id}");
+            writer.WriteLine($"  - User ID: {item.UserId}");
+            writer.WriteLine($"  - Modified: {item.DateModified}");
+            writer.WriteLine();
         }
+    }
 
-        private static void WritePage(TextWriter writer, DataPage<BlobItem> page)
+    public override async Task<int> ExecuteAsync(CommandContext context,
+        ListCommandSettings settings)
+    {
+        AnsiConsole.MarkupLine("[green underline]LIST ITEMS[/]");
+        CliAppContext.Logger?.LogInformation("---LIST ITEMS---");
+
+        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify();
+        if (apiRootUri == null) return 2;
+
+        // prompt for userID/password if required
+        LoginCredentials credentials = new(
+            settings.User,
+            settings.Password);
+        credentials.PromptIfRequired();
+
+        // login
+        ApiLogin? login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+        if (login == null) return 2;
+
+        // setup client
+        using HttpClient client = ClientHelper.GetClient(apiRootUri,
+            login.Token);
+
+        // get page
+        DataPage<BlobItem>? page = null;
+        await AnsiConsole.Status().Start("Fetching data...", async ctx =>
         {
-            writer.WriteLine($"--- {page.PageNumber}/{page.PageCount}");
+            ctx.Spinner(Spinner.Known.Star);
 
-            int n = (page.PageNumber - 1) * page.PageSize;
-            foreach (BlobItem item in page.Items)
-            {
-                writer.WriteLine($"[{++n}]");
-                writer.WriteLine($"  - ID: {item.Id}");
-                writer.WriteLine($"  - User ID: {item.UserId}");
-                writer.WriteLine($"  - Modified: {item.DateModified}");
-                writer.WriteLine();
-            }
+            page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
+                "items?" + CommandHelper.BuildItemListQueryString(settings))!;
+        });
+
+        // write page
+        TextWriter writer;
+        if (string.IsNullOrEmpty(settings.OutputPath))
+        {
+            // console
+            WriteRichPage(page!);
         }
-
-        public async Task<int> Run()
+        else
         {
-            ColorConsole.WriteWrappedHeader("List Items");
-            _options.Logger?.LogInformation("---LIST ITEMS---");
-
-            string? apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
-            if (apiRootUri == null) return 2;
-
-            // prompt for userID/password if required
-            LoginCredentials credentials = new(
-                _options.UserId,
-                _options.Password);
-            credentials.PromptIfRequired();
-
-            // login
-            ApiLogin? login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
-            if (login == null) return 2;
-
-            // setup client
-            using HttpClient client = ClientHelper.GetClient(apiRootUri,
-                login.Token);
-
-            // get page
-            var page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
-                "items?" + CommandHelper.BuildItemListQueryString(_options))!;
-
-            // write page
-            TextWriter writer;
-            if (!string.IsNullOrEmpty(_options.OutputPath))
-            {
-                writer = new StreamWriter(new FileStream(_options.OutputPath,
-                    FileMode.Create, FileAccess.Write, FileShare.Read),
-                    Encoding.UTF8);
-            }
-            else writer = Console.Out;
-            WritePage(writer, page!);
+            // file
+            writer = new StreamWriter(new FileStream(settings.OutputPath,
+                FileMode.Create, FileAccess.Write, FileShare.Read),
+                Encoding.UTF8);
+            WritePlainPage(page!, writer);
             writer.Flush();
-
-            return 0;
         }
-    }
 
-    public sealed class ListCommandOptions : ItemListOptions
-    {
-        public string? OutputPath { get; set; }
-
-        public ListCommandOptions(ICliAppContext context) : base(context)
-        {
-        }
+        return 0;
     }
+}
+
+internal class ListCommandSettings : ItemListSettings
+{
+    [CommandOption("-f|--file <FILE_PATH>")]
+    [Description("The path to the output file (if not set, the output will be displayed)")]
+    public string? OutputPath { get; set; }
 }

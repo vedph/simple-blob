@@ -1,11 +1,11 @@
-﻿using Fusi.Cli;
-using Fusi.Cli.Commands;
-using Microsoft.Extensions.CommandLineUtils;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using SimpleBlob.Api.Models;
 using SimpleBlob.Cli.Services;
+using Spectre.Console;
+using Spectre.Console.Cli;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -13,78 +13,21 @@ using System.Threading.Tasks;
 
 namespace SimpleBlob.Cli.Commands;
 
-internal sealed class AddPropertiesCommand : ICommand
+internal sealed class AddPropertiesCommand : AsyncCommand<AddPropertiesCommandSettings>
 {
-    private readonly AddPropertiesCommandOptions _options;
-
-    private AddPropertiesCommand(AddPropertiesCommandOptions options)
+    public override async Task<int> ExecuteAsync(CommandContext context,
+        AddPropertiesCommandSettings settings)
     {
-        _options = options;
-    }
+        AnsiConsole.MarkupLine("[yellow underline]ADD PROPERTIES[/]");
+        CliAppContext.Logger?.LogInformation("---ADD PROPERTIES---");
 
-    public static void Configure(CommandLineApplication app,
-        ICliAppContext context)
-    {
-        if (app == null)
-            throw new ArgumentNullException(nameof(app));
-
-        app.Description = "Add the specified properties to a BLOB item.";
-        app.HelpOption("-?|-h|--help");
-
-        CommandArgument idArgument = app.Argument("[id]", "The item ID.");
-
-        // credentials
-        CommandHelper.AddCredentialsOptions(app);
-
-        CommandOption resetOption = app.Option("--reset|-r",
-            "Clear all the properties before adding the new ones.",
-            CommandOptionType.NoValue);
-
-        CommandOption propOption = app.Option("--prop|-o",
-            "The property name=value pair. Repeatable.",
-            CommandOptionType.MultipleValue);
-
-        CommandOption metaPathOption = app.Option("--file|-f",
-            "The delimited metadata file to load properties from",
-            CommandOptionType.SingleValue);
-
-        CommandOption metaDelimOption = app.Option("--meta-sep",
-            "The separator used in delimited metadata files",
-            CommandOptionType.SingleValue);
-
-        app.OnExecute(() =>
-        {
-            AddPropertiesCommandOptions co = new(context)
-            {
-                Id = idArgument.Value,
-                IsResetEnabled = resetOption.HasValue(),
-                Properties = propOption.Values.Count > 0
-                    ? propOption.Values.ToArray()
-                    : null,
-                MetaPath = metaPathOption.Value(),
-                MetaDelimiter = metaDelimOption.HasValue()
-                    ? metaDelimOption.Value() : ",",
-            };
-            // credentials
-            CommandHelper.SetCredentialsOptions(app, co);
-
-            context.Command = new AddPropertiesCommand(co);
-            return 0;
-        });
-    }
-
-    public async Task<int> Run()
-    {
-        ColorConsole.WriteWrappedHeader("Add Properties");
-        _options.Logger?.LogInformation("---ADD PROPERTIES---");
-
-        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
+        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify();
         if (apiRootUri == null) return 2;
 
         // prompt for userID/password if required
         LoginCredentials credentials = new(
-            _options.UserId,
-            _options.Password);
+            settings.User,
+            settings.Password);
         credentials.PromptIfRequired();
 
         // login
@@ -100,20 +43,20 @@ internal sealed class AddPropertiesCommand : ICommand
         List<BlobItemPropertyModel> props = new();
 
         // get properties from file if any
-        if (!string.IsNullOrEmpty(_options.MetaPath))
+        if (!string.IsNullOrEmpty(settings.MetaPath))
         {
             IList<Tuple<string, string>> metadata = new CsvMetadataFile
             {
-                Delimiter = _options.MetaDelimiter!
-            }.Read(_options.MetaPath);
+                Delimiter = settings.MetaDelimiter!
+            }.Read(settings.MetaPath);
             props.AddRange(metadata.Select(m => new BlobItemPropertyModel
                 { Name = m.Item1, Value = m.Item2 }));
         }
 
         // get properties from command line if any
-        if (_options.Properties?.Count > 0)
+        if (settings.Properties?.Length > 0)
         {
-            foreach (string pair in _options.Properties)
+            foreach (string pair in settings.Properties)
             {
                 BlobItemPropertyModel prop = new();
                 int i = pair.IndexOf('=');
@@ -124,52 +67,65 @@ internal sealed class AddPropertiesCommand : ICommand
                 }
                 else
                 {
-                    prop.Name = pair.Substring(0, i);
-                    prop.Value = pair.Substring(i + 1);
+                    prop.Name = pair[..i];
+                    prop.Value = pair[(i + 1)..];
                 }
                 props.Add(prop);
             }
         }
 
         // no property to add is valid only when reset is true
-        ColorConsole.WriteInfo("Properties to add: " + props.Count);
-        if (props.Count == 0 && !_options.IsResetEnabled) return 0;
+        AnsiConsole.MarkupLine($"Properties to add: [cyan]{props.Count}[/]");
+        if (props.Count == 0 && !settings.IsResetEnabled) return 0;
 
-        string uri = $"properties/{_options.Id}/" +
-            (_options.IsResetEnabled ? "set" : "add");
+        string uri = $"properties/{settings.Id}/" +
+            (settings.IsResetEnabled ? "set" : "add");
 
-        HttpResponseMessage response = await client.PostAsJsonAsync(uri,
-            new BlobItemPropertiesModel
-            {
-                ItemId = _options.Id,
-                Properties = props.ToArray()
-            });
-
-        if (!response.IsSuccessStatusCode)
+        await AnsiConsole.Status().Start("Setting properties...", async ctx =>
         {
-            string error = $"Error adding properties to item {_options.Id}: " +
-                string.Join(", ", props.Select(p => $"{p.Name}={p.Value}"));
-            _options.Logger?.LogError(error);
-            ColorConsole.WriteError(error);
+            ctx.Spinner(Spinner.Known.Star);
 
-            return 2;
-        }
+            HttpResponseMessage response = await client.PostAsJsonAsync(uri,
+                new BlobItemPropertiesModel
+                {
+                    ItemId = settings.Id,
+                    Properties = props.ToArray()
+                });
+            response.EnsureSuccessStatusCode();
+        });
 
-        ColorConsole.WriteSuccess("Properties added");
+        AnsiConsole.MarkupLine("[green]Properties added[/]");
+
         return 0;
     }
 }
 
-internal class AddPropertiesCommandOptions : AppCommandOptions
+internal class AddPropertiesCommandSettings : AuthCommandSettings
 {
-    public AddPropertiesCommandOptions(ICliAppContext options)
-        : base(options)
-    {
-    }
-
+    [CommandArgument(0, "<ITEM_ID>")]
+    [Description("The item ID")]
     public string? Id { get; set; }
+
+    [CommandArgument(1, "<PROPERTY>")]
+    [Description("The property name=value (repeatable)")]
+    public string[] Properties { get; set; }
+
+    [CommandOption("-r|--reset")]
+    [Description("Clear all the properties before adding the new ones")]
     public bool IsResetEnabled { get; set; }
-    public IList<string>? Properties { get; set; }
+
+    [CommandOption("-f|--file <METADATA_PATH>")]
+    [Description("The delimited metadata file to load properties from")]
     public string? MetaPath { get; set; }
-    public string? MetaDelimiter { get; set; }
+
+    [CommandOption("--metasep <SEPARATOR>")]
+    [Description("The separator used in delimited metadata files")]
+    [DefaultValue(",")]
+    public string MetaDelimiter { get; set; }
+
+    public AddPropertiesCommandSettings()
+    {
+        Properties = Array.Empty<string>();
+        MetaDelimiter= ",";
+    }
 }

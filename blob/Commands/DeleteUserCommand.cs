@@ -1,65 +1,28 @@
-﻿using Fusi.Cli;
-using Fusi.Cli.Commands;
-using Microsoft.Extensions.CommandLineUtils;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
-using System;
+using Spectre.Console;
+using Spectre.Console.Cli;
+using System.ComponentModel;
 using System.Net.Http;
 using System.Threading.Tasks;
 
 namespace SimpleBlob.Cli.Commands;
 
-public sealed class DeleteUserCommand : ICommand
+internal sealed class DeleteUserCommand : AsyncCommand<DeleteUserCommandSettings>
 {
-    private readonly DeleteUserCommandOptions _options;
-
-    public DeleteUserCommand(DeleteUserCommandOptions options)
+    public override async Task<int> ExecuteAsync(CommandContext context,
+        DeleteUserCommandSettings settings)
     {
-        _options = options;
-    }
+        AnsiConsole.MarkupLine("[red underline]DELETE USER[/]");
+        CliAppContext.Logger?.LogInformation("---DELETE USER---");
 
-    public static void Configure(CommandLineApplication app,
-        ICliAppContext context)
-    {
-        if (app == null) throw new ArgumentNullException(nameof(app));
-
-        app.Description = "Delete the specified user.";
-        app.HelpOption("-?|-h|--help");
-
-        CommandArgument nameArgument = app.Argument("[name]", "The user name");
-        CommandOption confirmOption = app.Option("--confirm|-c",
-            "Confirm the operation without prompt",
-            CommandOptionType.NoValue);
-        CommandHelper.AddCredentialsOptions(app);
-
-        app.OnExecute(() =>
-        {
-            DeleteUserCommandOptions co = new(context)
-            {
-                UserName = nameArgument.Value,
-                IsConfirmed = confirmOption.HasValue()
-            };
-            // credentials
-            CommandHelper.SetCredentialsOptions(app, co);
-
-            context.Command = new DeleteUserCommand(co);
-
-            return 0;
-        });
-    }
-
-    public async Task<int> Run()
-    {
-        ColorConsole.WriteWrappedHeader("Delete User");
-        _options.Logger?.LogInformation("---DELETE USER---");
-
-        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
+        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify();
         if (apiRootUri == null) return 2;
 
         // prompt for userID/password if required
         LoginCredentials credentials = new(
-            _options.UserId,
-            _options.Password);
+            settings.User,
+            settings.Password);
         credentials.PromptIfRequired();
 
         // login
@@ -67,8 +30,8 @@ public sealed class DeleteUserCommand : ICommand
         if (login == null) return 2;
 
         // prompt for confirmation if required
-        if (!_options.IsConfirmed &&
-            !Prompt.ForBool("Delete user? ", false))
+        if (!settings.IsConfirmed &&
+            !AnsiConsole.Confirm($"Delete user {settings.UserName}? ", false))
         {
             return 0;
         }
@@ -78,28 +41,29 @@ public sealed class DeleteUserCommand : ICommand
             login.Token);
 
         // delete
-        HttpResponseMessage response =
-            await client.DeleteAsync($"accounts/{_options.UserName}");
-
-        if (!response.IsSuccessStatusCode)
+        await AnsiConsole.Status().Start("Deleting user...", async ctx =>
         {
-            string error = "Error deleting " + _options.UserName;
-            _options.Logger?.LogError(error);
-            ColorConsole.WriteError(error);
-            return 2;
-        }
-        else ColorConsole.WriteSuccess("Deleted user " + _options.UserName);
+            ctx.Status(settings.UserName!);
+            ctx.Spinner(Spinner.Known.Star);
+
+            HttpResponseMessage response =
+                await client.DeleteAsync($"accounts/{settings.UserName}");
+            response.EnsureSuccessStatusCode();
+        });
+
+        AnsiConsole.MarkupLine($"[green]Deleted user {settings.UserName}[/]");
 
         return 0;
     }
 }
 
-public sealed class DeleteUserCommandOptions : AppCommandOptions
+internal sealed class DeleteUserCommandSettings : AuthCommandSettings
 {
+    [CommandArgument(0, "<USER_NAME>")]
+    [Description("The name of the user to delete")]
     public string? UserName { get; set; }
-    public bool IsConfirmed { get; set; }
 
-    public DeleteUserCommandOptions(ICliAppContext context) : base(context)
-    {
-    }
+    [CommandOption("-c|-y|--yes")]
+    [Description("Automatically confirm operation (no prompt)")]
+    public bool IsConfirmed { get; set; }
 }

@@ -1,13 +1,12 @@
-﻿using Fusi.Cli;
-using Fusi.Cli.Commands;
-using Fusi.Tools.Data;
-using Microsoft.Extensions.CommandLineUtils;
+﻿using Fusi.Tools.Data;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
 using SimpleBlob.Core;
+using Spectre.Console;
+using Spectre.Console.Cli;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
+using System.ComponentModel;
 using System.IO;
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -15,87 +14,21 @@ using System.Threading.Tasks;
 
 namespace SimpleBlob.Cli.Commands;
 
-public sealed class DownloadCommand : ICommand
+internal sealed class DownloadCommand : AsyncCommand<DownloadCommandSettings>
 {
-    private readonly DownloadCommandOptions _options;
-
-    public DownloadCommand(DownloadCommandOptions options)
+    public override async Task<int> ExecuteAsync(CommandContext context,
+        DownloadCommandSettings settings)
     {
-        _options = options;
-    }
+        AnsiConsole.MarkupLine("[green underline]DOWNLOAD ITEMS[/]");
+        CliAppContext.Logger?.LogInformation("---DOWNLOAD ITEMS---");
 
-    public static void Configure(CommandLineApplication app,
-        ICliAppContext context)
-    {
-        if (app == null)
-            throw new ArgumentNullException(nameof(app));
-
-        app.Description = "List the BLOB items matching " +
-            "the specified filters.";
-        app.HelpOption("-?|-h|--help");
-
-        CommandArgument outputDirArgument = app.Argument("[output-dir]",
-            "The output directory");
-
-        // credentials
-        CommandHelper.AddCredentialsOptions(app);
-        // items list
-        CommandHelper.AddItemListOptions(app);
-
-        CommandOption pageCount = app.Option("--page-c",
-            "The maximum count of pages to retrieve",
-            CommandOptionType.SingleValue);
-
-        CommandOption metaExtOption = app.Option("--meta|-e",
-            "The extension appended to the content filename " +
-            "to represent its metadata in a correspondent file",
-            CommandOptionType.SingleValue);
-        CommandOption metaDelimOption = app.Option("--meta-sep",
-            "The separator used in delimited metadata files",
-            CommandOptionType.SingleValue);
-
-        CommandOption idDelimOption = app.Option("--id-sep",
-            "The conventional separator used in BLOB IDs",
-            CommandOptionType.SingleValue);
-
-        app.OnExecute(() =>
-        {
-            DownloadCommandOptions co = new(context)
-            {
-                OutputDir = outputDirArgument.Value,
-                PageCount = pageCount.HasValue()
-                    ? int.Parse(pageCount.Value(), CultureInfo.InvariantCulture)
-                    : 0,
-                MetaExtension = metaExtOption.HasValue()
-                    ? metaExtOption.Value() : ".meta",
-                IdDelimiter = idDelimOption.HasValue()
-                    ? idDelimOption.Value() : "|",
-                MetaDelimiter = metaDelimOption.HasValue()
-                    ? metaDelimOption.Value() : ","
-            };
-            // credentials
-            CommandHelper.SetCredentialsOptions(app, co);
-            // items list
-            CommandHelper.SetItemListOptions(app, co);
-
-            context.Command = new DownloadCommand(co);
-
-            return 0;
-        });
-    }
-
-    public async Task<int> Run()
-    {
-        ColorConsole.WriteWrappedHeader("Download Items");
-        _options.Logger?.LogInformation("---DOWNLOAD ITEMS---");
-
-        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
+        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify();
         if (apiRootUri == null) return 2;
 
         // prompt for userID/password if required
         LoginCredentials credentials = new(
-            _options.UserId,
-            _options.Password);
+            settings.User,
+            settings.Password);
         credentials.PromptIfRequired();
 
         // login
@@ -108,29 +41,29 @@ public sealed class DownloadCommand : ICommand
 
         // get 1st page
         var page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
-            "items?" + CommandHelper.BuildItemListQueryString(_options));
+            "items?" + CommandHelper.BuildItemListQueryString(settings));
 
-        ColorConsole.WriteInfo("Matching items: " + page!.Total);
+        AnsiConsole.MarkupLine($"Matching items: [yellow]{page!.Total}[/]");
         if (page.Total == 0) return 0;
 
-        if (!Directory.Exists(_options.OutputDir))
-            Directory.CreateDirectory(_options.OutputDir ?? "");
+        if (!Directory.Exists(settings.OutputDir))
+            Directory.CreateDirectory(settings.OutputDir ?? "");
 
         int itemNr = 0;
-        int pageCount = _options.PageCount > 0
-            ? Math.Min(_options.PageCount, page.PageCount)
+        int pageCount = settings.PageCount > 0
+            ? Math.Min(settings.PageCount, page.PageCount)
             : page.PageCount;
 
         while (true)
         {
-            ColorConsole.WriteInfo($"Page {_options.PageNumber} of {pageCount}");
+            AnsiConsole.MarkupLine("[cyan]Page[/] " +
+                $"[yellow]{settings.PageNumber}[/][cyan] of [/][yellow]{pageCount}[/]");
 
             foreach (BlobItem item in page!.Items)
             {
                 itemNr++;
-                _options.Logger?.LogInformation($"{itemNr} {item}");
-                ColorConsole.WriteEmbeddedColorLine(
-                    $"[green]{itemNr}[/green] {item}");
+                CliAppContext.Logger?.LogInformation($"{itemNr} {item}");
+                AnsiConsole.MarkupLine($"[yellow]{itemNr}[/] [cyan]{item}[/]");
 
                 // get stream
                 HttpResponseMessage response =
@@ -138,14 +71,14 @@ public sealed class DownloadCommand : ICommand
                 using Stream input = await response.Content.ReadAsStreamAsync();
 
                 // save to file
-                string itemPath = item.Id.Replace(_options.IdDelimiter!,
+                string itemPath = item.Id.Replace(settings.IdDelimiter,
                     new string(Path.DirectorySeparatorChar, 1));
-                string dir = Path.Combine(_options.OutputDir ?? "",
+                string dir = Path.Combine(settings.OutputDir ?? "",
                     Path.GetDirectoryName(itemPath) ?? "");
                 if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
 
                 string path = Path.Combine(dir, Path.GetFileName(itemPath));
-                Console.WriteLine(" => " + path);
+                AnsiConsole.MarkupLine($"[yellow] => [/][green]{path}[/]");
 
                 using FileStream output = new(path, FileMode.Create,
                     FileAccess.Write, FileShare.Read);
@@ -166,33 +99,55 @@ public sealed class DownloadCommand : ICommand
                 if (!hasId) metadata.Add(Tuple.Create("id", item.Id));
 
                 // save metadata to path
-                path += _options.MetaExtension;
-                Console.WriteLine(" => " + path);
+                path += settings.MetaExtension;
+                AnsiConsole.MarkupLine($"[yellow] => [/][green]{path}[/]");
                 CsvMetadataFile metaFile = new()
                 {
-                    Delimiter = _options.MetaDelimiter ?? ""
+                    Delimiter = settings.MetaDelimiter
                 };
                 metaFile.Write(metadata, path);
             }
 
             // next page
-            if (++_options.PageNumber > pageCount) break;
+            if (++settings.PageNumber > pageCount) break;
             page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
-                "items?" + CommandHelper.BuildItemListQueryString(_options));
+                "items?" + CommandHelper.BuildItemListQueryString(settings));
         }
         return 0;
     }
 }
 
-public sealed class DownloadCommandOptions : ItemListOptions
+internal sealed class DownloadCommandSettings : ItemListSettings
 {
-    public int PageCount { get; set; }
+    [CommandArgument(0, "<OUTPUT_DIR>")]
+    [Description("The output directory")]
     public string? OutputDir { get; set; }
-    public string? MetaExtension { get; set; }
-    public string? MetaDelimiter { get; set; }
-    public string? IdDelimiter { get; set; }
 
-    public DownloadCommandOptions(ICliAppContext context) : base(context)
+    [CommandOption("--pages <LIMIT>")]
+    [Description("The maximum count of pages to fetch")]
+    public int PageCount { get; set; }
+
+    [CommandOption("-e|--meta <EXTENSION>")]
+    [Description("The extension appended to the content filename " +
+        "to represent its metadata in a correspondent file")]
+    [DefaultValue(".meta")]
+    public string MetaExtension { get; set; }
+
+    [CommandOption("--metasep <SEPARATOR>")]
+    [Description("The separator used in delimited metadata files")]
+    [DefaultValue(",")]
+    public string MetaDelimiter { get; set; }
+
+    [CommandOption("--idsep <SEPARATOR>")]
+    [Description("The conventional separator used in BLOB IDs " +
+        "for virtual folders")]
+    [DefaultValue("|")]
+    public string IdDelimiter { get; set; }
+
+    public DownloadCommandSettings()
     {
+        MetaExtension = ".meta";
+        MetaDelimiter = ",";
+        IdDelimiter = "|";
     }
 }

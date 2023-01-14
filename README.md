@@ -25,6 +25,7 @@
     - [Delete User Roles Command](#delete-user-roles-command)
     - [Update User Command](#update-user-command)
   - [History](#history)
+    - [2.0.2](#202)
     - [2.0.1](#201)
     - [2.0.0](#200)
 
@@ -160,356 +161,322 @@ The schema is very simple and essentially includes just 3 tables (the auth table
 
 ## CLI Tool
 
-Note: when using `*` in UNIX-based OS (Linux, MacOS) remember to escape it with a backslash (e.g. `\*.xml`).
+Note: when using reserved characters like `*` or `|` in UNIX-based OS (Linux, MacOS) remember to escape it with a backslash (e.g. `\*.xml`) or include the value in quotes.
+
+>💡 In bash, enclosing characters in double quotes preserves the literal value of all characters within double quotes (`"..."`), with the exception of dollar, backtick, and backslash. The backslash retains its special meaning only when followed by one of the following characters: dollar, backtick, double quote, backslash, or newline.
 
 ### List Command
 
-- roles: `admin`, `browser`
+- 🔒 roles: `admin`, `browser`
 
-This command gets a paged list of BLOB items. Note that for added security a user with reader/writer role but without the `browser` (or `admin`) role cannot get the list of items. This way, he can just retrieve a file if he has its name.
+🎯 Show a paged list of BLOB items.
 
-Syntax:
+>Note that for added security a user with `reader`/`writer` role but without the `browser` (or `admin`) role cannot get the list of items. This way, he can just retrieve a file if he has its name, but he's not able to find out which files are present.
 
-```ps1
-./blob list [-n PageNumber] [-z PageSize] [-i IdFilter] [-m MimeType] [-d MinDate:MaxDate] [-s MinSize:MaxSize] [-l LastUser] [-o PropName=PropValue] [-f OutputFilePath] [-u UserName] [-p Password]
+```bash
+./blob list [-n <NUMBER>] [-z <SIZE>] [-i <ITEM_ID>] [-t <MIME_TYPE>] [--datemin <DATE>] [--datemax <DATE>] [--szmin <SIZE>] [--szmax <SIZE>] [-l <USER_NAME>] [--props <PROPERTIES>] [-f <FILE_PATH>] [-u <USER>] [-p <PASSWORD>]
 ```
 
-where:
+- `-n <NUMBER>` the page number (1-N). Default=1.
+- `-z <SIZE>` the page size. Default=20.
+- `-i <ITEM_ID>` the BLOB ID filter. You can use wildcards `*` and `?`.
+- `-t <MIME_TYPE>` the MIME type filter.
+- `--datemin <DATE>` the minimum date filter: each date has format `YYYY-MM-DD`.
+- `--datemax <DATE>` the maximum date filter: each date has format `YYYY-MM-DD`.
+- `--szmin <SIZE>` the minimum size filter (in bytes).
+- `--szmax <SIZE>` the maximum size filter (in bytes).
+- `-l <USER_NAME>` the user filter. This is the user who last modified the item.
+- `-props` the property filter. This is a comma-delimited string, where each property is expressed as name`=`value. Any of these properties must match for the item to match.
+- `-f <FILE_PATH>` the output file path. If not specified, the output will be displayed, rather than saved into a file.
+- `-u <USER>` the user name. If not specified, you will be prompted for it.
+- `-p <PASSWORD>` the password. If not specified, you will be prompted for it.
 
-- `-n` the page number (1-N). Default=1.
-- `-z` the page size. Default=20.
-- `-i` the BLOB ID filter. You can use wildcards `*` and `?`.
-- `-m` the MIME type filter.
-- `-d` the dates range filter: each date has format `YYYY-MM-DD`. You can specify the minimum date only (followed by `:`), the maximum date only (preceded by `:`), or both (min`:`max).
-- `-s` the size range filter: each size is in bytes. You can specify the minimum size only (followed by `:`), the maximum size only (preceded by `:`), or both (min`:`max).
-- `-l` the user filter. This is the user who last modified the item.
-- `-o` the property filter. Each property has format name`=`value. Repeat `-o` for multiple properties; just any of them should be matched.
-- `-f` the output file path. If not specified, the output will be displayed.
-- `-u` the user name. If not specified, you will be prompted for it.
-- `-p` the password. If not specified, you will be prompted for it.
+Example:
 
-Sample:
-
-```ps1
-./blob list -n 1 -z 10 -u zeus -p P4ss-W0rd!
+```bash
+./blob list -n 1 -z 10 -u zeus -p "P4ss-W0rd!"
 ```
 
 ### GetInfo Command
 
-- roles: all
+- 🔒 roles: all
 
-This command gets information about an item.
+🎯 Get information about an item.
 
-Syntax:
-
-```ps1
-./blob get-info ItemId [-f OutputFilePath] [-u UserName] [-p Password]
+```bash
+./blob get-info <ITEM_ID> [-f <FILE_PATH>] [-u <USER>] [-p <PASSWORD>]
 ```
 
-where:
+- `<ITEM_ID>` the ID of the item to get info for.
+- `-f <FILE_PATH>` the output file path. If not specified, the output will be displayed.
+- `-u <USER>` the user name. If not specified, you will be prompted for it.
+- `-p <PASSWORD>` the password. If not specified, you will be prompted for it.
 
-- `-f` the output file path. If not specified, the output will be displayed.
-- `-u` the user name. If not specified, you will be prompted for it.
-- `-p` the password. If not specified, you will be prompted for it.
+Example:
 
-Sample:
-
-```ps1
-./blob get-info samples|fam-ge-tro-ric711-000000_01 -u zeus -p P4ss-W0rd!
+```bash
+./blob get-info samples|fam-ge-tro-ric711-000000_01 -u zeus -p "P4ss-W0rd!"
 ```
 
 ### Delete Command
 
-- roles: `admin`, `browser`, `writer`
+- 🔒 roles: `admin`, `browser`, `writer`
 
-This command deletes the specified BLOB item.
+🎯 Delete the specified BLOB item.
 
-Syntax:
-
-```ps1
-./blob delete ItemId [-c] [-u UserName] [-p Password]
+```bash
+./blob delete <ITEM_ID> [-c] [-u <USER>] [-p <PASSWORD>]
 ```
 
-where:
-
-- `ItemId` is the ID of the item to delete.
+- `<ITEM_ID>` is the ID of the item to delete.
 - `-c` skips the confirmation prompt.
-- `-u` the user name. If not specified, you will be prompted for it.
-- `-p` the password. If not specified, you will be prompted for it.
+- `-u <USER>` the user name. If not specified, you will be prompted for it.
+- `-p <PASSWORD>` the password. If not specified, you will be prompted for it.
 
-Sample:
+Example:
 
-```ps1
-./blob delete samples|fam-ge-tro-ric711-000000_01 -c -u zeus -p P4ss-W0rd!
+```bash
+./blob delete "samples|fam-ge-tro-ric711-000000_01" -c -u zeus -p "P4ss-W0rd!"
 ```
 
 ### Upload Command
 
-- roles: `admin`, `browser`, `writer`
+- 🔒 roles: `admin`, `browser`, `writer`
 
-This command uploads a set of files, as defined from an input folder and a files mask. The mask can be a regular file system mask, or a regular expression. Also, files can optionally be recursively searched starting from the input folder.
+🎯 Upload a set of files, as defined from an input folder and a files mask. The mask can be a regular file system mask, or a regular expression. Also, files can be recursively searched starting from the input folder.
 
 It is assumed that each file matching the mask has in the same location a corresponding metadata file, with the same name suffixed with a custom extension. By default this extension is `.meta`. So, if a file to upload is `test.txt`, then the corresponding metadata file should be placed in the same directory with name `test.txt.meta`.
 
 You should also specify the MIME type for the files to upload. If you don't specify any, the type will be automatically derived from the file extension, when possible. This follows the mapping of MIME types defined in `blob/Assets/MimeTypes.csv` (as derived from this [list of common MIME types](https://gist.github.com/jimschubert/94894c938d8f9f64c6863b28c70a22cc)). You can direct the tool to use another file, as far as it has the same structure: a CSV file with a header row and at least 2 columns with name `extension` and `type`.
 
-Syntax:
-
-```ps1
-./blob upload <InputDir> <FileMask> [-x] [-r] [-t MimeType] [-m MetaExtension] [-e ExtensionAndMimeTypeList] [--meta-sep MetaSeparator] [-l IdSeparator] [-d] [-u UserName] [-p Password]
+```bash
+./blob upload <INPUT_DIR> <FILE_MASK> [-x] [-r] [-t <MIME_TYPE>] [-e <TYPES_FILE_PATH>] [-m <EXTENSION>] [--metapfx <PREFIX>] [--metasfx <SUFFIX>] [--metasep <SEPARATOR>] [-idsep <SEPARATOR>][-c] [-d] [-u <USER>] [-p <PASSWORD>]
 ```
 
-where:
-
-- `InputDir` is the input directory.
-- `FileMask` is the file mask. It can be a regular expression if `-p` is specified.
-- `-x` specifies that `FileMask` is a regular expression pattern.
+- `INPUT_DIR` is the input directory.
+- `FILE_MASK` is the file mask. It can be a regular expression if `-p` is specified.
+- `-x` specifies that `FILE_MASK` is a regular expression pattern.
 - `-r` recurses subdirectories.
-- `-t` specifies the MIME type for _all_ the files matched. Do not specify this option if you want the type to be derived (when possible) from the file's extension.
-- `-m` or `--meta`: the extension to replace to that of the content filename to build the correspondent metadata filename.
-- `--meta-p`: the prefix inserted before the content filename's extension to build the correspondent metadata filename.
-- `--meta-s`: the suffix appended after the content filename's extension to build the correspondent metadata filename.
-- `-e` the optional CSV MIME types file path, when you want to override the default list of MIME types.
-- `--meta-sep` the separator used for the metadata file. The default is comma (`,`).
-- `--id-sep` the separator used in BLOB IDs in a file-system like convention. The default is pipe (`|`). Slashes (`/` or `\`) automatically get converted into this separator when using file paths as IDs.
+- `-t <MIME_TYPE>` specifies the MIME type for _all_ the files matched. Do not specify this option if you want the type to be derived (when possible) from the file's extension.
+- `-e <TYPES_FILE_PATH>` the optional CSV MIME types file path, when you want to override the default list of MIME types.
+- `-m <EXTENSION>` or `--meta`: the extension to replace to that of the content filename to build the correspondent metadata filename.
+- `--metapfx <PREFIX>`: the prefix inserted before the content filename's extension to build the correspondent metadata filename.
+- `--metasfx <SUFFIX>`: the suffix appended after the content filename's extension to build the correspondent metadata filename.
+- `--metasep <SEPARATOR>` the separator used for the metadata file. The default is comma (`,`).
+- `--idsep <SEPARATOR>` the separator used in BLOB IDs in a file-system like convention. The default is pipe (`|`). Slashes (`/` or `\`) automatically get converted into this separator when using file paths as IDs.
 - `-c` to theck the file before uploading it. If the file size and CRC32C are the same, its metadata and properties are uploaded, but its content is not. This speeds up the process when some of the files have not changed.
-- `-d` dry run (do not write to service).
-- `-u` the user name. If not specified, you will be prompted for it.
-- `-p` the password. If not specified, you will be prompted for it.
+- `-d` dry (preflight) run (do not write data).
+- `-u <USER>` the user name. If not specified, you will be prompted for it.
+- `-p <PASSWORD>` the password. If not specified, you will be prompted for it.
 
 Note that you can variously combine the `meta` options to build the metadata filename starting from the content filename.
 
-Sample:
+Example:
 
-```ps1
-./blob upload c:\users\dfusi\desktop\up\ *.json -t application/json -u zeus -p P4ss-W0rd! -c
+```bash
+./blob upload c:/users/dfusi/desktop/demo/up/ *.* -u zeus -p "P4ss-W0rd!" -c
 ```
 
 ### Download Command
 
-- roles: all
+- 🔒 roles: all
 
-This command downloads all the files matching the specified filters into a root directory, together with their metadata companion file. If the file IDs include a path separator character, the same directory structure gets created under the output root folder.
+🎯 Download all the files matching the specified filters into a root directory, together with their metadata companion file. If the file IDs include a path separator character (which by default is `|`), the same directory structure gets created under the output root folder.
 
-Syntax:
-
-```ps1
-./blob download <TargetDir> [-n PageNumber] [-z PageSize] [-i IdFilter] [-m MimeType] [-d MinDate:MaxDate] [-s MinSize:MaxSize] [-l LastUser] [-o <Name>=<Value>] [-f OutputFilePath] [--meta-sep MetaSeparator] [-u UserName] [-p Password]
+```bash
+./blob download <OUTPUT_DIR> [-n <NUMBER>] [-z <SIZE] [-i <ITEM_ID] [-t <MIME_TYPE>] [--datemin <DATE>] [--datemax <DATE>] [--szmin <SIZE>] [--szmax <SIZE>] [-l <USER_NAME>] [--props <PROPERTIES>] [--pages <LIMIT>] [-e <EXTENSION>] [--metasep <SEPARATOR>] [--idsep <SEPARATOR>] [-u <USER>] [-p <PASSWORD>]
 ```
 
-where:
-
-- `-n` the page number to start from (1-N). Default=1.
-- `-z` the page size. Default=20.
-- `--page-c` the maximum count of pages to retrieve. Default=0, i.e. get all the pages.
-- `-i` the BLOB ID filter. You can use wildcards `*` and `?`.
-- `-m` the MIME type filter.
-- `-d` the dates range filter: each date has format `YYYY-MM-DD`. You can specify the minimum date only (followed by `:`), the maximum date only (preceded by `:`), or both (min`:`max).
-- `-s` the size range filter: each size is in bytes. You can specify the minimum size only (followed by `:`), the maximum size only (preceded by `:`), or both (min`:`max).
-- `-l` the user filter. This is the user who last modified the item.
-- `-o` the property filter. Each property has format name`=`value. Repeat `-o` for multiple properties; just any of them should be matched.
+- `<OUTPUT_DIR>` the output directory.
+- `-n <NUMBER>` the page number (1-N). Default=1.
+- `-z <SIZE>` the page size. Default=20.
+- `-i <ITEM_ID>` the BLOB ID filter. You can use wildcards `*` and `?`.
+- `-t <MIME_TYPE>` the MIME type filter.
+- `--datemin <DATE>` the minimum date filter: each date has format `YYYY-MM-DD`.
+- `--datemax <DATE>` the maximum date filter: each date has format `YYYY-MM-DD`.
+- `--szmin <SIZE>` the minimum size filter (in bytes).
+- `--szmax <SIZE>` the maximum size filter (in bytes).
+- `-l <USER_NAME>` the user filter. This is the user who last modified the item.
+- `-props` the property filter. This is a comma-delimited string, where each property is expressed as name`=`value. Any of these properties must match for the item to match.
+- `--pages` the maximum count of pages to retrieve. Default=0, i.e. get all the pages.
 - `-e` The metadata file extension. Default is `.meta`.
-- `--meta-sep` the separator used for the metadata file. The default is comma (`,`).
-- `-f` the output file path. If not specified, the output will be displayed.
-- `--id-sep` the virtual path separator used in item IDs. The default is pipe (`|`).
-- `-u` the user name. If not specified, you will be prompted for it.
-- `-p` the password. If not specified, you will be prompted for it.
+- `--metasep` the separator used for the metadata file. The default is comma (`,`).
+- `--idsep` the virtual path separator used in item IDs. The default is pipe (`|`).
+- `-u <USER>` the user name. If not specified, you will be prompted for it.
+- `-p <PASSWORD>` the password. If not specified, you will be prompted for it.
 
-Sample:
+Example:
 
-```ps1
-./blob download c:\users\dfusi\desktop\down\ -u zeus -p P4ss-W0rd!
+```bash
+./blob download c:/users/dfusi/desktop/demo/down/ -u zeus -p "P4ss-W0rd!"
 ```
 
 ### Add Properties Command
 
-- roles: `admin`, `browser`, `writer`
+- 🔒 roles: `admin`, `browser`, `writer`
 
-This command adds the specified properties to a BLOB item. The properties can be just added, or can replace all the existing properties of the item, according to the option chosen. So, you can also use this command to remove all the properties from an item.
+🎯 Add the specified properties to a BLOB item. The properties can be just added, or can replace all the existing properties of the item, according to the option chosen. Thus, you can also use this command to remove all the properties from an item.
 
-Syntax:
-
-```ps1
-./blob add-props <ItemId> [-o <Name>=<Value>] [-f MetadataFilePath] [--meta-sep MetaSeparator] [-r] [-u UserName] [-p Password]
+```bash
+./blob add-props <ITEM_ID> <PROPERTY>+ [-f <METADATA_PATH>] [--metasep <SEPARATOR>] [-r] [-u <USER>] [-p <PASSWORD>]
 ```
 
-- `-o` the property. Each property has format name`=`value. Repeat `-o` for multiple properties.
-- `-f` the optional metadata file path. If specified, properties will be loaded from that file. This is a delimited file without header.
-- `--meta-sep` the separator used for the metadata file. The default is comma (`,`).
+- `<ITEM_ID>` the item ID to add properties to.
+- `<PROPERTY>` the property to set, expressed as name`=`value. You can repeat this argument for each property you want to set.
+- `-f <METADATA_PATH>` the optional metadata file path. If specified, properties will be loaded from that file. This is a delimited file without header.
+- `--metasep <SEPARATOR>` the separator used for the metadata file. The default is comma (`,`).
 - `-r` remove all the existing properties before adding the new ones (if any).
-- `-u` the user name. If not specified, you will be prompted for it.
-- `-p` the password. If not specified, you will be prompted for it.
+- `-u <USER>` the user name. If not specified, you will be prompted for it.
+- `-p <PASSWORD>` the password. If not specified, you will be prompted for it.
 
-If both the metadata file and `-o` are used to specify properties, these will be combined together.
+>If both the metadata file and arguments are used to specify properties, these will be combined together.
 
-Sample:
+Example:
 
-```ps1
-./blob add-props samples|fam-ge-tro-ric711-000000_01 -o category=test -u zeus -p P4ss-W0rd!
+```bash
+./blob add-props aeneis.txt author=Vergilius -u zeus -p "P4ss-W0rd!"
 ```
 
 ### List Users Command
 
-- roles: all
+- 🔒 roles: all
 
-This command lists the registered users.
+🎯 List the registered users.
 
-Syntax:
-
-```ps1
-./blob list-users [-n PageNumber] [-z PageSize] [-m NameOrIdFilter] [-f OutputFilePath] [-u UserName] [-p Password]
+```bash
+./blob list-users [-n <NUMBER>] [-z <SIZE>] [-m <NAME>] [-f <FILE_PATH>] [-u <USER>] [-p <PASSWORD>]
 ```
 
-where:
+- `-n <NUMBER>` the page number (1-N). Default=1.
+- `-z <SIZE>` the page size. Default=20.
+- `-m <NAME>` the user name or ID filter. Any portion of the name/ID must match the filter.
+- `-f <FILE_PATH>` the output file path. If not specified, the output will be displayed.
+- `-u <USER>` the user name. If not specified, you will be prompted for it.
+- `-p <PASSWORD>` the password. If not specified, you will be prompted for it.
 
-- `-n` the page number (1-N). Default=1.
-- `-z` the page size. Default=20.
-- `-m` the user name or ID filter. Any portion of the name/ID must match the filter.
-- `-f` the output file path. If not specified, the output will be displayed.
-- `-u` the user name. If not specified, you will be prompted for it.
-- `-p` the password. If not specified, you will be prompted for it.
+Example:
 
-Sample:
-
-```ps1
-./blob list-users -u zeus -p P4ss-W0rd!
+```bash
+./blob list-users -u zeus -p "P4ss-W0rd!"
 ```
 
 ### Add User Command
 
-- roles: `admin`
+- 🔒 roles: `admin`
 
-This command adds a new user to the BLOB service.
+🎯 Add a new user account to the BLOB service.
 
-Syntax:
-
-```ps1
-./blob add-user <Name> <Password> <Email> [-f FirstName] [-l LastName] [-u UserName] [-p Password]
+```bash
+./blob add-user <USER_NAME> <USER_PWD> <USER_EMAIL> [-f <NAME>] [-l <NAME>] [-u <USER>] [-p <PASSWORD>]
 ```
 
 where:
 
-- `Name` the name of the user to add. This is the username and must be unique in the service.
-- `Password` the password for the user being added.
-- `Email` the email address of the user being added.
-- `-f` the first name of the user being added.
-- `-l` the last name of the user being added.
-- `-u` the user name. If not specified, you will be prompted for it.
-- `-p` the password. If not specified, you will be prompted for it.
+- `<USER_NAME>` the name of the user to add. This is the username and must be unique in the service.
+- `<USER_PWD>` the password for the user being added.
+- `<USER_EMAIL>` the email address of the user being added.
+- `-f <NAME>` the first name of the user being added.
+- `-l <NAME>` the last name of the user being added.
+- `-u <USER>` the user name. If not specified, you will be prompted for it.
+- `-p <PASSWORD>` the password. If not specified, you will be prompted for it.
 
-Sample:
+Example:
 
-```ps1
-./blob add-user tester P4ss-W0rd! tester@somewhere.org -f Mario -l Rossi -u zeus -p P4ss-W0rd!
+```bash
+./blob add-user tester "P4ss-W0rd!" tester@somewhere.org -f Mario -l Rossi -u zeus -p "P4ss-W0rd!"
 ```
 
 ### Delete User Command
 
-- roles: `admin`
+- 🔒 roles: `admin`
 
-This commands deletes the specified user from the BLOB service.
+🎯 Delete a user account from the BLOB service.
 
-Syntax:
-
-```ps1
-./blob delete-user <Name> [-c] [-u UserName] [-p Password]
+```bash
+./blob delete-user <USER_NAME> [-c] [-u <USER>] [-p <PASSWORD>]
 ```
 
-where:
-
-- `Name` the name of the user to delete.
+- `<USER_NAME>` the name of the user to delete.
 - `-c` skips the confirmation prompt.
-- `-u` the user name. If not specified, you will be prompted for it.
-- `-p` the password. If not specified, you will be prompted for it.
+- `-u <USER>` the user name. If not specified, you will be prompted for it.
+- `-p <PASSWORD>` the password. If not specified, you will be prompted for it.
 
-Sample:
+Example:
 
-```ps1
-./blob delete-user tester -c -u zeus -p P4ss-W0rd!
+```bash
+./blob delete-user tester -c -u zeus -p "P4ss-W0rd!"
 ```
 
 ### Add User Roles Command
 
-- roles: `admin`
+- 🔒 roles: `admin`
 
-This commands adds the specified roles to a user.
+🎯 Add the specified roles to a user.
 
-Syntax:
-
-```ps1
-./blob add-user-roles <Name> [-r RoleName] [-u UserName] [-p Password]
+```bash
+./blob add-user-roles <USER_NAME> <USER_ROLE>+ [-u <USER>] [-p <PASSWORD>]
 ```
 
-where:
+- `<USER_NAME>` the name of the user to add roles to.
+- `<USER_ROLE>` the name of the role to add. Repeat this option for all the roles you want to add.
+- `-u <USER>` the user name. If not specified, you will be prompted for it.
+- `-p <PASSWORD>` the password. If not specified, you will be prompted for it.
 
-- `Name` the name of the user to add roles to.
-- `-r` the name of the role to add. Repeat this option for all the roles you want to add.
-- `-u` the user name. If not specified, you will be prompted for it.
-- `-p` the password. If not specified, you will be prompted for it.
+Example:
 
-Sample:
-
-```ps1
-./blob add-user-roles tester -r admin -u zeus -p P4ss-W0rd!
+```bash
+./blob add-user-roles tester admin browser -u zeus -p "P4ss-W0rd!"
 ```
 
 ### Delete User Roles Command
 
-- roles: `admin`
+- 🔒 roles: `admin`
 
-This commands deletes the specified roles of a user. Available roles are:
+Delete the specified role(s) of a user. Available roles are:
 
 - `admin`: administrator, can do everything and manage accounts.
 - `browser`: is a writer and a reader, with the added ability of browsing the BLOB store.
 - `writer`: is a reader, with the added ability of writing (upload/delete files) to the BLOB store.
 - `reader`: can only read a file from the BLOB store.
 
-Syntax:
-
-```ps1
-./blob delete-user-roles <Name> [-r RoleName] [-u UserName] [-p Password]
+```bash
+./blob delete-user-roles <USER_NAME> <USER_ROLE>+ [-u <USER>] [-p <PASSWORD>]
 ```
 
-where:
+- `<USER_NAME>` the name of the user to add roles to.
+- `<USER_ROLE>` the name of the role to add. Repeat this option for all the roles you want to delete.
+- `-u <USER>` the user name. If not specified, you will be prompted for it.
+- `-p <PASSWORD>` the password. If not specified, you will be prompted for it.
 
-- `Name` the name of the user to delete roles from.
-- `-r` the name of the role to delete. Repeat this option for all the roles you want to delete.
-- `-u` the user name. If not specified, you will be prompted for it.
-- `-p` the password. If not specified, you will be prompted for it.
+Example:
 
-Sample:
-
-```ps1
-./blob delete-user-roles tester -r admin -u zeus -p P4ss-W0rd!
+```bash
+./blob delete-user-roles tester admin -u zeus -p "P4ss-W0rd!"
 ```
 
 ### Update User Command
 
-- roles: `admin`
+- 🔒 roles: `admin`
 
-This commands updates the editable properties of a user. Only the properties explicitly specified with options will be updated.
+🎯 Update the editable properties of a user. Only the properties explicitly specified by options will be updated.
 
-Syntax:
-
-```ps1
-./blob update-user <Name> [-u UserName] [-p Password]
+```bash
+./blob update-user <USER_NAME> [-e <EMAIL>] [-c] [-f <NAME>] [-l <NAME>] [-k <STATE>] [-u <USER>] [-p <PASSWORD>]
 ```
 
-where:
-
-- `Name` the name of the user to update.
+- `USER_NAME` the name of the user to update.
 - `-e` the user's email address.
 - `-c` confirm the user's email address.
-- `-k` set lockout enabled on (`1`)/off (`0`).
-- `-f` set first name.
-- `-l` set last name.
-- `-u` the user name. If not specified, you will be prompted for it.
-- `-p` the password. If not specified, you will be prompted for it.
+- `-f <NAME>` set first name.
+- `-l <NAME>` set last name.
+- `-k <STATE>` set lockout enabled on (`1`) / off (`0`).
+- `-u <USER>` the user name. If not specified, you will be prompted for it.
+- `-p <PASSWORD>` the password. If not specified, you will be prompted for it.
 
-Sample:
+Example:
 
-```ps1
-./blob update-user tester -c -u zeus -p P4ss-W0rd!
+```bash
+./blob update-user tester -c -u zeus -p "P4ss-W0rd!"
 ```
 
 ## History

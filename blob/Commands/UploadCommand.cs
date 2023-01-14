@@ -1,12 +1,12 @@
 ﻿using Force.Crc32;
-using Fusi.Cli;
-using Fusi.Cli.Commands;
-using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Api.Models;
 using SimpleBlob.Cli.Services;
+using Spectre.Console;
+using Spectre.Console.Cli;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -14,358 +14,296 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 
-namespace SimpleBlob.Cli.Commands
+namespace SimpleBlob.Cli.Commands;
+
+internal sealed class UploadCommand : AsyncCommand<UploadCommandSettings>
 {
-    public sealed class UploadCommand : ICommand
+    private readonly MimeTypeMap _typeMap;
+
+    public UploadCommand()
     {
-        private readonly UploadCommandOptions _options;
-        private readonly MimeTypeMap _typeMap;
-
-        public UploadCommand(UploadCommandOptions options)
-        {
-            _options = options;
-            _typeMap = new MimeTypeMap();
-        }
-
-        public static void Configure(CommandLineApplication app,
-            ICliAppContext context)
-        {
-            if (app == null)
-                throw new ArgumentNullException(nameof(app));
-
-            app.Description = "Upload all the files matching " +
-                "the specified mask from the specified directory.";
-            app.HelpOption("-?|-h|--help");
-
-            CommandArgument dirArgument = app.Argument("[inputDir]",
-                "The input directory");
-            CommandArgument maskArgument = app.Argument("[fileMask]",
-                "The files mask");
-
-            // credentials
-            CommandHelper.AddCredentialsOptions(app);
-
-            CommandOption regexOption = app.Option("--regex|-x",
-                "Use a regular expression pattern for the files mask",
-                CommandOptionType.NoValue);
-            CommandOption recurseOption = app.Option("--recurse|-r",
-                "Recurse subdirectories",
-                CommandOptionType.NoValue);
-
-            CommandOption mimeTypeOption = app.Option("--type|-t",
-                "The MIME type for the files to upload",
-                CommandOptionType.SingleValue);
-            CommandOption mimeTypeListOption = app.Option("--ext-list|-e",
-                "The list of common file extensions with their MIME types. " +
-                "This is used when no MIME type is specified with -t.",
-                CommandOptionType.SingleValue);
-
-            CommandOption metaExtOption = app.Option("--meta|-m",
-                "The extension to replace to that of the content filename " +
-                "to build the correspondent metadata filename.",
-                CommandOptionType.SingleValue);
-            CommandOption metaExtPrefixOption = app.Option("--meta-p",
-                "The prefix inserted before the content filename's extension " +
-                "to build the correspondent metadata filename.",
-                CommandOptionType.SingleValue);
-            CommandOption metaExtSuffixOption = app.Option("--meta-s",
-                "The suffix appended after the content filename's extension " +
-                "to represent its metadata in a correspondent file.",
-                CommandOptionType.SingleValue);
-
-            CommandOption metaDelimOption = app.Option("--meta-sep",
-                "The separator used in delimited metadata files (default=,).",
-                CommandOptionType.SingleValue);
-
-            CommandOption idDelimOption = app.Option("--id-sep",
-                "The conventional separator used in BLOB IDs.",
-                CommandOptionType.SingleValue);
-
-            CommandOption checkOption = app.Option("--check|-c",
-                "Check for file change before uploading. " +
-                "If no change occurred, nothing is done.",
-                CommandOptionType.NoValue);
-
-            CommandOption dryOption = app.Option("--dry|-d",
-                "Dry run (do not write data).", CommandOptionType.NoValue);
-
-            app.OnExecute(() =>
-            {
-                UploadCommandOptions co = new(context)
-                {
-                    InputDir = dirArgument.Value,
-                    FileMask = maskArgument.Value,
-                    IsRegexMask = regexOption.HasValue(),
-                    IsRecursive = recurseOption.HasValue(),
-                    MetaPrefix = metaExtPrefixOption.Value(),
-                    MetaExtension = metaExtOption.HasValue()
-                        ? metaExtOption.Value() : ".meta",
-                    MetaSuffix = metaExtSuffixOption.Value(),
-                    MetaDelimiter = metaDelimOption.HasValue()
-                        ? metaDelimOption.Value() : ",",
-                    IdDelimiter = idDelimOption.HasValue()
-                        ? idDelimOption.Value() : "|",
-                    IsDryRun = dryOption.HasValue(),
-                    IsCheckEnabled = checkOption.HasValue(),
-                    MimeType = mimeTypeOption.Value(),
-                    MimeTypeList = mimeTypeListOption.Value()
-                };
-                // credentials
-                CommandHelper.SetCredentialsOptions(app, co);
-                context.Command = new UploadCommand(co);
-
-                return 0;
-            });
-        }
-
-        private async Task<string?> AddItemAsync(string id, HttpClient client)
-        {
-            if (_options.IsDryRun) return null;
-
-            HttpResponseMessage response = await client.PostAsJsonAsync(
-                "items", new { id });
-            return response.IsSuccessStatusCode
-                ? null
-                : $"Error adding item {id}: {response.ReasonPhrase}";
-        }
-
-        private async Task<string?> SetItemPropertiesAsync(string id,
-            HttpClient client, IList<Tuple<string, string>>? metadata)
-        {
-            if (_options.IsDryRun || metadata == null || metadata.Count == 0)
-                return null;
-
-            BlobItemPropertiesModel model = new()
-            {
-                ItemId = id,
-                Properties = metadata.Select(t => new BlobItemPropertyModel
-                {
-                    Name = t.Item1,
-                    Value = t.Item2
-                }).ToArray()
-            };
-
-            HttpResponseMessage response = await client.PostAsJsonAsync(
-                $"properties/{id}/set", model);
-            return response.IsSuccessStatusCode
-                ? null
-                : $"Error adding item {id}: {response.ReasonPhrase}";
-        }
-
-        private static long GetCrc(string path)
-        {
-            using FileStream stream = new(path, FileMode.Open,
-                FileAccess.Read, FileShare.Read);
-            BinaryReader reader = new(stream);
-            uint crc = 0;
-            while (true)
-            {
-                byte[] buf = reader.ReadBytes(8192);
-                crc = Crc32Algorithm.Append(crc, buf);
-                if (buf.Length < 8192) break;
-            }
-            return crc;
-        }
-
-        private static async Task<Tuple<bool, string?>> AreContentEqualAsync(
-            string id, HttpClient client, string path)
-        {
-            HttpResponseMessage r = await client.GetAsync(
-                $"contents/{id}/meta");
-            if (!r.IsSuccessStatusCode)
-            {
-                return Tuple.Create(false,
-                    (string?)$"Error getting content metadata for item {id}");
-            }
-
-            FileInfo info = new(path);
-            BlobItemContentMetaModel meta = (await r.Content
-                .ReadFromJsonAsync<BlobItemContentMetaModel>())!;
-
-            // size must be equal
-            if (info.Length != meta.Size)
-                return Tuple.Create(false, (string?)null);
-
-            // CRC32C must be equal
-            long crc = GetCrc(path);
-            return Tuple.Create(crc == meta.Hash, (string?)null);
-        }
-
-        private async Task<string?> SetItemContentAsync(string id,
-            HttpClient client, string path, string apiRootUri,
-            ApiLogin login)
-        {
-            if (_options.IsDryRun) return null;
-
-            string uri = apiRootUri + $"contents/{id}";
-            string? mimeType = _options.MimeType;
-            if (string.IsNullOrEmpty(mimeType))
-            {
-                mimeType = _typeMap.GetType(Path.GetExtension(path));
-                if (mimeType == null) return "Unknown extension: " + path;
-            }
-
-            // check if required
-            if (_options.IsCheckEnabled)
-            {
-                var t = await AreContentEqualAsync(id, client, path);
-                if (t.Item2 != null) return t.Item2;
-                if (t.Item1) return null;
-            }
-
-            string? response = await FileUploader.UploadFile(uri, path,
-                login.Token, id, mimeType);
-            Debug.WriteLine(response);
-            // TODO response
-            return null;
-        }
-
-        private static string SanitizePath(string path, string sep)
-        {
-            path = path.Replace("/", sep);
-            return path.Replace("\\", sep);
-        }
-
-        private string GetMetadataPath(string path)
-        {
-            string result = path;
-
-            if (!string.IsNullOrEmpty(_options.MetaExtension))
-                result = Path.ChangeExtension(result, _options.MetaExtension);
-
-            if (!string.IsNullOrEmpty(_options.MetaPrefix))
-            {
-                result = Path.Combine(
-                    Path.GetDirectoryName(result) ?? "",
-                    Path.GetFileNameWithoutExtension(result) +
-                    _options.MetaPrefix +
-                    Path.GetExtension(result));
-            }
-
-            if (!string.IsNullOrEmpty(_options.MetaSuffix))
-                result += _options.MetaSuffix;
-
-            return result;
-        }
-
-        public async Task<int> Run()
-        {
-            ColorConsole.WriteWrappedHeader("Upload Files");
-            _options.Logger?.LogInformation("---UPLOAD---");
-
-            string? apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
-            if (apiRootUri == null) return 2;
-
-            // load types if required
-            if (!string.IsNullOrEmpty(_options.MimeTypeList))
-                _typeMap.Load(_options.MimeTypeList);
-
-            // prompt for userID/password if required
-            LoginCredentials credentials = new(
-                _options.UserId,
-                _options.Password);
-            credentials.PromptIfRequired();
-
-            // login
-            ApiLogin? login =
-                await CommandHelper.LoginAndNotify(apiRootUri, credentials);
-            if (login == null) return 2;
-
-            // setup the metadata services
-            CsvMetadataFile metaFile = new()
-            {
-                Delimiter = _options.MetaDelimiter ?? ""
-            };
-
-            // setup client
-            using HttpClient client = ClientHelper.GetClient(apiRootUri,
-                login.Token);
-
-            // process files
-            int count = 0;
-
-            foreach (string path in FileEnumerator.Enumerate(
-                _options.InputDir ?? "", _options.FileMask ?? "",
-                _options.IsRegexMask, _options.IsRecursive))
-            {
-                // skip metadata files
-                if (Path.GetExtension(path) == _options.MetaExtension) continue;
-
-                count++;
-                _options.Logger?.LogInformation($"{count} {path}");
-                ColorConsole.WriteEmbeddedColorLine($"[green]{count:0000}[/green] {path}");
-
-                // load metadata if any
-                string metaPath = GetMetadataPath(path);
-
-                IList<Tuple<string, string>>? metadata = null;
-                if (File.Exists(metaPath))
-                {
-                    ColorConsole.WriteInfo(metaPath);
-                    metadata = metaFile.Read(metaPath);
-                }
-                string id = metadata?.FirstOrDefault(t => t.Item1 == "id")
-                    ?.Item2
-                    ?? SanitizePath(Path.GetRelativePath(
-                        _options.InputDir ?? "", path),
-                        _options.IdDelimiter ?? "");
-
-                // add/update item
-                string? error = await AddItemAsync(id, client);
-                if (error != null)
-                {
-                    _options.Logger?.LogError(error);
-                    ColorConsole.WriteError(error);
-                    return 2;
-                }
-
-                // set properties
-                error = await SetItemPropertiesAsync(id, client, metadata);
-                if (error != null)
-                {
-                    _options.Logger?.LogError(error);
-                    ColorConsole.WriteError(error);
-                    return 2;
-                }
-
-                // set content
-                error = await SetItemContentAsync(
-                    id, client, path, apiRootUri, login);
-
-                if (error != null)
-                {
-                    _options.Logger?.LogError(error);
-                    ColorConsole.WriteError(error);
-                    return 2;
-                }
-            }
-
-            string info = "Upload complete: " + count;
-            _options.Logger?.LogInformation(info);
-            ColorConsole.WriteInfo(info);
-
-            return 0;
-        }
+        _typeMap = new();
     }
 
-    public sealed class UploadCommandOptions : AppCommandOptions
+    private static async Task AddItemAsync(string id, HttpClient client)
     {
-        public string? InputDir { get; set; }
-        public string? FileMask { get; set; }
-        public string? MimeType { get; set; }
-        public string? MimeTypeList { get; set; }
-        public bool IsRegexMask { get; set; }
-        public bool IsRecursive { get; set; }
-        public string? MetaPrefix { get; set; }
-        public string? MetaExtension { get; set; }
-        public string? MetaSuffix { get; set; }
-        public string? MetaDelimiter { get; set; }
-        public string? IdDelimiter { get; set; }
-        public bool IsDryRun { get; set; }
-        public bool IsCheckEnabled { get; set; }
+        HttpResponseMessage response = await client.PostAsJsonAsync(
+            "items", new { id });
+        response.EnsureSuccessStatusCode();
+    }
 
-        public UploadCommandOptions(ICliAppContext context) : base(context)
+    private static async Task SetItemPropertiesAsync(string id,
+        HttpClient client, IList<Tuple<string, string>>? metadata)
+    {
+        if (metadata == null || metadata.Count == 0) return;
+
+        BlobItemPropertiesModel model = new()
         {
+            ItemId = id,
+            Properties = metadata.Select(t => new BlobItemPropertyModel
+            {
+                Name = t.Item1,
+                Value = t.Item2
+            }).ToArray()
+        };
+
+        HttpResponseMessage response = await client.PostAsJsonAsync(
+            $"properties/{id}/set", model);
+        response.EnsureSuccessStatusCode();
+    }
+
+    private static long GetCrc(string path)
+    {
+        using FileStream stream = new(path, FileMode.Open,
+            FileAccess.Read, FileShare.Read);
+        BinaryReader reader = new(stream);
+        uint crc = 0;
+        while (true)
+        {
+            byte[] buf = reader.ReadBytes(8192);
+            crc = Crc32Algorithm.Append(crc, buf);
+            if (buf.Length < 8192) break;
         }
+        return crc;
+    }
+
+    private static async Task<Tuple<bool, string?>> AreContentEqualAsync(
+        string id, HttpClient client, string path)
+    {
+        HttpResponseMessage r = await client.GetAsync(
+            $"contents/{id}/meta");
+        if (!r.IsSuccessStatusCode)
+        {
+            return Tuple.Create(false,
+                (string?)$"Error getting content metadata for item {id}");
+        }
+
+        FileInfo info = new(path);
+        BlobItemContentMetaModel meta = (await r.Content
+            .ReadFromJsonAsync<BlobItemContentMetaModel>())!;
+
+        // size must be equal
+        if (info.Length != meta.Size)
+            return Tuple.Create(false, (string?)null);
+
+        // CRC32C must be equal
+        long crc = GetCrc(path);
+        return Tuple.Create(crc == meta.Hash, (string?)null);
+    }
+
+    private async Task<string?> SetItemContentAsync(string id,
+        HttpClient client, string path, string apiRootUri,
+        UploadCommandSettings settings, ApiLogin login)
+    {
+        string uri = apiRootUri + $"contents/{id}";
+        string? mimeType = settings.MimeType;
+        if (string.IsNullOrEmpty(mimeType))
+        {
+            mimeType = _typeMap.GetType(Path.GetExtension(path));
+            if (mimeType == null) return "Unknown extension: " + path;
+        }
+
+        // check if required
+        if (settings.IsCheckEnabled)
+        {
+            var t = await AreContentEqualAsync(id, client, path);
+            if (t.Item2 != null) return t.Item2;
+            if (t.Item1) return null;
+        }
+
+        string? response = await FileUploader.UploadFile(uri, path,
+            login.Token, id, mimeType);
+        Debug.WriteLine(response);
+        // TODO response
+        return null;
+    }
+
+    private static string SanitizePath(string path, string sep)
+    {
+        path = path.Replace("/", sep);
+        return path.Replace("\\", sep);
+    }
+
+    private static string GetMetadataPath(string path,
+        UploadCommandSettings settings)
+    {
+        string result = path;
+
+        if (!string.IsNullOrEmpty(settings.MetaExtension))
+            result = Path.ChangeExtension(result, settings.MetaExtension);
+
+        if (!string.IsNullOrEmpty(settings.MetaPrefix))
+        {
+            result = Path.Combine(
+                Path.GetDirectoryName(result) ?? "",
+                Path.GetFileNameWithoutExtension(result) +
+                settings.MetaPrefix +
+                Path.GetExtension(result));
+        }
+
+        if (!string.IsNullOrEmpty(settings.MetaSuffix))
+            result += settings.MetaSuffix;
+
+        return result;
+    }
+
+    public override async Task<int> ExecuteAsync(CommandContext context,
+        UploadCommandSettings settings)
+    {
+        AnsiConsole.MarkupLine("[yellow underline]UPLOAD FILES[/]");
+        CliAppContext.Logger?.LogInformation("---UPLOAD---");
+
+        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify();
+        if (apiRootUri == null) return 2;
+
+        // load types if required
+        if (!string.IsNullOrEmpty(settings.MimeTypeList))
+            _typeMap.Load(settings.MimeTypeList);
+
+        // prompt for userID/password if required
+        LoginCredentials credentials = new(
+            settings.User,
+            settings.Password);
+        credentials.PromptIfRequired();
+
+        // login
+        ApiLogin? login =
+            await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+        if (login == null) return 2;
+
+        // setup the metadata services
+        CsvMetadataFile metaFile = new()
+        {
+            Delimiter = settings.MetaDelimiter ?? ""
+        };
+
+        // setup client
+        using HttpClient client = ClientHelper.GetClient(apiRootUri,
+            login.Token);
+
+        // process files
+        int count = 0;
+
+        foreach (string path in FileEnumerator.Enumerate(
+            settings.InputDir ?? "", settings.FileMask ?? "",
+            settings.IsRegexMask, settings.IsRecursive))
+        {
+            // skip metadata files
+            if (Path.GetExtension(path) == settings.MetaExtension) continue;
+
+            count++;
+            CliAppContext.Logger?.LogInformation($"{count} {path}");
+            AnsiConsole.MarkupLine($"[yellow]{count:0000}[/] [cyan]{path}[/]");
+
+            // load metadata if any
+            string metaPath = GetMetadataPath(path, settings);
+
+            IList<Tuple<string, string>>? metadata = null;
+            if (File.Exists(metaPath))
+            {
+                AnsiConsole.MarkupLine($"- [cyan]{metaPath}[/]");
+                metadata = metaFile.Read(metaPath);
+            }
+            string id = metadata?.FirstOrDefault(t => t.Item1 == "id")
+                ?.Item2
+                ?? SanitizePath(Path.GetRelativePath(
+                    settings.InputDir ?? "", path),
+                    settings.IdDelimiter ?? "");
+
+            // add/update item
+            if (!settings.IsDryRun)
+            {
+                await AddItemAsync(id, client);
+
+                // set properties
+                await SetItemPropertiesAsync(id, client, metadata);
+
+                // set content
+                string? error = await SetItemContentAsync(
+                    id, client, path, apiRootUri, settings, login);
+
+                if (error != null)
+                {
+                    CliAppContext.Logger?.LogError(error);
+                    AnsiConsole.MarkupLine($"[red]{error}[/]");
+                    return 2;
+                }
+            }
+        }
+
+        string info = "Upload complete: " + count;
+        CliAppContext.Logger?.LogInformation(info);
+        AnsiConsole.MarkupLine($"[green]{info}.[/]");
+
+        return 0;
+    }
+}
+
+internal sealed class UploadCommandSettings : AuthCommandSettings
+{
+    [CommandArgument(0, "<INPUT_DIR>")]
+    [Description("The input directory")]
+    public string? InputDir { get; set; }
+
+    [CommandArgument(1, "<FILE_MASK>")]
+    [Description("The input files mask")]
+    public string? FileMask { get; set; }
+
+    [CommandOption("-x|--regex")]
+    [Description("Use a regular expression pattern for the files mask")]
+    public bool IsRegexMask { get; set; }
+
+    [CommandOption("-r|--recurse")]
+    [Description("Recurse subdirectories")]
+    public bool IsRecursive { get; set; }
+
+    [CommandOption("-t|--type <MIME_TYPE>")]
+    [Description("The MIME type for all the files to upload")]
+    public string? MimeType { get; set; }
+
+    [CommandOption("-e|--extlist <TYPES_FILE_PATH>")]
+    [Description("The list of common file extensions with their MIME types; " +
+        "used when no MIME type is specified with -t")]
+    public string? MimeTypeList { get; set; }
+
+    [CommandOption("-m|--meta <EXTENSION>")]
+    [Description("The extension to replace to that of the content filename " +
+        "to build the correspondent metadata filename")]
+    [DefaultValue(".meta")]
+    public string MetaExtension { get; set; }
+
+    [CommandOption("--metapfx <PREFIX>")]
+    [Description("The prefix inserted before the content filename's extension " +
+        "to build the correspondent metadata filename")]
+    public string? MetaPrefix { get; set; }
+
+    [CommandOption("--metasfx <SUFFIX>")]
+    [Description("The suffix appended after the content filename's extension " +
+        "to represent its metadata in a correspondent file")]
+    public string? MetaSuffix { get; set; }
+
+    [CommandOption("--metasep <SEPARATOR>")]
+    [Description("The separator used in delimited metadata files")]
+    [DefaultValue(",")]
+    public string MetaDelimiter { get; set; }
+
+    [CommandOption("--idsep <SEPARATOR>")]
+    [Description("The conventional separator used in BLOB IDs for virtual folders.")]
+    [DefaultValue("|")]
+    public string IdDelimiter { get; set; }
+
+    [CommandOption("-c|--check")]
+    [Description("Check for file change before uploading")]
+    public bool IsCheckEnabled { get; set; }
+
+    [CommandOption("-d|--preflight|--dry")]
+    [Description("Preflight mode: do not write to database")]
+    public bool IsDryRun { get; set; }
+
+    public UploadCommandSettings()
+    {
+        MetaExtension = ".meta";
+        MetaDelimiter = ",";
+        IdDelimiter = "|";
     }
 }

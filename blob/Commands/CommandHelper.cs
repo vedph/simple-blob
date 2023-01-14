@@ -1,6 +1,5 @@
-﻿using Fusi.Cli;
-using Microsoft.Extensions.CommandLineUtils;
-using SimpleBlob.Cli.Services;
+﻿using SimpleBlob.Cli.Services;
+using Spectre.Console;
 using System;
 using System.Collections.Specialized;
 using System.Globalization;
@@ -26,30 +25,15 @@ static internal class CommandHelper
             : null;
     }
 
-    public static int GetOptionValue(CommandOption? option, int defValue)
+    public static string? GetApiRootUriAndNotify()
     {
-        if (option?.HasValue() != true) return defValue;
-
-        return int.TryParse(option.Value(), out int n) ? n : defValue;
-    }
-
-    public static DateTime GetOptionValue(CommandOption? option, DateTime defValue)
-    {
-        if (option?.HasValue() != true) return defValue;
-
-        DateTime? d = ParseDate(option.Value());
-        return d ?? defValue;
-    }
-
-    public static string? GetApiRootUriAndNotify(AppCommandOptions options)
-    {
-        string? apiRootUri = options.Configuration?.GetSection("ApiRootUri")?.Value;
+        string? apiRootUri = CliAppContext.Configuration?.GetSection("ApiRootUri")?.Value;
         if (string.IsNullOrEmpty(apiRootUri))
         {
-            ColorConsole.WriteError("Missing ApiUri in configuration");
+            AnsiConsole.MarkupLine("[red]Missing ApiUri in configuration[/]");
             return null;
         }
-        ColorConsole.WriteInfo("API: " + apiRootUri);
+        AnsiConsole.MarkupLine($"API: [cyan]{apiRootUri}[/]");
         return apiRootUri;
     }
 
@@ -58,118 +42,25 @@ static internal class CommandHelper
     {
         if (credentials.UserName == null || credentials.Password == null)
         {
-            ColorConsole.WriteError("Credentials not specified");
+            AnsiConsole.MarkupLine("[red]Credentials not specified[/]");
             return null;
         }
 
-        Console.Write("Logging in... ");
-        ApiLogin login = new(apiRootUri);
-        if (!await login.Login(credentials.UserName, credentials.Password))
+        return await AnsiConsole.Status().Start("Logging in...", async ctx =>
         {
-            ColorConsole.WriteError("Unable to login");
-            return null;
-        }
-        Console.WriteLine("done");
-        return login;
-    }
+            ctx.Spinner(Spinner.Known.Star);
 
-    public static void AddCredentialsOptions(CommandLineApplication app)
-    {
-        if (app == null) throw new ArgumentNullException(nameof(app));
-
-        app.Option("--user|-u", "The BLOB user name",
-            CommandOptionType.SingleValue);
-
-        app.Option("--pwd|-p", "The BLOB user password",
-            CommandOptionType.SingleValue);
-    }
-
-    public static void SetCredentialsOptions(CommandLineApplication app,
-        AppCommandOptions options)
-    {
-        if (app == null) throw new ArgumentNullException(nameof(app));
-        if (options == null) throw new ArgumentNullException(nameof(options));
-
-        options.UserId = app.Options.Find(o => o.ShortName == "u")?.Value();
-        options.Password = app.Options.Find(o => o.ShortName == "p")?.Value();
-    }
-
-    public static void AddItemListOptions(CommandLineApplication app)
-    {
-        if (app == null) throw new ArgumentNullException(nameof(app));
-
-        app.Option("--page-nr|-n", "The page number (1-N)",
-            CommandOptionType.SingleValue);
-        app.Option("--page-sz|-z", "The page size",
-            CommandOptionType.SingleValue);
-
-        app.Option("--id|-i", "The ID filter (wildcards ? and *)",
-            CommandOptionType.SingleValue);
-
-        app.Option("--mime|-m", "The mime type", CommandOptionType.SingleValue);
-
-        app.Option("--dates|-d", "The dates range (min:max, min:, :max)",
-            CommandOptionType.SingleValue);
-
-        app.Option("--sizes|-s", "The sizes range (min:max, min:, :max)",
-            CommandOptionType.SingleValue);
-
-        app.Option("--last-user|-l", "The last user who modified the item",
-            CommandOptionType.SingleValue);
-
-        app.Option("--prop|-o", "A name=value property to match (repeatable)",
-            CommandOptionType.MultipleValue);
-    }
-
-    public static void SetItemListOptions(CommandLineApplication app,
-        ItemListOptions options)
-    {
-        if (app == null) throw new ArgumentNullException(nameof(app));
-        if (options == null) throw new ArgumentNullException(nameof(options));
-
-        CommandOption? dateOption = app.Options.Find(o => o.ShortName == "n");
-        CommandOption? sizeOption = app.Options.Find(o => o.ShortName == "s");
-        CommandOption? propOption = app.Options.Find(o => o.ShortName == "o");
-
-        options.PageNumber = GetOptionValue(app.Options.Find(
-            o => o.ShortName == "n"), 1);
-        options.PageSize = GetOptionValue(app.Options.Find(
-            o => o.ShortName == "z"), 20);
-        options.Id = app.Options.Find(o => o.ShortName == "i")?.Value();
-        options.MimeType = app.Options.Find(o => o.ShortName == "m")?.Value();
-        options.LastUserId = app.Options.Find(o => o.ShortName == "l")?.Value();
-        options.Properties = propOption?.Values.Count > 0
-            ? string.Join(",", propOption.Values)
-            : null;
-
-        Regex rngRegex = new("^(?<a>[^:]+)?:(?<b>.+)?", RegexOptions.Compiled);
-
-        // dates
-        if (dateOption?.HasValue() == true)
-        {
-            Match m = rngRegex.Match(dateOption.Value());
-            if (m.Success)
+            ApiLogin login = new(apiRootUri);
+            if (!await login.Login(credentials.UserName, credentials.Password))
             {
-                options.MinDateModified = ParseDate(m.Groups["a"].Value);
-                options.MaxDateModified = ParseDate(m.Groups["b"].Value);
+                AnsiConsole.MarkupLine("[red]Unable to login[/]");
+                return null;
             }
-        }
-
-        // sizes
-        if (sizeOption?.HasValue() == true)
-        {
-            Match m = rngRegex.Match(sizeOption.Value());
-            if (m.Success)
-            {
-                options.MinSize = long.TryParse(m.Groups["a"].Value,
-                    out long min) ? min : 0;
-                options.MaxSize = long.TryParse(m.Groups["b"].Value,
-                    out long max) ? max : 0;
-            }
-        }
+            return login;
+        });
     }
 
-    public static string BuildItemListQueryString(ItemListOptions options)
+    public static string BuildItemListQueryString(ItemListSettings options)
     {
         if (options == null) throw new ArgumentNullException(nameof(options));
 

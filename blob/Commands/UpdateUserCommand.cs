@@ -1,138 +1,106 @@
 ﻿using Fusi.Api.Auth.Controllers;
-using Fusi.Cli;
-using Fusi.Cli.Commands;
-using Microsoft.Extensions.CommandLineUtils;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
-using System;
+using Spectre.Console;
+using Spectre.Console.Cli;
+using System.ComponentModel;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Threading.Tasks;
 
-namespace SimpleBlob.Cli.Commands
+namespace SimpleBlob.Cli.Commands;
+
+internal sealed class UpdateUserCommand : AsyncCommand<UpdateUserCommandSettings>
 {
-    public sealed class UpdateUserCommand : ICommand
+    public override async Task<int> ExecuteAsync(CommandContext context,
+        UpdateUserCommandSettings settings)
     {
-        private readonly UpdateUserCommandOptions _options;
+        AnsiConsole.MarkupLine("[yellow underline]UPDATE USER[/]");
+        CliAppContext.Logger?.LogInformation("---UPDATE USER---");
 
-        public UpdateUserCommand(UpdateUserCommandOptions options)
+        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify();
+        if (apiRootUri == null) return 2;
+
+        // prompt for userID/password if required
+        LoginCredentials credentials = new(
+            settings.User,
+            settings.Password);
+        credentials.PromptIfRequired();
+
+        // login
+        ApiLogin? login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+        if (login == null) return 2;
+
+        // setup client
+        using HttpClient client = ClientHelper.GetClient(apiRootUri,
+            login.Token);
+
+        // get user
+        return await AnsiConsole.Status().Start("Updating user...", async ctx =>
         {
-            _options = options;
-        }
+            ctx.Status($"Getting user {settings.UserName}");
+            ctx.Spinner(Spinner.Known.Star);
 
-        public static void Configure(CommandLineApplication app,
-            ICliAppContext context)
-        {
-            if (app == null)
-                throw new ArgumentNullException(nameof(app));
-
-            app.Description = "Update user editable data.";
-            app.HelpOption("-?|-h|--help");
-
-            CommandArgument nameArgument = app.Argument("[name]", "The user name");
-
-            CommandOption emailOption = app.Option("--email|-e",
-                "The user's email address", CommandOptionType.SingleValue);
-            CommandOption emailConfOption = app.Option("--conf|-c",
-                "Confirm user's email address", CommandOptionType.NoValue);
-            CommandOption lockoutOption = app.Option("--lock|-k",
-                "Enable (1) or disable (0) lockout", CommandOptionType.SingleValue);
-            CommandOption firstOption = app.Option("--first|-f",
-                "The user first name", CommandOptionType.SingleValue);
-            CommandOption lastOption = app.Option("--last|-l",
-                "The user last name", CommandOptionType.SingleValue);
-
-            // credentials
-            CommandHelper.AddCredentialsOptions(app);
-
-            app.OnExecute(() =>
-            {
-                UpdateUserCommandOptions co = new(context)
-                {
-                    UserName = nameArgument.Value,
-                    UserEmail = emailOption.Value(),
-                    EmailConfirmed = emailConfOption.HasValue()? true : null,
-                    FirstName = firstOption.Value(),
-                    LastName = lastOption.Value(),
-                    LockoutEnabled = lockoutOption.HasValue()
-                        ? lockoutOption.Value() == "1" : null,
-                };
-                // credentials
-                CommandHelper.SetCredentialsOptions(app, co);
-
-                context.Command = new UpdateUserCommand(co);
-                return 0;
-            });
-        }
-
-        public async Task<int> Run()
-        {
-            ColorConsole.WriteWrappedHeader("Update User");
-            _options.Logger?.LogInformation("---UPDATE USER---");
-
-            string? apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
-            if (apiRootUri == null) return 2;
-
-            // prompt for userID/password if required
-            LoginCredentials credentials = new(
-                _options.UserId,
-                _options.Password);
-            credentials.PromptIfRequired();
-
-            // login
-            ApiLogin? login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
-            if (login == null) return 2;
-
-            // setup client
-            using HttpClient client = ClientHelper.GetClient(apiRootUri,
-                login.Token);
-
-            // get user
-            Console.WriteLine($"Getting user {_options.UserName}...");
             NamedUserModel? user = await client.GetFromJsonAsync<NamedUserModel>(
-                "users/" + _options.UserName);
+                "users/" + settings.UserName);
             if (user == null)
             {
-                ColorConsole.WriteError("User not found: " + _options.UserName);
+                AnsiConsole.MarkupLine(
+                    $"[red]User not found: {settings.UserName}[/]");
                 return 2;
             }
-
-            Console.Write($"Updating user {_options.UserName}... ");
+            ctx.Status($"Updating user {settings.UserName}... ");
             NamedUserBindingModel newUser = new()
             {
-                UserName = _options.UserName,
-                Email = _options.UserEmail ?? user.Email,
-                EmailConfirmed = _options.EmailConfirmed ?? user.EmailConfirmed,
-                FirstName = _options.FirstName ?? user.FirstName,
-                LastName = _options.LastName ?? user.LastName,
-                LockoutEnabled = _options.LockoutEnabled ?? user.LockoutEnabled,
+                UserName = settings.UserName,
+                Email = settings.UserEmail ?? user.Email,
+                EmailConfirmed = settings.EmailConfirmed ?? user.EmailConfirmed,
+                FirstName = settings.FirstName ?? user.FirstName,
+                LastName = settings.LastName ?? user.LastName,
+                LockoutEnabled = settings.LockoutEnabled == -1
+                    ? user.LockoutEnabled : settings.LockoutEnabled == 1
             };
             HttpResponseMessage response = await client.PutAsJsonAsync(
                 "users", newUser);
 
-            if (!response.IsSuccessStatusCode)
-            {
-                string error = $"Error updating user {_options.UserName}";
-                _options.Logger?.LogError(error);
-                ColorConsole.WriteError(error);
-                return 2;
-            }
-            Console.WriteLine("done");
+            response.EnsureSuccessStatusCode();
+            AnsiConsole.MarkupLine($"[green]User {settings.UserName} updated.[/]");
             return 0;
-        }
+        });
     }
+}
 
-    public sealed class UpdateUserCommandOptions : AppCommandOptions
+internal sealed class UpdateUserCommandSettings : AuthCommandSettings
+{
+    [CommandArgument(0, "<USER_NAME>")]
+    [Description("The name of the user to update")]
+    public string? UserName { get; set; }
+
+    [CommandOption("-e|--email <EMAIL>")]
+    [Description("The user's email address")]
+    public string? UserEmail { get; set; }
+
+    [CommandOption("-c|--conf")]
+    [Description("Confirm user's email address")]
+    public bool? EmailConfirmed { get; set; }
+
+    [CommandOption("-f|--first <NAME>")]
+    [Description("The user first name")]
+    [DefaultValue("")]
+    public string? FirstName { get; set; }
+
+    [CommandOption("-l|--last <NAME>")]
+    [Description("The user last name")]
+    [DefaultValue("")]
+    public string? LastName { get; set; }
+
+    [CommandOption("-k|--lock <STATE>")]
+    [Description("Enable (1) or disable (0) lockout")]
+    [DefaultValue(-1)]
+    public int LockoutEnabled { get; set; }
+
+    public UpdateUserCommandSettings()
     {
-        public string? UserName { get; set; }
-        public string? UserEmail { get; set; }
-        public bool? EmailConfirmed { get; set; }
-        public string? FirstName { get; set; }
-        public string? LastName { get; set; }
-        public bool? LockoutEnabled { get; set; }
-
-        public UpdateUserCommandOptions(ICliAppContext context) : base(context)
-        {
-        }
+        LockoutEnabled = -1;
     }
 }

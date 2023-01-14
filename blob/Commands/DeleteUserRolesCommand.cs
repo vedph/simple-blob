@@ -1,9 +1,7 @@
-﻿using Fusi.Cli;
-using Fusi.Cli.Commands;
-using Microsoft.Extensions.CommandLineUtils;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
-using System;
+using Spectre.Console;
+using Spectre.Console.Cli;
 using System.Collections.Specialized;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -11,58 +9,21 @@ using System.Web;
 
 namespace SimpleBlob.Cli.Commands;
 
-public sealed class DeleteUserRolesCommand : ICommand
+internal sealed class DeleteUserRolesCommand : AsyncCommand<UserRolesCommandSettings>
 {
-    private readonly UserRolesCommandOptions _options;
-
-    public DeleteUserRolesCommand(UserRolesCommandOptions options)
+    public override async Task<int> ExecuteAsync(CommandContext context,
+        UserRolesCommandSettings settings)
     {
-        _options = options;
-    }
+        AnsiConsole.MarkupLine("[red underline]DELETE USER ROLES[/]");
+        CliAppContext.Logger?.LogInformation("---DELETE USER ROLES---");
 
-    public static void Configure(CommandLineApplication app,
-        ICliAppContext context)
-    {
-        if (app == null)
-            throw new ArgumentNullException(nameof(app));
-
-        app.Description = "Delete the specified roles from a user.";
-        app.HelpOption("-?|-h|--help");
-
-        CommandArgument nameArgument = app.Argument("[name]", "The user name");
-        CommandOption roleOption = app.Option("--role|-r",
-            "The role (repeatable)", CommandOptionType.MultipleValue);
-
-        // credentials
-        CommandHelper.AddCredentialsOptions(app);
-
-        app.OnExecute(() =>
-        {
-            UserRolesCommandOptions co = new(context)
-            {
-                UserName = nameArgument.Value,
-                Roles = roleOption.Values.ToArray()
-            };
-            // credentials
-            CommandHelper.SetCredentialsOptions(app, co);
-
-            context.Command = new DeleteUserRolesCommand(co);
-            return 0;
-        });
-    }
-
-    public async Task<int> Run()
-    {
-        ColorConsole.WriteWrappedHeader("Delete User Roles");
-        _options.Logger?.LogInformation("---DELETE USER ROLES---");
-
-        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify(_options);
+        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify();
         if (apiRootUri == null) return 2;
 
         // prompt for userID/password if required
         LoginCredentials credentials = new(
-            _options.UserId,
-            _options.Password);
+            settings.User,
+            settings.Password);
         credentials.PromptIfRequired();
 
         // login
@@ -74,23 +35,21 @@ public sealed class DeleteUserRolesCommand : ICommand
         using HttpClient client = ClientHelper.GetClient(apiRootUri,
             login.Token);
 
-        Console.Write($"Adding roles to user {_options.UserName}... ");
-
         // https://stackoverflow.com/questions/17096201/build-query-string-for-system-net-httpclient-get
         NameValueCollection query = HttpUtility.ParseQueryString("");
-        query["roles"] = string.Join(",", _options.Roles!);
+        query["roles"] = string.Join(",", settings.Roles);
 
-        HttpResponseMessage response = await client.DeleteAsync(
-            $"users/{_options.UserName}/roles?" + query.ToString());
-
-        if (!response.IsSuccessStatusCode)
+        await AnsiConsole.Status().Start("Deleting roles...", async ctx =>
         {
-            string error = $"Error deleting roles from user {_options.UserName}";
-            _options.Logger?.LogError(error);
-            ColorConsole.WriteError(error);
-            return 2;
-        }
-        Console.WriteLine("done");
+            ctx.Spinner(Spinner.Known.Star);
+
+            HttpResponseMessage response = await client.DeleteAsync(
+                $"users/{settings.UserName}/roles?" + query.ToString());
+            response.EnsureSuccessStatusCode();
+        });
+
+        AnsiConsole.MarkupLine($"[green] Removed {settings.Roles.Length} role(s) " +
+            $"from user {settings.UserName}.[/]");
 
         return 0;
     }

@@ -1,15 +1,11 @@
-﻿using Fusi.Cli.Commands;
-using Microsoft.Extensions.CommandLineUtils;
-using Serilog;
-using Serilog.Extensions.Logging;
+﻿using Serilog;
 using SimpleBlob.Cli.Commands;
-using SimpleBlob.Cli.Services;
+using Spectre.Console;
+using Spectre.Console.Cli;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace SimpleBlob.Cli;
@@ -20,7 +16,7 @@ public static class Program
     private static void DeleteLogs()
     {
         foreach (var path in Directory.EnumerateFiles(
-            AppDomain.CurrentDomain.BaseDirectory, "Blob-log*.txt"))
+            AppDomain.CurrentDomain.BaseDirectory, "blob-log*.txt"))
         {
             try
             {
@@ -34,32 +30,6 @@ public static class Program
     }
 #endif
 
-    private static BlobCliAppContext? GetAppContext(string[] args)
-    {
-        return new CliAppContextBuilder<BlobCliAppContext>(args)
-            .SetNames("Blob", "Blob CLI")
-            .SetLogger(new SerilogLoggerProvider(Log.Logger)
-                .CreateLogger(nameof(Program)))
-            .SetDefaultConfiguration()
-            .SetCommands(new Dictionary<string,
-                Action<CommandLineApplication, ICliAppContext>>
-            {
-                ["list"] = ListCommand.Configure,
-                ["upload"] = UploadCommand.Configure,
-                ["download"] = DownloadCommand.Configure,
-                ["get-info"] = GetInfoCommand.Configure,
-                ["add-props"] = AddPropertiesCommand.Configure,
-                ["delete"] = DeleteItemCommand.Configure,
-                ["list-users"] = ListUsersCommand.Configure,
-                ["add-user"] = AddUserCommand.Configure,
-                ["update-user"] = UpdateUserCommand.Configure,
-                ["delete-user"] = DeleteUserCommand.Configure,
-                ["add-user-roles"] = AddUserRolesCommand.Configure,
-                ["delete-user-roles"] = DeleteUserRolesCommand.Configure,
-            })
-        .Build();
-    }
-
     public static async Task<int> Main(string[] args)
     {
         try
@@ -68,12 +38,12 @@ public static class Program
             string logFilePath = Path.Combine(
                 Path.GetDirectoryName(
                     Assembly.GetExecutingAssembly().Location) ?? "",
-                    "Blob-log.txt");
+                    "blob-log.txt");
             Log.Logger = new LoggerConfiguration()
 #if DEBUG
                 .MinimumLevel.Debug()
 #else
-                    .MinimumLevel.Information()
+                .MinimumLevel.Information()
 #endif
                 .Enrich.FromLogContext()
                 .WriteTo.File(logFilePath, rollingInterval: RollingInterval.Day)
@@ -81,25 +51,50 @@ public static class Program
 #if DEBUG
             DeleteLogs();
 #endif
-            Console.OutputEncoding = Encoding.UTF8;
             Stopwatch stopwatch = new();
             stopwatch.Start();
 
-            BlobCliAppContext? context = GetAppContext(args);
-
-            if (context?.Command == null)
+            CommandApp app = new();
+            app.Configure(config =>
             {
-                // RootCommand will have printed help
-                return 1;
-            }
+                config.AddCommand<AddPropertiesCommand>("add-props")
+                    .WithDescription("Add or set the properties for a specified item");
 
-            Console.Clear();
-            int result = await context.Command.Run();
+                config.AddCommand<AddUserCommand>("add-user")
+                    .WithDescription("Add a user account");
 
-            Console.ResetColor();
-            Console.CursorVisible = true;
-            Console.WriteLine();
-            Console.WriteLine();
+                config.AddCommand<AddUserRolesCommand>("add-user-roles")
+                    .WithDescription("Add role(s) to a user");
+
+                config.AddCommand<DeleteItemCommand>("delete")
+                    .WithDescription("Delete the specified item");
+
+                config.AddCommand<DeleteUserCommand>("delete-user")
+                    .WithDescription("Delete the specified user account");
+
+                config.AddCommand<DeleteUserRolesCommand>("delete-user-roles")
+                    .WithDescription("Delete the specified roles from a user");
+
+                config.AddCommand<DownloadCommand>("download")
+                    .WithDescription("Download items matching the specified filters");
+
+                config.AddCommand<GetInfoCommand>("get-info")
+                    .WithDescription("Get information about an item");
+
+                config.AddCommand<ListCommand>("list")
+                    .WithDescription("Get a list of items");
+
+                config.AddCommand<ListUsersCommand>("list-users")
+                    .WithDescription("List user accounts");
+
+                config.AddCommand<UpdateUserCommand>("update-user")
+                    .WithDescription("Update metadata for the specified user");
+
+                config.AddCommand<UploadCommand>("upload")
+                    .WithDescription("Upload items from matching files");
+            });
+
+            int result = await app.RunAsync(args);
 
             stopwatch.Stop();
             if (stopwatch.ElapsedMilliseconds > 1000)
@@ -115,10 +110,7 @@ public static class Program
         catch (Exception ex)
         {
             Debug.WriteLine(ex.ToString());
-            Console.CursorVisible = true;
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(ex.ToString());
-            Console.ResetColor();
+            AnsiConsole.WriteException(ex);
             return 2;
         }
     }
