@@ -24,14 +24,16 @@
     - [Add User Roles Command](#add-user-roles-command)
     - [Delete User Roles Command](#delete-user-roles-command)
     - [Update User Command](#update-user-command)
+    - [Show Settings Command](#show-settings-command)
   - [History](#history)
+    - [2.0.3](#203)
     - [2.0.2](#202)
     - [2.0.1](#201)
     - [2.0.0](#200)
 
 A very simple BLOB store with minimal dependencies. This is used internally, as a support subsystem for other projects, but can eventually be used as a standalone utility service.
 
-Currently the only implemented RDBMS is PostgreSQL, but others may follow.
+Currently the only implemented RDBMS is PostgreSQL.
 
 Projects:
 
@@ -47,7 +49,7 @@ Projects:
 Quick Docker image build:
 
 ```bash
-docker build . -t vedph2020/simple-blob-api:2.0.2 -t vedph2020/simple-blob-api:latest
+docker build . -t vedph2020/simple-blob-api:2.0.3 -t vedph2020/simple-blob-api:latest
 ```
 
 (replace with the current version).
@@ -479,7 +481,19 @@ Example:
 ./blob update-user tester -c -u zeus -p "P4ss-W0rd!"
 ```
 
+### Show Settings Command
+
+- 🔒 roles: any
+
+🎯 Show relevant tool's settings. This just displays the root URI of the BLOB API service used by this client tool.
+
+```bash
+./blob settings
+```
+
 ## History
+
+### 2.0.3
 
 - 2023-01-09:
   - updated packages.

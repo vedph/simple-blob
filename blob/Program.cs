@@ -92,6 +92,9 @@ public static class Program
 
                 config.AddCommand<UploadCommand>("upload")
                     .WithDescription("Upload items from matching files");
+
+                config.AddCommand<ShowSettingsCommand>("settings")
+                    .WithDescription("Show relevant tool settings");
             });
 
             int result = await app.RunAsync(args);
