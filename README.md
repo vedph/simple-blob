@@ -26,6 +26,7 @@
     - [Update User Command](#update-user-command)
     - [Show Settings Command](#show-settings-command)
   - [History](#history)
+    - [2.0.4](#204)
     - [2.0.3](#203)
     - [2.0.2](#202)
     - [2.0.1](#201)
@@ -49,7 +50,7 @@ Projects:
 Quick Docker image build:
 
 ```bash
-docker build . -t vedph2020/simple-blob-api:2.0.3 -t vedph2020/simple-blob-api:latest
+docker build . -t vedph2020/simple-blob-api:2.0.4 -t vedph2020/simple-blob-api:latest
 ```
 
 (replace with the current version).
@@ -493,7 +494,11 @@ Example:
 
 ## History
 
-- 2023-01-16: refactored CLI moving auth commands into new `Fusi.Cli.Auth` library.
+### 2.0.4
+
+- 2023-01-16:
+  - updated backend packages.
+  - refactored CLI moving auth commands into new `Fusi.Cli.Auth` library.
 
 ### 2.0.3
 
