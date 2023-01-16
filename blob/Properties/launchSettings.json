@@ -2,7 +2,7 @@
   "profiles": {
     "blob": {
       "commandName": "Project",
-      "commandLineArgs": "update-user tester -c -u zeus -p P4ss-W0rd!"
+      "commandLineArgs": "update-user tester -f Gino -c 1 -u zeus -p P4ss-W0rd!"
     }
   }
 }

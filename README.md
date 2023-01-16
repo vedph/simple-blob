@@ -369,7 +369,7 @@ Example:
 🎯 Add a new user account to the BLOB service.
 
 ```bash
-./blob add-user <USER_NAME> <USER_PWD> <USER_EMAIL> [-f <NAME>] [-l <NAME>] [-u <USER>] [-p <PASSWORD>]
+./blob add-user <USER_NAME> <USER_PWD> <USER_EMAIL> <FIRST_NAME> <LAST_NAME> [-u <USER>] [-p <PASSWORD>]
 ```
 
 where:
@@ -377,15 +377,15 @@ where:
 - `<USER_NAME>` the name of the user to add. This is the username and must be unique in the service.
 - `<USER_PWD>` the password for the user being added.
 - `<USER_EMAIL>` the email address of the user being added.
-- `-f <NAME>` the first name of the user being added.
-- `-l <NAME>` the last name of the user being added.
+- `<FIRST_NAME>` the first name of the user being added.
+- `<LAST_NAME>` the last name of the user being added.
 - `-u <USER>` the user name. If not specified, you will be prompted for it.
 - `-p <PASSWORD>` the password. If not specified, you will be prompted for it.
 
 Example:
 
 ```bash
-./blob add-user tester "P4ss-W0rd!" tester@somewhere.org -f Mario -l Rossi -u zeus -p "P4ss-W0rd!"
+./blob add-user tester "P4ss-W0rd!" tester@somewhere.org Mario Rossi -u zeus -p "P4ss-W0rd!"
 ```
 
 ### Delete User Command
@@ -463,12 +463,12 @@ Example:
 🎯 Update the editable properties of a user. Only the properties explicitly specified by options will be updated.
 
 ```bash
-./blob update-user <USER_NAME> [-e <EMAIL>] [-c] [-f <NAME>] [-l <NAME>] [-k <STATE>] [-u <USER>] [-p <PASSWORD>]
+./blob update-user <USER_NAME> [-e <EMAIL>] [-c <VALUE>] [-f <NAME>] [-l <NAME>] [-k <STATE>] [-u <USER>] [-p <PASSWORD>]
 ```
 
 - `USER_NAME` the name of the user to update.
 - `-e` the user's email address.
-- `-c` confirm the user's email address.
+- `-c <VALUE>` set (1) or revoke (0) the user's email address confirmation.
 - `-f <NAME>` set first name.
 - `-l <NAME>` set last name.
 - `-k <STATE>` set lockout enabled on (`1`) / off (`0`).
@@ -492,6 +492,8 @@ Example:
 ```
 
 ## History
+
+- 2023-01-16: refactored CLI moving auth commands into new `Fusi.Cli.Auth` library.
 
 ### 2.0.3
 

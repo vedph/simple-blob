@@ -1,4 +1,5 @@
-﻿using Spectre.Console.Cli;
+﻿using Fusi.Cli.Auth.Commands;
+using Spectre.Console.Cli;
 using System;
 using System.ComponentModel;
 

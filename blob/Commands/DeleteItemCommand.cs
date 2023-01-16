@@ -1,7 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Fusi.Cli.Auth.Commands;
+using Fusi.Cli.Auth.Services;
+using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
 using Spectre.Console;
 using Spectre.Console.Cli;
+using System;
 using System.ComponentModel;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -10,14 +13,19 @@ namespace SimpleBlob.Cli.Commands;
 
 internal sealed class DeleteItemCommand : AsyncCommand<DeleteItemCommandSettings>
 {
+    private readonly ICliAuthSettings _settings;
+
+    public DeleteItemCommand(ICliAuthSettings settings)
+    {
+        _settings = settings
+            ?? throw new ArgumentNullException(nameof(settings));
+    }
+
     public override async Task<int> ExecuteAsync(CommandContext context,
         DeleteItemCommandSettings settings)
     {
         AnsiConsole.MarkupLine("[red underline]DELETE ITEM[/]");
         CliAppContext.Logger?.LogInformation("---DELETE ITEM---");
-
-        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify();
-        if (apiRootUri == null) return 2;
 
         // prompt for userID/password if required
         LoginCredentials credentials = new(
@@ -26,7 +34,8 @@ internal sealed class DeleteItemCommand : AsyncCommand<DeleteItemCommandSettings
         credentials.PromptIfRequired();
 
         // login
-        ApiLogin? login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+        ApiLogin? login = await CommandHelper.LoginAndNotify(
+            _settings.ApiRootUri, credentials);
         if (login == null) return 2;
 
         // prompt for confirmation if required
@@ -37,7 +46,7 @@ internal sealed class DeleteItemCommand : AsyncCommand<DeleteItemCommandSettings
         }
 
         // setup client
-        using HttpClient client = ClientHelper.GetClient(apiRootUri,
+        using HttpClient client = CommandHelper.GetClient(_settings.ApiRootUri,
             login.Token);
 
         // delete

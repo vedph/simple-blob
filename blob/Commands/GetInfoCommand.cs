@@ -1,4 +1,5 @@
-﻿using CsvHelper;
+﻿using Fusi.Cli.Auth.Commands;
+using Fusi.Cli.Auth.Services;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Api.Models;
 using SimpleBlob.Cli.Services;
@@ -17,6 +18,14 @@ namespace SimpleBlob.Cli.Commands;
 
 internal sealed class GetInfoCommand : AsyncCommand<GetInfoCommandSettings>
 {
+    private readonly ICliAuthSettings _settings;
+
+    public GetInfoCommand(ICliAuthSettings settings)
+    {
+        _settings = settings
+            ?? throw new ArgumentNullException(nameof(settings));
+    }
+
     private static void WriteRichItemInfo(BlobItem item,
         BlobItemProperty[]? properties,
         BlobItemContentMetaModel? contentMeta)
@@ -95,9 +104,6 @@ internal sealed class GetInfoCommand : AsyncCommand<GetInfoCommandSettings>
         AnsiConsole.MarkupLine("[green underline]GET ITEM INFO[/]");
         CliAppContext.Logger?.LogInformation("---GET ITEM INFO---");
 
-        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify();
-        if (apiRootUri == null) return 2;
-
         // prompt for userID/password if required
         LoginCredentials credentials = new(
             settings.User,
@@ -106,11 +112,11 @@ internal sealed class GetInfoCommand : AsyncCommand<GetInfoCommandSettings>
 
         // login
         ApiLogin? login =
-            await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            await CommandHelper.LoginAndNotify(_settings.ApiRootUri, credentials);
         if (login == null) return 2;
 
         // setup client
-        using HttpClient client = ClientHelper.GetClient(apiRootUri,
+        using HttpClient client = CommandHelper.GetClient(_settings.ApiRootUri,
             login.Token);
 
         BlobItem? item = null;

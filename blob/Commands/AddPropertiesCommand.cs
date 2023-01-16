@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Fusi.Cli.Auth.Commands;
+using Fusi.Cli.Auth.Services;
+using Microsoft.Extensions.Logging;
 using SimpleBlob.Api.Models;
 using SimpleBlob.Cli.Services;
 using Spectre.Console;
@@ -15,14 +17,19 @@ namespace SimpleBlob.Cli.Commands;
 
 internal sealed class AddPropertiesCommand : AsyncCommand<AddPropertiesCommandSettings>
 {
+    private readonly ICliAuthSettings _settings;
+
+    public AddPropertiesCommand(ICliAuthSettings settings)
+    {
+        _settings = settings
+            ?? throw new ArgumentNullException(nameof(settings));
+    }
+
     public override async Task<int> ExecuteAsync(CommandContext context,
         AddPropertiesCommandSettings settings)
     {
         AnsiConsole.MarkupLine("[yellow underline]ADD PROPERTIES[/]");
         CliAppContext.Logger?.LogInformation("---ADD PROPERTIES---");
-
-        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify();
-        if (apiRootUri == null) return 2;
 
         // prompt for userID/password if required
         LoginCredentials credentials = new(
@@ -32,11 +39,11 @@ internal sealed class AddPropertiesCommand : AsyncCommand<AddPropertiesCommandSe
 
         // login
         ApiLogin? _login =
-            await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            await CommandHelper.LoginAndNotify(_settings.ApiRootUri, credentials);
         if (_login == null) return 2;
 
         // setup client
-        using HttpClient client = ClientHelper.GetClient(apiRootUri,
+        using HttpClient client = CommandHelper.GetClient(_settings.ApiRootUri,
             _login.Token);
 
         // collect properties

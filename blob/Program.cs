@@ -1,5 +1,10 @@
-﻿using Serilog;
+﻿using Fusi.Cli.Auth.Commands;
+using Fusi.Cli.Auth.Services;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Serilog;
 using SimpleBlob.Cli.Commands;
+using SimpleBlob.Cli.Services;
 using Spectre.Console;
 using Spectre.Console.Cli;
 using System;
@@ -54,7 +59,21 @@ public static class Program
             Stopwatch stopwatch = new();
             stopwatch.Start();
 
-            CommandApp app = new();
+            // we want to inject CliAuthSettings into commands
+            ServiceCollection registrations = new();
+            registrations.AddSingleton<ICliAuthSettings>(_ =>
+            {
+                return new CliAuthSettings
+                {
+                    ApiRootUri =
+                        CliAppContext.Configuration.GetValue<string>("ApiRootUri")!
+                };
+            });
+
+            // Create a new command app with the registrar
+            // and run it with the provided arguments.
+            CommandApp app = new(new TypeRegistrar(registrations));
+
             app.Configure(config =>
             {
                 config.AddCommand<AddPropertiesCommand>("add-props")

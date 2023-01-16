@@ -1,4 +1,6 @@
 ﻿using Force.Crc32;
+using Fusi.Cli.Auth.Commands;
+using Fusi.Cli.Auth.Services;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Api.Models;
 using SimpleBlob.Cli.Services;
@@ -19,9 +21,12 @@ namespace SimpleBlob.Cli.Commands;
 internal sealed class UploadCommand : AsyncCommand<UploadCommandSettings>
 {
     private readonly MimeTypeMap _typeMap;
+    private readonly ICliAuthSettings _settings;
 
-    public UploadCommand()
+    public UploadCommand(ICliAuthSettings settings)
     {
+        _settings = settings
+            ?? throw new ArgumentNullException(nameof(settings));
         _typeMap = new();
     }
 
@@ -153,9 +158,6 @@ internal sealed class UploadCommand : AsyncCommand<UploadCommandSettings>
         AnsiConsole.MarkupLine("[yellow underline]UPLOAD FILES[/]");
         CliAppContext.Logger?.LogInformation("---UPLOAD---");
 
-        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify();
-        if (apiRootUri == null) return 2;
-
         // load types if required
         if (!string.IsNullOrEmpty(settings.MimeTypeList))
             _typeMap.Load(settings.MimeTypeList);
@@ -168,7 +170,7 @@ internal sealed class UploadCommand : AsyncCommand<UploadCommandSettings>
 
         // login
         ApiLogin? login =
-            await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+            await CommandHelper.LoginAndNotify(_settings.ApiRootUri, credentials);
         if (login == null) return 2;
 
         // setup the metadata services
@@ -178,7 +180,7 @@ internal sealed class UploadCommand : AsyncCommand<UploadCommandSettings>
         };
 
         // setup client
-        using HttpClient client = ClientHelper.GetClient(apiRootUri,
+        using HttpClient client = CommandHelper.GetClient(_settings.ApiRootUri,
             login.Token);
 
         // process files
@@ -220,7 +222,7 @@ internal sealed class UploadCommand : AsyncCommand<UploadCommandSettings>
 
                 // set content
                 string? error = await SetItemContentAsync(
-                    id, client, path, apiRootUri, settings, login);
+                    id, client, path, _settings.ApiRootUri, settings, login);
 
                 if (error != null)
                 {

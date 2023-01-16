@@ -1,4 +1,5 @@
-﻿using Fusi.Tools.Data;
+﻿using Fusi.Cli.Auth.Services;
+using Fusi.Tools.Data;
 using Microsoft.Extensions.Logging;
 using SimpleBlob.Cli.Services;
 using SimpleBlob.Core;
@@ -16,14 +17,19 @@ namespace SimpleBlob.Cli.Commands;
 
 internal sealed class DownloadCommand : AsyncCommand<DownloadCommandSettings>
 {
+    private readonly ICliAuthSettings _settings;
+
+    public DownloadCommand(ICliAuthSettings settings)
+    {
+        _settings = settings
+            ?? throw new ArgumentNullException(nameof(settings));
+    }
+
     public override async Task<int> ExecuteAsync(CommandContext context,
         DownloadCommandSettings settings)
     {
         AnsiConsole.MarkupLine("[green underline]DOWNLOAD ITEMS[/]");
         CliAppContext.Logger?.LogInformation("---DOWNLOAD ITEMS---");
-
-        string? apiRootUri = CommandHelper.GetApiRootUriAndNotify();
-        if (apiRootUri == null) return 2;
 
         // prompt for userID/password if required
         LoginCredentials credentials = new(
@@ -32,16 +38,17 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommandSettings>
         credentials.PromptIfRequired();
 
         // login
-        ApiLogin? login = await CommandHelper.LoginAndNotify(apiRootUri, credentials);
+        ApiLogin? login = await CommandHelper.LoginAndNotify(
+            _settings.ApiRootUri, credentials);
         if (login == null) return 2;
 
         // setup client
-        using HttpClient client = ClientHelper.GetClient(apiRootUri,
+        using HttpClient client = CommandHelper.GetClient(_settings.ApiRootUri,
             login.Token);
 
         // get 1st page
         var page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
-            "items?" + CommandHelper.BuildItemListQueryString(settings));
+            "items?" + ListCommand.BuildItemListQueryString(settings));
 
         AnsiConsole.MarkupLine($"Matching items: [yellow]{page!.Total}[/]");
         if (page.Total == 0) return 0;
@@ -111,7 +118,7 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommandSettings>
             // next page
             if (++settings.PageNumber > pageCount) break;
             page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
-                "items?" + CommandHelper.BuildItemListQueryString(settings));
+                "items?" + ListCommand.BuildItemListQueryString(settings));
         }
         return 0;
     }
