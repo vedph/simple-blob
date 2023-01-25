@@ -94,9 +94,9 @@ The schema is very simple and essentially includes just 3 tables (the auth table
 
 ### Account
 
-`GET /api/accounts/emailexists/{email}`: Check if the specified email address is already registered.
+`GET /api/accounts/emailexists/{email}`: Checks if the specified email address is already registered.
 
-`GET /api/accounts/nameexists/{name}`: Check if the specified user name is already registered.
+`GET /api/accounts/nameexists/{name}`: Checks if the specified user name is already registered.
 
 `POST /api/accounts/register?confirmed=true`: Registers the specified user (here we use `confirmed` to avoid email confirmation).
 
@@ -110,7 +110,7 @@ The schema is very simple and essentially includes just 3 tables (the auth table
 
 `GET /api/accounts/resetpassword/apply`: Resets the password using the received token.
 
-`DELETE /api/accounts/{name}`: Delete the user with the specified username.
+`DELETE /api/accounts/{name}`: Deletes the user with the specified username.
 
 ### Auth
 
@@ -150,7 +150,7 @@ The schema is very simple and essentially includes just 3 tables (the auth table
 
 `GET /api/users`: Gets the specified page from the list of registered users. Use page size=0 to get all the users at once.
 
-`PUT /api/users`: Update the specified user data.
+`PUT /api/users`: Updates the specified user data.
 
 `GET /api/users/{name}`: Gets the details about the user with the specified ID.
 
@@ -218,7 +218,7 @@ Example:
 Example:
 
 ```bash
-./blob get-info samples|fam-ge-tro-ric711-000000_01 -u zeus -p "P4ss-W0rd!"
+./blob get-info "samples|fam-ge-tro-ric711-000000_01" -u zeus -p "P4ss-W0rd!"
 ```
 
 ### Delete Command
