@@ -257,7 +257,7 @@ You should also specify the MIME type for the files to upload. If you don't spec
 ```
 
 - `INPUT_DIR` is the input directory.
-- `FILE_MASK` is the file mask. It can be a regular expression if `-p` is specified.
+- `FILE_MASK` is the file mask. It can be a regular expression if `-x` is specified.
 - `-x` specifies that `FILE_MASK` is a regular expression pattern.
 - `-r` recurses subdirectories.
 - `-t <MIME_TYPE>` specifies the MIME type for _all_ the files matched. Do not specify this option if you want the type to be derived (when possible) from the file's extension.
