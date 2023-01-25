@@ -414,7 +414,12 @@ Example:
 
 - 🔒 roles: `admin`
 
-🎯 Add the specified roles to a user.
+🎯 Add the specified roles to a user.  Available roles are:
+
+- `admin`: administrator: can do everything and manage accounts.
+- `browser`: is a `writer` and a `reader`, with the added ability of _browsing_ the BLOB store.
+- `writer`: is a `reader`, with the added ability of _writing_ (upload/delete files) to the BLOB store.
+- `reader`: can only read a known file from the BLOB store.
 
 ```bash
 ./blob add-user-roles <USER_NAME> <USER_ROLE>+ [-u <USER>] [-p <PASSWORD>]
@@ -435,12 +440,7 @@ Example:
 
 - 🔒 roles: `admin`
 
-Delete the specified role(s) of a user. Available roles are:
-
-- `admin`: administrator, can do everything and manage accounts.
-- `browser`: is a writer and a reader, with the added ability of browsing the BLOB store.
-- `writer`: is a reader, with the added ability of writing (upload/delete files) to the BLOB store.
-- `reader`: can only read a file from the BLOB store.
+Delete the specified role(s) of a user.
 
 ```bash
 ./blob delete-user-roles <USER_NAME> <USER_ROLE>+ [-u <USER>] [-p <PASSWORD>]
