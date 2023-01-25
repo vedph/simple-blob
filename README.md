@@ -177,7 +177,7 @@ Note: when using reserved characters like `*` or `|` in UNIX-based OS (Linux, Ma
 >Note that for added security a user with `reader`/`writer` role but without the `browser` (or `admin`) role cannot get the list of items. This way, he can just retrieve a file if he has its name, but he's not able to find out which files are present.
 
 ```bash
-./blob list [-n <NUMBER>] [-z <SIZE>] [-i <ITEM_ID>] [-t <MIME_TYPE>] [--datemin <DATE>] [--datemax <DATE>] [--szmin <SIZE>] [--szmax <SIZE>] [-l <USER_NAME>] [--props <PROPERTIES>] [-f <FILE_PATH>] [-u <USER>] [-p <PASSWORD>]
+./blob list [-n <NUMBER>] [-z <SIZE>] [-i <ITEM_ID>] [-t <MIME_TYPE>] [--datemin <DATE>] [--datemax <DATE>] [--szmin <SIZE>] [--szmax <SIZE>] [-l <USER_NAME>] [--props <PROPERTIES>] [-f <FILE_PATH>] [-r] [-u <USER>] [-p <PASSWORD>]
 ```
 
 - `-n <NUMBER>` the page number (1-N). Default=1.
@@ -191,6 +191,7 @@ Note: when using reserved characters like `*` or `|` in UNIX-based OS (Linux, Ma
 - `-l <USER_NAME>` the user filter. This is the user who last modified the item.
 - `-props` the property filter. This is a comma-delimited string, where each property is expressed as name`=`value. Any of these properties must match for the item to match.
 - `-f <FILE_PATH>` the output file path. If not specified, the output will be displayed, rather than saved into a file.
+- `-r`: raw list, i.e. list all the item IDs only, from all the matching pages. This can be used to get a list of item IDs for some further processing, like when you want to delete all the items or all the items matching some criteria (such commands are not available for security reasons).
 - `-u <USER>` the user name. If not specified, you will be prompted for it.
 - `-p <PASSWORD>` the password. If not specified, you will be prompted for it.
 
@@ -493,6 +494,8 @@ Example:
 ```
 
 ## History
+
+- 2023-01-25: added `-r` option to list command.
 
 ### 2.0.4
 

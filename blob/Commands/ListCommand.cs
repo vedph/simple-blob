@@ -14,6 +14,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using Fusi.Cli.Auth.Services;
+using System.Linq;
 
 namespace SimpleBlob.Cli.Commands;
 
@@ -27,39 +28,39 @@ internal sealed class ListCommand : AsyncCommand<ListCommandSettings>
             ?? throw new ArgumentNullException(nameof(settings));
     }
 
-    public static string BuildItemListQueryString(ItemListSettings options)
+    public static string BuildItemListQueryString(ItemListSettings settings)
     {
-        if (options == null) throw new ArgumentNullException(nameof(options));
+        if (settings == null) throw new ArgumentNullException(nameof(settings));
 
         // https://stackoverflow.com/questions/17096201/build-query-string-for-system-net-httpclient-get
         NameValueCollection query = HttpUtility.ParseQueryString("");
-        query["PageNumber"] = options.PageNumber.ToString();
-        query["PageSize"] = options.PageSize.ToString();
+        query["PageNumber"] = settings.PageNumber.ToString();
+        query["PageSize"] = settings.PageSize.ToString();
 
-        if (!string.IsNullOrEmpty(options.Id)) query["Id"] = options.Id;
+        if (!string.IsNullOrEmpty(settings.Id)) query["Id"] = settings.Id;
 
-        if (!string.IsNullOrEmpty(options.MimeType))
-            query["MimeType"] = options.Id;
+        if (!string.IsNullOrEmpty(settings.MimeType))
+            query["MimeType"] = settings.Id;
 
-        if (options.MinDateModified != null)
+        if (settings.MinDateModified != null)
         {
-            query["MinDateModified"] = options.MinDateModified
+            query["MinDateModified"] = settings.MinDateModified
                 .Value.ToString("yyyy-MM-dd");
         }
-        if (options.MaxDateModified != null)
+        if (settings.MaxDateModified != null)
         {
-            query["MaxDateModified"] = options.MaxDateModified
+            query["MaxDateModified"] = settings.MaxDateModified
                 .Value.ToString("yyyy-MM-dd");
         }
 
-        if (options.MinSize > 0) query["MinSize"] = options.MinSize.ToString();
-        if (options.MaxSize > 0) query["MaxSize"] = options.MaxSize.ToString();
+        if (settings.MinSize > 0) query["MinSize"] = settings.MinSize.ToString();
+        if (settings.MaxSize > 0) query["MaxSize"] = settings.MaxSize.ToString();
 
-        if (!string.IsNullOrEmpty(options.LastUserId))
-            query["UserId"] = options.LastUserId;
+        if (!string.IsNullOrEmpty(settings.LastUserId))
+            query["UserId"] = settings.LastUserId;
 
-        if (!string.IsNullOrEmpty(options.Properties))
-            query["Properties"] = options.Properties;
+        if (!string.IsNullOrEmpty(settings.Properties))
+            query["Properties"] = settings.Properties;
 
         return query.ToString() ?? "";
     }
@@ -94,6 +95,71 @@ internal sealed class ListCommand : AsyncCommand<ListCommandSettings>
         }
     }
 
+    private static async Task ListPageItems(HttpClient client,
+        ListCommandSettings settings)
+    {
+        // get page
+        DataPage<BlobItem>? page = null;
+        await AnsiConsole.Status().Start("Fetching data...", async ctx =>
+        {
+            ctx.Spinner(Spinner.Known.Star);
+
+            page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
+                "items?" + BuildItemListQueryString(settings))!;
+        });
+
+        // write page
+        TextWriter writer;
+        if (string.IsNullOrEmpty(settings.OutputPath))
+        {
+            // console
+            WriteRichPage(page!);
+        }
+        else
+        {
+            // file
+            writer = new StreamWriter(new FileStream(settings.OutputPath,
+                FileMode.Create, FileAccess.Write, FileShare.Read),
+                Encoding.UTF8);
+            WritePlainPage(page!, writer);
+            writer.Flush();
+        }
+    }
+
+    private static async Task ListItemIds(HttpClient client,
+        ListCommandSettings settings)
+    {
+        // get page
+        DataPage<BlobItem>? page = null;
+        await AnsiConsole.Status().Start("Fetching data...", async ctx =>
+        {
+            ctx.Spinner(Spinner.Known.Star);
+            StreamWriter? writer = string.IsNullOrEmpty(settings.OutputPath)
+                ? null
+                : new StreamWriter(new FileStream(settings.OutputPath,
+                    FileMode.Create, FileAccess.Write, FileShare.Read),
+                    Encoding.UTF8);
+
+            while (true)
+            {
+                page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
+                    "items?" + BuildItemListQueryString(settings));
+                if (page == null) break;
+
+                foreach (string id in page.Items.Select(item => item.Id))
+                {
+                    if (writer == null)
+                        AnsiConsole.MarkupLine($"[cyan]{id}[/]");
+                    else
+                        writer.WriteLine(id);
+                }
+
+                if (++settings.PageNumber > page!.PageCount) break;
+            }
+            writer?.Flush();
+        });
+    }
+
     public override async Task<int> ExecuteAsync(CommandContext context,
         ListCommandSettings settings)
     {
@@ -115,31 +181,13 @@ internal sealed class ListCommand : AsyncCommand<ListCommandSettings>
         using HttpClient client = CommandHelper.GetClient(_settings.ApiRootUri,
             login.Token);
 
-        // get page
-        DataPage<BlobItem>? page = null;
-        await AnsiConsole.Status().Start("Fetching data...", async ctx =>
+        if (settings.IdOnly)
         {
-            ctx.Spinner(Spinner.Known.Star);
-
-            page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
-                "items?" + ListCommand.BuildItemListQueryString(settings))!;
-        });
-
-        // write page
-        TextWriter writer;
-        if (string.IsNullOrEmpty(settings.OutputPath))
-        {
-            // console
-            WriteRichPage(page!);
+            await ListItemIds(client, settings);
         }
         else
         {
-            // file
-            writer = new StreamWriter(new FileStream(settings.OutputPath,
-                FileMode.Create, FileAccess.Write, FileShare.Read),
-                Encoding.UTF8);
-            WritePlainPage(page!, writer);
-            writer.Flush();
+            await ListPageItems(client, settings);
         }
 
         return 0;
@@ -151,4 +199,8 @@ internal class ListCommandSettings : ItemListSettings
     [CommandOption("-f|--file <FILE_PATH>")]
     [Description("The path to the output file (if not set, the output will be displayed)")]
     public string? OutputPath { get; set; }
+
+    [CommandOption("-r|--raw")]
+    [Description("List item IDs only from all the pages")]
+    public bool IdOnly { get; set; }
 }
