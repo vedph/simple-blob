@@ -495,6 +495,7 @@ Example:
 
 ## History
 
+- 2023-03-30: updated packages.
 - 2023-01-25: added `-r` option to list command.
 
 ### 2.0.4
