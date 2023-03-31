@@ -268,6 +268,7 @@ You should also specify the MIME type for the files to upload. If you don't spec
 - `--metasfx <SUFFIX>`: the suffix appended after the content filename's extension to build the correspondent metadata filename.
 - `--metasep <SEPARATOR>` the separator used for the metadata file. The default is comma (`,`).
 - `--idsep <SEPARATOR>` the separator used in BLOB IDs in a file-system like convention. The default is pipe (`|`). Slashes (`/` or `\`) automatically get converted into this separator when using file paths as IDs.
+- `--noext <EXTENSION>` (repeatable): the extension(s) to exclude from upload (e.g. `.ini`).
 - `-c` to theck the file before uploading it. If the file size and CRC32C are the same, its metadata and properties are uploaded, but its content is not. This speeds up the process when some of the files have not changed.
 - `-d` dry (preflight) run (do not write data).
 - `-u <USER>` the user name. If not specified, you will be prompted for it.
@@ -495,6 +496,7 @@ Example:
 
 ## History
 
+- 2023-03-31: added `--noext` to upload command.
 - 2023-03-30: updated packages.
 - 2023-01-25: added `-r` option to list command.
 

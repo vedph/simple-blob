@@ -190,8 +190,14 @@ internal sealed class UploadCommand : AsyncCommand<UploadCommandSettings>
             settings.InputDir ?? "", settings.FileMask ?? "",
             settings.IsRegexMask, settings.IsRecursive))
         {
-            // skip metadata files
-            if (Path.GetExtension(path) == settings.MetaExtension) continue;
+            // skip metadata files or excluded files
+            string ext = Path.GetExtension(path);
+            if (ext == settings.MetaExtension ||
+                (settings.ExcludedExtensions?.Length > 0 &&
+                settings.ExcludedExtensions.Contains(ext)))
+            {
+                continue;
+            }
 
             count++;
             CliAppContext.Logger?.LogInformation($"{count} {path}");
@@ -293,6 +299,10 @@ internal sealed class UploadCommandSettings : AuthCommandSettings
     [Description("The conventional separator used in BLOB IDs for virtual folders.")]
     [DefaultValue("|")]
     public string IdDelimiter { get; set; }
+
+    [CommandOption("--noext <EXTENSION>")]
+    [Description("The extension(s) to exclude from upload (e.g. .ini).")]
+    public string[]? ExcludedExtensions { get; set; }
 
     [CommandOption("-c|--check")]
     [Description("Check for file change before uploading")]
