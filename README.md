@@ -26,6 +26,7 @@
     - [Update User Command](#update-user-command)
     - [Show Settings Command](#show-settings-command)
   - [History](#history)
+    - [2.0.5](#205)
     - [2.0.4](#204)
     - [2.0.3](#203)
     - [2.0.2](#202)
@@ -50,7 +51,7 @@ Projects:
 Quick Docker image build:
 
 ```bash
-docker build . -t vedph2020/simple-blob-api:2.0.4 -t vedph2020/simple-blob-api:latest
+docker build . -t vedph2020/simple-blob-api:2.0.5 -t vedph2020/simple-blob-api:latest
 ```
 
 (replace with the current version).
@@ -496,6 +497,9 @@ Example:
 
 ## History
 
+### 2.0.5
+
+- 2023-06-28: updated packages.
 - 2023-03-31: added `--noext` to upload command.
 - 2023-03-30: updated packages.
 - 2023-01-25: added `-r` option to list command.

@@ -10,15 +10,15 @@
     <Product>Simple BLOB</Product>
     <Description>Simple BLOB API core components.</Description>
     <Copyright>by Daniele Fusi 2021</Copyright>
-    <Version>1.1.0</Version>
+    <Version>2.0.5</Version>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <PackageTags>BLOB</PackageTags>
-    <FileVersion>1.1.0</FileVersion>
-    <AssemblyVersion>1.1.0</AssemblyVersion>
+    <FileVersion>2.0.5</FileVersion>
+    <AssemblyVersion>2.0.5</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Fusi.Tools" Version="3.1.0" />
+    <PackageReference Include="Fusi.Tools" Version="3.1.1" />
   </ItemGroup>
 
 </Project>

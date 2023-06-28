@@ -10,11 +10,11 @@
     <Product>Simple BLOB</Product>
     <Description>Simple BLOB PostgreSql store.</Description>
     <Copyright>by Daniele Fusi 2021</Copyright>
-    <Version>1.1.0</Version>
+    <Version>2.0.5</Version>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <PackageTags>BLOB;PostgreSql</PackageTags>
-    <FileVersion>1.1.0</FileVersion>
-    <AssemblyVersion>1.1.0</AssemblyVersion>
+    <FileVersion>2.0.5</FileVersion>
+    <AssemblyVersion>2.0.5</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Npgsql" Version="7.0.2" />
+    <PackageReference Include="Npgsql" Version="7.0.4" />
   </ItemGroup>
 
   <ItemGroup>
