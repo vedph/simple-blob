@@ -12,10 +12,10 @@
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <Copyright>by Daniele Fusi</Copyright>
     <PackageTags>BLOB</PackageTags>
-    <Version>2.0.5</Version>
+    <Version>2.0.6</Version>
 	<Nullable>enable</Nullable>
-	<FileVersion>2.0.5</FileVersion>
-	<AssemblyVersion>2.0.5</AssemblyVersion>
+	<FileVersion>2.0.6</FileVersion>
+	<AssemblyVersion>2.0.6</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>

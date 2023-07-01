@@ -2,7 +2,7 @@
   "profiles": {
     "blob": {
       "commandName": "Project",
-      "commandLineArgs": "update-user tester -f Gino -c 1 -u zeus -p P4ss-W0rd!"
+      "commandLineArgs": "upload D:/Jobs/AttiChiari/Data/004 *.xml -m \"\" --metasfx .meta -r -u zeus -p \"S70ckUs3rUnige2021!\" -c -d"
     }
   }
 }

@@ -26,6 +26,7 @@
     - [Update User Command](#update-user-command)
     - [Show Settings Command](#show-settings-command)
   - [History](#history)
+    - [2.0.6](#206)
     - [2.0.5](#205)
     - [2.0.4](#204)
     - [2.0.3](#203)
@@ -250,9 +251,7 @@ Example:
 
 🎯 Upload a set of files, as defined from an input folder and a files mask. The mask can be a regular file system mask, or a regular expression. Also, files can be recursively searched starting from the input folder.
 
-It is assumed that each file matching the mask has in the same location a corresponding metadata file, with the same name suffixed with a custom extension. By default this extension is `.meta`. So, if a file to upload is `test.txt`, then the corresponding metadata file should be placed in the same directory with name `test.txt.meta`.
-
-You should also specify the MIME type for the files to upload. If you don't specify any, the type will be automatically derived from the file extension, when possible. This follows the mapping of MIME types defined in `blob/Assets/MimeTypes.csv` (as derived from this [list of common MIME types](https://gist.github.com/jimschubert/94894c938d8f9f64c6863b28c70a22cc)). You can direct the tool to use another file, as far as it has the same structure: a CSV file with a header row and at least 2 columns with name `extension` and `type`.
+You might also want to specify the MIME type for the files to upload. If you don't specify any, the type will be automatically derived from the file extension, when possible. This follows the mapping of MIME types defined in `blob/Assets/MimeTypes.csv` (as derived from this [list of common MIME types](https://gist.github.com/jimschubert/94894c938d8f9f64c6863b28c70a22cc)). You can direct the tool to use another file, as far as it has the same structure: a CSV file with a header row and at least 2 columns with name `extension` and `type`.
 
 ```bash
 ./blob upload <INPUT_DIR> <FILE_MASK> [-x] [-r] [-t <MIME_TYPE>] [-e <TYPES_FILE_PATH>] [-m <EXTENSION>] [--metapfx <PREFIX>] [--metasfx <SUFFIX>] [--metasep <SEPARATOR>] [-idsep <SEPARATOR>][-c] [-d] [-u <USER>] [-p <PASSWORD>]
@@ -496,6 +495,10 @@ Example:
 ```
 
 ## History
+
+### 2.0.6
+
+- 2023-07-01: default `meta` option to empty in upload command.
 
 ### 2.0.5
 

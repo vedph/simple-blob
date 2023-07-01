@@ -277,7 +277,6 @@ internal sealed class UploadCommandSettings : AuthCommandSettings
     [CommandOption("-m|--meta <EXTENSION>")]
     [Description("The extension to replace to that of the content filename " +
         "to build the correspondent metadata filename")]
-    [DefaultValue(".meta")]
     public string MetaExtension { get; set; }
 
     [CommandOption("--metapfx <PREFIX>")]
@@ -314,7 +313,7 @@ internal sealed class UploadCommandSettings : AuthCommandSettings
 
     public UploadCommandSettings()
     {
-        MetaExtension = ".meta";
+        MetaExtension = "";
         MetaDelimiter = ",";
         IdDelimiter = "|";
     }

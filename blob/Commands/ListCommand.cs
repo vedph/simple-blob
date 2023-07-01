@@ -95,7 +95,7 @@ internal sealed class ListCommand : AsyncCommand<ListCommandSettings>
         }
     }
 
-    private static async Task ListPageItems(HttpClient client,
+    private static async Task<int> ListPageItems(HttpClient client,
         ListCommandSettings settings)
     {
         // get page
@@ -124,6 +124,8 @@ internal sealed class ListCommand : AsyncCommand<ListCommandSettings>
             WritePlainPage(page!, writer);
             writer.Flush();
         }
+
+        return page?.Total ?? 0;
     }
 
     private static async Task ListItemIds(HttpClient client,
@@ -187,7 +189,10 @@ internal sealed class ListCommand : AsyncCommand<ListCommandSettings>
         }
         else
         {
-            await ListPageItems(client, settings);
+            int total = await ListPageItems(client, settings);
+            AnsiConsole.MarkupLine(
+                $"[cyan]{settings.PageNumber}[/]×[cyan]{settings.PageSize}[/] " +
+                $"| total: [cyan]{total}[/]");
         }
 
         return 0;
