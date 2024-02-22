@@ -38,7 +38,7 @@ public sealed class CsvMetadataFile
     /// <exception cref="ArgumentNullException">reader</exception>
     public IList<Tuple<string, string>> Read(TextReader reader)
     {
-        if (reader == null) throw new ArgumentNullException(nameof(reader));
+        ArgumentNullException.ThrowIfNull(reader);
 
         List<Tuple<string, string>> metadata = new();
 
@@ -69,7 +69,7 @@ public sealed class CsvMetadataFile
     /// <exception cref="ArgumentNullException">path</exception>
     public IList<Tuple<string, string>> Read(string path)
     {
-        if (path == null) throw new ArgumentNullException(nameof(path));
+        ArgumentNullException.ThrowIfNull(path);
 
         using StreamReader reader = new(path, Encoding.UTF8);
         return Read(reader);
@@ -83,8 +83,8 @@ public sealed class CsvMetadataFile
     /// <exception cref="ArgumentNullException">metadata or writer</exception>
     public void Write(IList<Tuple<string,string>> metadata, TextWriter writer)
     {
-        if (metadata == null) throw new ArgumentNullException(nameof(metadata));
-        if (writer == null) throw new ArgumentNullException(nameof(writer));
+        ArgumentNullException.ThrowIfNull(metadata);
+        ArgumentNullException.ThrowIfNull(writer);
 
         using CsvWriter csv = new(writer, new CsvConfiguration(
             CultureInfo.InvariantCulture)
@@ -109,8 +109,8 @@ public sealed class CsvMetadataFile
     /// <exception cref="ArgumentNullException">metadata or path</exception>
     public void Write(IList<Tuple<string, string>> metadata, string path)
     {
-        if (metadata == null) throw new ArgumentNullException(nameof(metadata));
-        if (path == null) throw new ArgumentNullException(nameof(path));
+        ArgumentNullException.ThrowIfNull(metadata);
+        ArgumentNullException.ThrowIfNull(path);
 
         using StreamWriter writer = new(path, false, Encoding.UTF8);
         Write(metadata, writer);

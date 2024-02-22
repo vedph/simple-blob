@@ -1,55 +1,55 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net7.0</TargetFramework>
-    <RootNamespace>SimpleBlob.Cli</RootNamespace>
-    <Authors>Daniele Fusi</Authors>
-    <Company>Fusi</Company>
-    <Product>Simple BLOB</Product>
-    <Description>Simple BLOB CLI client</Description>
-    <NeutralLanguage>en-US</NeutralLanguage>
-    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
-    <Copyright>by Daniele Fusi</Copyright>
-    <PackageTags>BLOB</PackageTags>
-    <Version>2.0.6</Version>
-	<Nullable>enable</Nullable>
-	<FileVersion>2.0.6</FileVersion>
-	<AssemblyVersion>2.0.6</AssemblyVersion>
-  </PropertyGroup>
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net8.0</TargetFramework>
+		<RootNamespace>SimpleBlob.Cli</RootNamespace>
+		<Authors>Daniele Fusi</Authors>
+		<Company>Fusi</Company>
+		<Product>Simple BLOB</Product>
+		<Description>Simple BLOB CLI client</Description>
+		<NeutralLanguage>en-US</NeutralLanguage>
+		<PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
+		<Copyright>by Daniele Fusi</Copyright>
+		<PackageTags>BLOB</PackageTags>
+		<Version>3.0.0</Version>
+		<Nullable>enable</Nullable>
+		<FileVersion>3.0.0</FileVersion>
+		<AssemblyVersion>3.0.0</AssemblyVersion>
+	</PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="appsettings.json" />
-    <None Remove="Assets\MimeTypes.csv" />
-  </ItemGroup>
+	<ItemGroup>
+		<None Remove="appsettings.json" />
+		<None Remove="Assets\MimeTypes.csv" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <Content Include="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+	<ItemGroup>
+		<Content Include="appsettings.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</Content>
+	</ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="Assets\MimeTypes.csv" />
-  </ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Include="Assets\MimeTypes.csv" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <PackageReference Include="CsvHelper" Version="30.0.1" />
-    <PackageReference Include="Fusi.Api.Auth.Controllers" Version="3.1.1" />
-    <PackageReference Include="Fusi.Cli.Auth" Version="1.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="7.0.0" />
-    <PackageReference Include="Serilog" Version="3.0.1" />
-    <PackageReference Include="Serilog.Extensions.Logging" Version="7.0.0" />
-    <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
-    <PackageReference Include="Crc32.NET" Version="1.2.0" />
-    <PackageReference Include="Spectre.Console" Version="0.47.0" />
-    <PackageReference Include="Spectre.Console.Cli" Version="0.47.0" />
-  </ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="CsvHelper" Version="31.0.0" />
+		<PackageReference Include="Fusi.Api.Auth.Controllers" Version="4.0.0" />
+		<PackageReference Include="Fusi.Cli.Auth" Version="4.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0" />
+		<PackageReference Include="Serilog" Version="3.1.1" />
+		<PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
+		<PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
+		<PackageReference Include="Crc32.NET" Version="1.2.0" />
+		<PackageReference Include="Spectre.Console" Version="0.48.0" />
+		<PackageReference Include="Spectre.Console.Cli" Version="0.48.0" />
+	</ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\SimpleBlob.Api.Models\SimpleBlob.Api.Models.csproj" />
-  </ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\SimpleBlob.Api.Models\SimpleBlob.Api.Models.csproj" />
+	</ItemGroup>
 
 </Project>

@@ -31,10 +31,8 @@ public static class FileEnumerator
         bool regex = false,
         bool recursive = false)
     {
-        if (directory == null)
-            throw new ArgumentNullException(nameof(directory));
-        if (mask == null)
-            throw new ArgumentNullException(nameof(mask));
+        ArgumentNullException.ThrowIfNull(directory);
+        ArgumentNullException.ThrowIfNull(mask);
 
         if (!regex)
         {

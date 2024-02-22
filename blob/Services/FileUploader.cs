@@ -23,13 +23,13 @@ public static class FileUploader
     public static async Task<string> UploadFile(string uri,
         string path, string? token, string id, string mimeType)
     {
-        if (uri == null) throw new ArgumentNullException(nameof(uri));
-        if (path == null) throw new ArgumentNullException(nameof(path));
-        if (id == null) throw new ArgumentNullException(nameof(id));
-        if (mimeType == null) throw new ArgumentNullException(nameof(mimeType));
+        ArgumentNullException.ThrowIfNull(uri);
+        ArgumentNullException.ThrowIfNull(path);
+        ArgumentNullException.ThrowIfNull(id);
+        ArgumentNullException.ThrowIfNull(mimeType);
 
         // https://makolyte.com/csharp-how-to-send-a-file-with-httpclient/        
-        using MultipartFormDataContent mfc = new();
+        using MultipartFormDataContent mfc = [];
 
         // mimeType
         mfc.Add(new StringContent(mimeType), name: "mimeType");

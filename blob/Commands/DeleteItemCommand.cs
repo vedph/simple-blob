@@ -33,36 +33,44 @@ internal sealed class DeleteItemCommand : AsyncCommand<DeleteItemCommandSettings
             settings.Password);
         credentials.PromptIfRequired();
 
-        // login
-        ApiLogin? login = await CommandHelper.LoginAndNotify(
-            _settings.ApiRootUri, credentials);
-        if (login == null) return 2;
-
-        // prompt for confirmation if required
-        if (!settings.IsConfirmed &&
-            !AnsiConsole.Confirm($"Delete item {settings.Id}? ", false))
+        try
         {
+            // login
+            ApiLogin? login = await CommandHelper.LoginAndNotify(
+                _settings.ApiRootUri, credentials);
+            if (login == null) return 2;
+
+            // prompt for confirmation if required
+            if (!settings.IsConfirmed &&
+                !AnsiConsole.Confirm($"Delete item {settings.Id}? ", false))
+            {
+                return 0;
+            }
+
+            // setup client
+            using HttpClient client = CommandHelper.GetClient(_settings.ApiRootUri,
+                login.Token);
+
+            // delete
+            await AnsiConsole.Status().Start("Deleting item...", async ctx =>
+            {
+                ctx.Status(settings.Id!);
+                ctx.Spinner(Spinner.Known.Star);
+
+                HttpResponseMessage response =
+                    await client.DeleteAsync($"items/{settings.Id}");
+                response.EnsureSuccessStatusCode();
+            });
+
+            AnsiConsole.MarkupLine($"[green]Deleted item {settings.Id}[/]");
+
             return 0;
         }
-
-        // setup client
-        using HttpClient client = CommandHelper.GetClient(_settings.ApiRootUri,
-            login.Token);
-
-        // delete
-        await AnsiConsole.Status().Start("Deleting item...", async ctx =>
+        catch (Exception ex)
         {
-            ctx.Status(settings.Id!);
-            ctx.Spinner(Spinner.Known.Star);
-
-            HttpResponseMessage response =
-                await client.DeleteAsync($"items/{settings.Id}");
-            response.EnsureSuccessStatusCode();
-        });
-
-        AnsiConsole.MarkupLine($"[green]Deleted item {settings.Id}[/]");
-
-        return 0;
+            CliHelper.ShowError(ex);
+            return 2;
+        }
     }
 }
 

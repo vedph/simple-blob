@@ -110,60 +110,68 @@ internal sealed class GetInfoCommand : AsyncCommand<GetInfoCommandSettings>
             settings.Password);
         credentials.PromptIfRequired();
 
-        // login
-        ApiLogin? login =
-            await CommandHelper.LoginAndNotify(_settings.ApiRootUri, credentials);
-        if (login == null) return 2;
-
-        // setup client
-        using HttpClient client = CommandHelper.GetClient(_settings.ApiRootUri,
-            login.Token);
-
-        BlobItem? item = null;
-        BlobItemProperty[]? props = null;
-        BlobItemContentMetaModel? contentMeta = null;
-
-        await AnsiConsole.Status().Start("Fetching data...", async ctx =>
+        try
         {
-            ctx.Status("Loading item");
-            ctx.Spinner(Spinner.Known.Star);
+            // login
+            ApiLogin? login =
+                await CommandHelper.LoginAndNotify(_settings.ApiRootUri, credentials);
+            if (login == null) return 2;
 
-            // load item
-            item = await client.GetFromJsonAsync<BlobItem>($"items/{settings.Id}");
-            if (item == null)
+            // setup client
+            using HttpClient client = CommandHelper.GetClient(_settings.ApiRootUri,
+                login.Token);
+
+            BlobItem? item = null;
+            BlobItemProperty[]? props = null;
+            BlobItemContentMetaModel? contentMeta = null;
+
+            await AnsiConsole.Status().Start("Fetching data...", async ctx =>
             {
-                AnsiConsole.MarkupLine($"[red]Item not found: {settings.Id}[/]");
-            }
-            else
-            {
-                // load its properties
-                ctx.Status("Loading properties");
+                ctx.Status("Loading item");
+                ctx.Spinner(Spinner.Known.Star);
 
-                props = await client.GetFromJsonAsync<BlobItemProperty[]>
-                    ($"properties/{item.Id}");
-
-                // load its content metadata
-                ctx.Status("Loading metadata");
-
-                contentMeta = await client.GetFromJsonAsync<BlobItemContentMetaModel>(
-                        $"contents/{item.Id}/meta");
-
-                if (!string.IsNullOrEmpty(settings.OutputPath))
+                // load item
+                item = await client.GetFromJsonAsync<BlobItem>($"items/{settings.Id}");
+                if (item == null)
                 {
-                    StreamWriter writer = new(new FileStream(settings.OutputPath,
-                        FileMode.Create, FileAccess.Write, FileShare.Read),
-                        Encoding.UTF8);
-                    WritePlainItemInfo(item, props, contentMeta, writer);
-                    writer.Flush();
+                    AnsiConsole.MarkupLine($"[red]Item not found: {settings.Id}[/]");
                 }
                 else
                 {
-                    WriteRichItemInfo(item, props, contentMeta);
-                }
-            }
-        });
+                    // load its properties
+                    ctx.Status("Loading properties");
 
-        return 0;
+                    props = await client.GetFromJsonAsync<BlobItemProperty[]>
+                        ($"properties/{item.Id}");
+
+                    // load its content metadata
+                    ctx.Status("Loading metadata");
+
+                    contentMeta = await client.GetFromJsonAsync<BlobItemContentMetaModel>(
+                            $"contents/{item.Id}/meta");
+
+                    if (!string.IsNullOrEmpty(settings.OutputPath))
+                    {
+                        StreamWriter writer = new(new FileStream(settings.OutputPath,
+                            FileMode.Create, FileAccess.Write, FileShare.Read),
+                            Encoding.UTF8);
+                        WritePlainItemInfo(item, props, contentMeta, writer);
+                        writer.Flush();
+                    }
+                    else
+                    {
+                        WriteRichItemInfo(item, props, contentMeta);
+                    }
+                }
+            });
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            CliHelper.ShowError(ex);
+            return 2;
+        }
     }
 }
 

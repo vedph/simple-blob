@@ -15,13 +15,13 @@ namespace SimpleBlobApi;
 /// <summary>
 /// Main program.
 /// </summary>
-public sealed class Program
+public static class Program
 {
     private static void DumpEnvironmentVars()
     {
         Console.WriteLine("ENVIRONMENT VARIABLES:");
         IDictionary dct = Environment.GetEnvironmentVariables();
-        List<string> keys = new List<string>();
+        List<string> keys = [];
         var enumerator = dct.GetEnumerator();
         while (enumerator.MoveNext())
         {
@@ -41,7 +41,6 @@ public sealed class Program
             .ConfigureWebHostDefaults(webBuilder =>
             {
                 webBuilder.UseStartup<Startup>();
-                // webBuilder.UseSerilog();
             });
 
     /// <summary>

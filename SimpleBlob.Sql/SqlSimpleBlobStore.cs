@@ -8,7 +8,7 @@ namespace SimpleBlob.Sql;
 /// <summary>
 /// SQL-based simple BLOB store.
 /// </summary>
-public abstract class SqlSimpleBlobStore
+public abstract class SqlSimpleBlobStore : IDisposable
 {
     /// <summary>
     /// The name of the items table.
@@ -102,7 +102,7 @@ public abstract class SqlSimpleBlobStore
     /// <exception cref="ArgumentNullException">content</exception>
     protected static Tuple<byte[],long> ReadContent(Stream content)
     {
-        if (content == null) throw new ArgumentNullException(nameof(content));
+        ArgumentNullException.ThrowIfNull(content);
 
         MemoryStream ms = new MemoryStream();
         BinaryReader reader = new BinaryReader(content);

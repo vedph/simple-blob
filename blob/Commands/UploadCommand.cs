@@ -168,82 +168,90 @@ internal sealed class UploadCommand : AsyncCommand<UploadCommandSettings>
             settings.Password);
         credentials.PromptIfRequired();
 
-        // login
-        ApiLogin? login =
-            await CommandHelper.LoginAndNotify(_settings.ApiRootUri, credentials);
-        if (login == null) return 2;
-
-        // setup the metadata services
-        CsvMetadataFile metaFile = new()
+        try
         {
-            Delimiter = settings.MetaDelimiter ?? ""
-        };
+            // login
+            ApiLogin? login =
+                await CommandHelper.LoginAndNotify(_settings.ApiRootUri, credentials);
+            if (login == null) return 2;
 
-        // setup client
-        using HttpClient client = CommandHelper.GetClient(_settings.ApiRootUri,
-            login.Token);
-
-        // process files
-        int count = 0;
-
-        foreach (string path in FileEnumerator.Enumerate(
-            settings.InputDir ?? "", settings.FileMask ?? "",
-            settings.IsRegexMask, settings.IsRecursive))
-        {
-            // skip metadata files or excluded files
-            string ext = Path.GetExtension(path);
-            if (ext == settings.MetaExtension ||
-                (settings.ExcludedExtensions?.Length > 0 &&
-                settings.ExcludedExtensions.Contains(ext)))
+            // setup the metadata services
+            CsvMetadataFile metaFile = new()
             {
-                continue;
-            }
+                Delimiter = settings.MetaDelimiter ?? ""
+            };
 
-            count++;
-            CliAppContext.Logger?.LogInformation($"{count} {path}");
-            AnsiConsole.MarkupLine($"[yellow]{count:0000}[/] [cyan]{path}[/]");
+            // setup client
+            using HttpClient client = CommandHelper.GetClient(_settings.ApiRootUri,
+                login.Token);
 
-            // load metadata if any
-            string metaPath = GetMetadataPath(path, settings);
+            // process files
+            int count = 0;
 
-            IList<Tuple<string, string>>? metadata = null;
-            if (File.Exists(metaPath))
+            foreach (string path in FileEnumerator.Enumerate(
+                settings.InputDir ?? "", settings.FileMask ?? "",
+                settings.IsRegexMask, settings.IsRecursive))
             {
-                AnsiConsole.MarkupLine($"- [cyan]{metaPath}[/]");
-                metadata = metaFile.Read(metaPath);
-            }
-            string id = metadata?.FirstOrDefault(t => t.Item1 == "id")
-                ?.Item2
-                ?? SanitizePath(Path.GetRelativePath(
-                    settings.InputDir ?? "", path),
-                    settings.IdDelimiter ?? "");
-
-            // add/update item
-            if (!settings.IsDryRun)
-            {
-                await AddItemAsync(id, client);
-
-                // set properties
-                await SetItemPropertiesAsync(id, client, metadata);
-
-                // set content
-                string? error = await SetItemContentAsync(
-                    id, client, path, _settings.ApiRootUri, settings, login);
-
-                if (error != null)
+                // skip metadata files or excluded files
+                string ext = Path.GetExtension(path);
+                if (ext == settings.MetaExtension ||
+                    (settings.ExcludedExtensions?.Length > 0 &&
+                    settings.ExcludedExtensions.Contains(ext)))
                 {
-                    CliAppContext.Logger?.LogError(error);
-                    AnsiConsole.MarkupLine($"[red]{error}[/]");
-                    return 2;
+                    continue;
+                }
+
+                count++;
+                CliAppContext.Logger?.LogInformation("{count} {path}", count, path);
+                AnsiConsole.MarkupLine($"[yellow]{count:0000}[/] [cyan]{path}[/]");
+
+                // load metadata if any
+                string metaPath = GetMetadataPath(path, settings);
+
+                IList<Tuple<string, string>>? metadata = null;
+                if (File.Exists(metaPath))
+                {
+                    AnsiConsole.MarkupLine($"- [cyan]{metaPath}[/]");
+                    metadata = metaFile.Read(metaPath);
+                }
+                string id = metadata?.FirstOrDefault(t => t.Item1 == "id")
+                    ?.Item2
+                    ?? SanitizePath(Path.GetRelativePath(
+                        settings.InputDir ?? "", path),
+                        settings.IdDelimiter ?? "");
+
+                // add/update item
+                if (!settings.IsDryRun)
+                {
+                    await AddItemAsync(id, client);
+
+                    // set properties
+                    await SetItemPropertiesAsync(id, client, metadata);
+
+                    // set content
+                    string? error = await SetItemContentAsync(
+                        id, client, path, _settings.ApiRootUri, settings, login);
+
+                    if (error != null)
+                    {
+                        CliAppContext.Logger?.LogError(error);
+                        AnsiConsole.MarkupLine($"[red]{error}[/]");
+                        return 2;
+                    }
                 }
             }
+
+            string info = "Upload complete: " + count;
+            CliAppContext.Logger?.LogInformation(info);
+            AnsiConsole.MarkupLine($"[green]{info}.[/]");
+
+            return 0;
         }
-
-        string info = "Upload complete: " + count;
-        CliAppContext.Logger?.LogInformation(info);
-        AnsiConsole.MarkupLine($"[green]{info}.[/]");
-
-        return 0;
+        catch (Exception ex)
+        {
+            CliHelper.ShowError(ex);
+            return 2;
+        }
     }
 }
 

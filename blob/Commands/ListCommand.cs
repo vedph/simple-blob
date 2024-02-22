@@ -30,7 +30,7 @@ internal sealed class ListCommand : AsyncCommand<ListCommandSettings>
 
     public static string BuildItemListQueryString(ItemListSettings settings)
     {
-        if (settings == null) throw new ArgumentNullException(nameof(settings));
+        ArgumentNullException.ThrowIfNull(settings);
 
         // https://stackoverflow.com/questions/17096201/build-query-string-for-system-net-httpclient-get
         NameValueCollection query = HttpUtility.ParseQueryString("");
@@ -174,28 +174,36 @@ internal sealed class ListCommand : AsyncCommand<ListCommandSettings>
             settings.Password);
         credentials.PromptIfRequired();
 
-        // login
-        ApiLogin? login = await CommandHelper.LoginAndNotify(
-            _settings.ApiRootUri, credentials);
-        if (login == null) return 2;
-
-        // setup client
-        using HttpClient client = CommandHelper.GetClient(_settings.ApiRootUri,
-            login.Token);
-
-        if (settings.IdOnly)
+        try
         {
-            await ListItemIds(client, settings);
-        }
-        else
-        {
-            int total = await ListPageItems(client, settings);
-            AnsiConsole.MarkupLine(
-                $"[cyan]{settings.PageNumber}[/]×[cyan]{settings.PageSize}[/] " +
-                $"| total: [cyan]{total}[/]");
-        }
+            // login
+            ApiLogin? login = await CommandHelper.LoginAndNotify(
+                _settings.ApiRootUri, credentials);
+            if (login == null) return 2;
 
-        return 0;
+            // setup client
+            using HttpClient client = CommandHelper.GetClient(_settings.ApiRootUri,
+                login.Token);
+
+            if (settings.IdOnly)
+            {
+                await ListItemIds(client, settings);
+            }
+            else
+            {
+                int total = await ListPageItems(client, settings);
+                AnsiConsole.MarkupLine(
+                    $"[cyan]{settings.PageNumber}[/]×[cyan]{settings.PageSize}[/] " +
+                    $"| total: [cyan]{total}[/]");
+            }
+
+            return 0;
+        }
+        catch (Exception ex)
+        {
+            CliHelper.ShowError(ex);
+            return 2;
+        }
     }
 }
 

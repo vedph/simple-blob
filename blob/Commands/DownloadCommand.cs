@@ -37,90 +37,101 @@ internal sealed class DownloadCommand : AsyncCommand<DownloadCommandSettings>
             settings.Password);
         credentials.PromptIfRequired();
 
-        // login
-        ApiLogin? login = await CommandHelper.LoginAndNotify(
-            _settings.ApiRootUri, credentials);
-        if (login == null) return 2;
-
-        // setup client
-        using HttpClient client = CommandHelper.GetClient(_settings.ApiRootUri,
-            login.Token);
-
-        // get 1st page
-        var page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
-            "items?" + ListCommand.BuildItemListQueryString(settings));
-
-        AnsiConsole.MarkupLine($"Matching items: [yellow]{page!.Total}[/]");
-        if (page.Total == 0) return 0;
-
-        if (!Directory.Exists(settings.OutputDir))
-            Directory.CreateDirectory(settings.OutputDir ?? "");
-
-        int itemNr = 0;
-        int pageCount = settings.PageCount > 0
-            ? Math.Min(settings.PageCount, page.PageCount)
-            : page.PageCount;
-
-        while (true)
+        try
         {
-            AnsiConsole.MarkupLine("[cyan]Page[/] " +
-                $"[yellow]{settings.PageNumber}[/][cyan] of [/][yellow]{pageCount}[/]");
+            // login
+            ApiLogin? login = await CommandHelper.LoginAndNotify(
+                _settings.ApiRootUri, credentials);
+            if (login == null) return 2;
 
-            foreach (BlobItem item in page!.Items)
-            {
-                itemNr++;
-                CliAppContext.Logger?.LogInformation($"{itemNr} {item}");
-                AnsiConsole.MarkupLine($"[yellow]{itemNr}[/] [cyan]{item}[/]");
+            // setup client
+            using HttpClient client = CommandHelper.GetClient(_settings.ApiRootUri,
+                login.Token);
 
-                // get stream
-                HttpResponseMessage response =
-                    await client.GetAsync($"contents/{item.Id}");
-                using Stream input = await response.Content.ReadAsStreamAsync();
-
-                // save to file
-                string itemPath = item.Id.Replace(settings.IdDelimiter,
-                    new string(Path.DirectorySeparatorChar, 1));
-                string dir = Path.Combine(settings.OutputDir ?? "",
-                    Path.GetDirectoryName(itemPath) ?? "");
-                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-
-                string path = Path.Combine(dir, Path.GetFileName(itemPath));
-                AnsiConsole.MarkupLine($"[yellow] => [/][green]{path}[/]");
-
-                using FileStream output = new(path, FileMode.Create,
-                    FileAccess.Write, FileShare.Read);
-                input.CopyTo(output);
-                output.Flush();
-
-                // load metadata
-                List<Tuple<string, string>> metadata = new();
-
-                var props = await client.GetFromJsonAsync<BlobItemProperty[]>(
-                    $"properties/{item.Id}");
-                bool hasId = false;
-                foreach (var p in props!)
-                {
-                    if (p.Name == "id") hasId = true;
-                    metadata.Add(Tuple.Create(p.Name, p.Value));
-                }
-                if (!hasId) metadata.Add(Tuple.Create("id", item.Id));
-
-                // save metadata to path
-                path += settings.MetaExtension;
-                AnsiConsole.MarkupLine($"[yellow] => [/][green]{path}[/]");
-                CsvMetadataFile metaFile = new()
-                {
-                    Delimiter = settings.MetaDelimiter
-                };
-                metaFile.Write(metadata, path);
-            }
-
-            // next page
-            if (++settings.PageNumber > pageCount) break;
-            page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
+            // get 1st page
+            var page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
                 "items?" + ListCommand.BuildItemListQueryString(settings));
+
+            AnsiConsole.MarkupLine($"Matching items: [yellow]{page!.Total}[/]");
+            if (page.Total == 0) return 0;
+
+            if (!Directory.Exists(settings.OutputDir))
+                Directory.CreateDirectory(settings.OutputDir ?? "");
+
+            int itemNr = 0;
+            int pageCount = settings.PageCount > 0
+                ? Math.Min(settings.PageCount, page.PageCount)
+                : page.PageCount;
+
+            while (true)
+            {
+                AnsiConsole.MarkupLine("[cyan]Page[/] " +
+                    $"[yellow]{settings.PageNumber}[/]" +
+                    $"[cyan] of [/][yellow]{pageCount}[/]");
+
+                foreach (BlobItem item in page!.Items)
+                {
+                    itemNr++;
+                    CliAppContext.Logger?.LogInformation("{itemNr} {item}",
+                        itemNr, item);
+                    AnsiConsole.MarkupLine($"[yellow]{itemNr}[/] [cyan]{item}[/]");
+
+                    // get stream
+                    HttpResponseMessage response =
+                        await client.GetAsync($"contents/{item.Id}");
+                    await using Stream input =
+                        await response.Content.ReadAsStreamAsync();
+
+                    // save to file
+                    string itemPath = item.Id.Replace(settings.IdDelimiter,
+                        new string(Path.DirectorySeparatorChar, 1));
+                    string dir = Path.Combine(settings.OutputDir ?? "",
+                        Path.GetDirectoryName(itemPath) ?? "");
+                    if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+                    string path = Path.Combine(dir, Path.GetFileName(itemPath));
+                    AnsiConsole.MarkupLine($"[yellow] => [/][green]{path}[/]");
+
+                    await using FileStream output = new(path, FileMode.Create,
+                        FileAccess.Write, FileShare.Read);
+                    input.CopyTo(output);
+                    output.Flush();
+
+                    // load metadata
+                    List<Tuple<string, string>> metadata = [];
+
+                    var props = await client.GetFromJsonAsync<BlobItemProperty[]>(
+                        $"properties/{item.Id}");
+                    bool hasId = false;
+                    foreach (var p in props!)
+                    {
+                        if (p.Name == "id") hasId = true;
+                        metadata.Add(Tuple.Create(p.Name, p.Value));
+                    }
+                    if (!hasId) metadata.Add(Tuple.Create("id", item.Id));
+
+                    // save metadata to path
+                    path += settings.MetaExtension;
+                    AnsiConsole.MarkupLine($"[yellow] => [/][green]{path}[/]");
+                    CsvMetadataFile metaFile = new()
+                    {
+                        Delimiter = settings.MetaDelimiter
+                    };
+                    metaFile.Write(metadata, path);
+                }
+
+                // next page
+                if (++settings.PageNumber > pageCount) break;
+                page = await client.GetFromJsonAsync<DataPage<BlobItem>>(
+                    "items?" + ListCommand.BuildItemListQueryString(settings));
+            }
+            return 0;
         }
-        return 0;
+        catch (Exception ex)
+        {
+            CliHelper.ShowError(ex);
+            return 2;
+        }
     }
 }
 

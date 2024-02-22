@@ -15,7 +15,7 @@ public sealed class MimeTypeMap
 
     public void Load(TextReader reader)
     {
-        if (reader == null) throw new ArgumentNullException(nameof(reader));
+        ArgumentNullException.ThrowIfNull(reader);
 
         if (_types == null) _types = new Dictionary<string, string>();
         else _types.Clear();
@@ -37,7 +37,7 @@ public sealed class MimeTypeMap
 
     public void Load(string path)
     {
-        if (path == null) throw new ArgumentNullException(nameof(path));
+        ArgumentNullException.ThrowIfNull(path);
 
         using StreamReader reader = new(path, Encoding.UTF8);
         Load(reader);
@@ -53,7 +53,7 @@ public sealed class MimeTypeMap
 
     public string? GetType(string ext)
     {
-        if (ext == null) throw new ArgumentNullException(nameof(ext));
+        ArgumentNullException.ThrowIfNull(ext);
 
         if (_types == null)
         {

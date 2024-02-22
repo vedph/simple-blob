@@ -26,6 +26,7 @@
     - [Update User Command](#update-user-command)
     - [Show Settings Command](#show-settings-command)
   - [History](#history)
+    - [3.0.0](#300)
     - [2.0.6](#206)
     - [2.0.5](#205)
     - [2.0.4](#204)
@@ -52,7 +53,7 @@ Projects:
 Quick Docker image build:
 
 ```bash
-docker build . -t vedph2020/simple-blob-api:2.0.5 -t vedph2020/simple-blob-api:latest
+docker build . -t vedph2020/simple-blob-api:3.0.0 -t vedph2020/simple-blob-api:latest
 ```
 
 (replace with the current version).
@@ -495,6 +496,13 @@ Example:
 ```
 
 ## History
+
+### 3.0.0
+
+- 2024-02-22:
+  - upgraded to .NET 8.
+  - updated packages.
+  - better error handling in CLI.
 
 ### 2.0.6
 

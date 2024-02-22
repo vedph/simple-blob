@@ -58,7 +58,7 @@ public sealed class PgSqlSimpleBlobStore : SqlSimpleBlobStore, ISimpleBlobStore
     /// <exception cref="ArgumentNullException">filter</exception>
     public DataPage<BlobItem> GetItems(BlobItemFilter filter)
     {
-        if (filter == null) throw new ArgumentNullException(nameof(filter));
+        ArgumentNullException.ThrowIfNull(filter);
 
         IDbCommand cmd = Connection.CreateCommand();
         var dataAndTot = ItemPageQueryBuilder.Build(filter, cmd);
@@ -94,7 +94,7 @@ public sealed class PgSqlSimpleBlobStore : SqlSimpleBlobStore, ISimpleBlobStore
     /// <exception cref="ArgumentNullException">item or userId</exception>
     public void AddItem(BlobItem item)
     {
-        if (item == null) throw new ArgumentNullException(nameof(item));
+        ArgumentNullException.ThrowIfNull(item);
 
         // do an upsert as PostgreSql now supports this
         // https://www.postgresql.org/docs/current/sql-insert.html#SQL-ON-CONFLICT
@@ -120,7 +120,7 @@ public sealed class PgSqlSimpleBlobStore : SqlSimpleBlobStore, ISimpleBlobStore
     /// <exception cref="ArgumentNullException">id</exception>
     public BlobItem GetItem(string id)
     {
-        if (id == null) throw new ArgumentNullException(nameof(id));
+        ArgumentNullException.ThrowIfNull(id);
 
         IDbCommand cmd = Connection.CreateCommand();
         cmd.CommandText = $"SELECT id,user_id,date_modified FROM {T_ITEM}\n" +
@@ -143,7 +143,7 @@ public sealed class PgSqlSimpleBlobStore : SqlSimpleBlobStore, ISimpleBlobStore
     /// <exception cref="ArgumentNullException">id</exception>
     public void DeleteItem(string id)
     {
-        if (id == null) throw new ArgumentNullException(nameof(id));
+        ArgumentNullException.ThrowIfNull(id);
 
         IDbCommand cmd = Connection.CreateCommand();
         cmd.CommandText = $"DELETE FROM {T_ITEM} WHERE id=@id;";
@@ -159,7 +159,7 @@ public sealed class PgSqlSimpleBlobStore : SqlSimpleBlobStore, ISimpleBlobStore
     /// <exception cref="ArgumentNullException">content</exception>
     public bool SetContent(BlobItemContent content)
     {
-        if (content == null) throw new ArgumentNullException(nameof(content));
+        ArgumentNullException.ThrowIfNull(content);
 
         if (GetItem(content.ItemId) == null) return false;
 
@@ -201,7 +201,7 @@ public sealed class PgSqlSimpleBlobStore : SqlSimpleBlobStore, ISimpleBlobStore
     /// <exception cref="ArgumentNullException">id</exception>
     public BlobItemContent GetContent(string id, bool metadataOnly)
     {
-        if (id == null) throw new ArgumentNullException(nameof(id));
+        ArgumentNullException.ThrowIfNull(id);
 
         if (metadataOnly)
         {
@@ -256,7 +256,7 @@ public sealed class PgSqlSimpleBlobStore : SqlSimpleBlobStore, ISimpleBlobStore
     /// <exception cref="ArgumentNullException">id</exception>
     public IList<BlobItemProperty> GetProperties(string id)
     {
-        if (id == null) throw new ArgumentNullException(nameof(id));
+        ArgumentNullException.ThrowIfNull(id);
 
         IDbCommand cmd = Connection.CreateCommand();
         cmd.CommandText = $"SELECT id,name,value FROM {T_PROP}\n" +
@@ -313,8 +313,8 @@ public sealed class PgSqlSimpleBlobStore : SqlSimpleBlobStore, ISimpleBlobStore
     /// <exception cref="ArgumentNullException">id or properties</exception>
     public bool AddProperties(string id, IList<BlobItemProperty> properties)
     {
-        if (id == null) throw new ArgumentNullException(nameof(id));
-        if (properties == null) throw new ArgumentNullException(nameof(properties));
+        ArgumentNullException.ThrowIfNull(id);
+        ArgumentNullException.ThrowIfNull(properties);
 
         using IDbTransaction trans = Connection.BeginTransaction();
         try
@@ -340,8 +340,8 @@ public sealed class PgSqlSimpleBlobStore : SqlSimpleBlobStore, ISimpleBlobStore
     /// <exception cref="ArgumentNullException">id or properties</exception>
     public bool SetProperties(string id, IList<BlobItemProperty> properties)
     {
-        if (id == null) throw new ArgumentNullException(nameof(id));
-        if (properties == null) throw new ArgumentNullException(nameof(properties));
+        ArgumentNullException.ThrowIfNull(id);
+        ArgumentNullException.ThrowIfNull(properties);
 
         using IDbTransaction trans = Connection.BeginTransaction();
         try
@@ -375,7 +375,7 @@ public sealed class PgSqlSimpleBlobStore : SqlSimpleBlobStore, ISimpleBlobStore
     /// <exception cref="ArgumentNullException">id</exception>
     public void DeleteProperties(string id)
     {
-        if (id == null) throw new ArgumentNullException(nameof(id));
+        ArgumentNullException.ThrowIfNull(id);
 
         DeleteProperties(id, null);
     }

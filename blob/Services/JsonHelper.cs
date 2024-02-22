@@ -7,7 +7,7 @@ public static class JsonHelper
 {
     public static string Jsonize(string s, bool quoted)
     {
-        if (s == null) throw new ArgumentNullException(nameof(s));
+        ArgumentNullException.ThrowIfNull(s);
 
         StringBuilder sb = new();
         foreach (char c in s)

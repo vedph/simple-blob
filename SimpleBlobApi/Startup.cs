@@ -73,7 +73,7 @@ public sealed class Startup
 
     private void ConfigureCorsServices(IServiceCollection services)
     {
-        string[] origins = new[] { "http://localhost:4200" };
+        string[] origins = ["http://localhost:4200"];
 
         IConfigurationSection section = Configuration.GetSection("AllowedOrigins");
         if (section.Exists())
@@ -304,10 +304,7 @@ public sealed class Startup
         app.UseAuthentication();
         app.UseAuthorization();
 
-        app.UseEndpoints(endpoints =>
-        {
-            endpoints.MapControllers();
-        });
+        app.UseEndpoints(endpoints => endpoints.MapControllers());
 
         // Swagger
         app.UseSwagger();
