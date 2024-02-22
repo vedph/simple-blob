@@ -53,8 +53,7 @@ public sealed class CsvMetadataFile
             string? name = csv.GetField(0)?.Trim();
             if (string.IsNullOrEmpty(name)) continue;
             string? value = csv.GetField(1);
-            if (name != null)
-                metadata.Add(Tuple.Create(name, value ?? ""));
+            metadata.Add(Tuple.Create(name, value ?? ""));
         }
         return metadata;
     }

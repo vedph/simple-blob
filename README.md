@@ -26,6 +26,7 @@
     - [Update User Command](#update-user-command)
     - [Show Settings Command](#show-settings-command)
   - [History](#history)
+    - [3.0.1](#301)
     - [3.0.0](#300)
     - [2.0.6](#206)
     - [2.0.5](#205)
@@ -496,6 +497,10 @@ Example:
 ```
 
 ## History
+
+### 3.0.1
+
+- 2024-02-22: fix to upload command metadata.
 
 ### 3.0.0
 

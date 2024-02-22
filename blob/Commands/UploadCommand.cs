@@ -129,24 +129,24 @@ internal sealed class UploadCommand : AsyncCommand<UploadCommandSettings>
         return path.Replace("\\", sep);
     }
 
-    private static string GetMetadataPath(string path,
+    private static string? GetMetadataPath(string path,
         UploadCommandSettings settings)
     {
-        string result = path;
+        string? result = null;
 
         if (!string.IsNullOrEmpty(settings.MetaExtension))
-            result = Path.ChangeExtension(result, settings.MetaExtension);
+            result = Path.ChangeExtension(path, settings.MetaExtension);
 
         if (!string.IsNullOrEmpty(settings.MetaPrefix))
         {
             result = Path.Combine(
-                Path.GetDirectoryName(result) ?? "",
-                Path.GetFileNameWithoutExtension(result) +
+                Path.GetDirectoryName(path) ?? "",
+                Path.GetFileNameWithoutExtension(path) +
                 settings.MetaPrefix +
-                Path.GetExtension(result));
+                Path.GetExtension(path));
         }
 
-        if (!string.IsNullOrEmpty(settings.MetaSuffix))
+        if (result != null && !string.IsNullOrEmpty(settings.MetaSuffix))
             result += settings.MetaSuffix;
 
         return result;
@@ -206,10 +206,9 @@ internal sealed class UploadCommand : AsyncCommand<UploadCommandSettings>
                 AnsiConsole.MarkupLine($"[yellow]{count:0000}[/] [cyan]{path}[/]");
 
                 // load metadata if any
-                string metaPath = GetMetadataPath(path, settings);
-
                 IList<Tuple<string, string>>? metadata = null;
-                if (File.Exists(metaPath))
+                string? metaPath = GetMetadataPath(path, settings);
+                if (metaPath != null && File.Exists(metaPath))
                 {
                     AnsiConsole.MarkupLine($"- [cyan]{metaPath}[/]");
                     metadata = metaFile.Read(metaPath);
@@ -241,9 +240,8 @@ internal sealed class UploadCommand : AsyncCommand<UploadCommandSettings>
                 }
             }
 
-            string info = "Upload complete: " + count;
-            CliAppContext.Logger?.LogInformation(info);
-            AnsiConsole.MarkupLine($"[green]{info}.[/]");
+            CliAppContext.Logger?.LogInformation("Upload complete: {count}", count);
+            AnsiConsole.MarkupLine($"[green]Upload complete: {count}.[/]");
 
             return 0;
         }
