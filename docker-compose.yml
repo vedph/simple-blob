@@ -16,7 +16,7 @@ services:
       - /var/db/pgsql:/var/lib/postgresql/data
 
   simple-blob-api:
-    image: vedph2020/simple-blob-api:3.0.0
+    image: vedph2020/simple-blob-api:3.0.2
     ports:
         - 2418:8080
     depends_on:

@@ -12,10 +12,10 @@
 		<PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
 		<Copyright>by Daniele Fusi</Copyright>
 		<PackageTags>BLOB</PackageTags>
-		<Version>3.0.1</Version>
+		<Version>3.0.2</Version>
 		<Nullable>enable</Nullable>
-		<FileVersion>3.0.1</FileVersion>
-		<AssemblyVersion>3.0.1</AssemblyVersion>
+		<FileVersion>3.0.2</FileVersion>
+		<AssemblyVersion>3.0.2</AssemblyVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -34,9 +34,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="CsvHelper" Version="31.0.0" />
-		<PackageReference Include="Fusi.Api.Auth.Controllers" Version="4.0.0" />
-		<PackageReference Include="Fusi.Cli.Auth" Version="4.0.0" />
+		<PackageReference Include="CsvHelper" Version="32.0.2" />
+		<PackageReference Include="Fusi.Api.Auth.Controllers" Version="4.0.1" />
+		<PackageReference Include="Fusi.Cli.Auth" Version="4.0.1" />
 		<PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
 		<PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0" />
@@ -44,8 +44,8 @@
 		<PackageReference Include="Serilog.Extensions.Logging" Version="8.0.0" />
 		<PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
 		<PackageReference Include="Crc32.NET" Version="1.2.0" />
-		<PackageReference Include="Spectre.Console" Version="0.48.0" />
-		<PackageReference Include="Spectre.Console.Cli" Version="0.48.0" />
+		<PackageReference Include="Spectre.Console" Version="0.49.1" />
+		<PackageReference Include="Spectre.Console.Cli" Version="0.49.1" />
 	</ItemGroup>
 
 	<ItemGroup>

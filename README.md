@@ -26,6 +26,7 @@
     - [Update User Command](#update-user-command)
     - [Show Settings Command](#show-settings-command)
   - [History](#history)
+    - [3.0.2](#302)
     - [3.0.1](#301)
     - [3.0.0](#300)
     - [2.0.6](#206)
@@ -54,7 +55,7 @@ Projects:
 Quick Docker image build:
 
 ```bash
-docker build . -t vedph2020/simple-blob-api:3.0.0 -t vedph2020/simple-blob-api:latest
+docker build . -t vedph2020/simple-blob-api:3.0.2 -t vedph2020/simple-blob-api:latest
 ```
 
 (replace with the current version).
@@ -497,6 +498,10 @@ Example:
 ```
 
 ## History
+
+### 3.0.2
+
+- 2024-05-13: updated packages.
 
 ### 3.0.1
 
