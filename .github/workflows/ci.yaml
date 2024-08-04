@@ -28,7 +28,7 @@ jobs:
       - name: Setup dotnet
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.204
+          dotnet-version: 8.0.303
 
       - name: Build
         shell: bash

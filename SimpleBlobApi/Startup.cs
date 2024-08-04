@@ -27,7 +27,7 @@ using Microsoft.Extensions.Options;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Identity;
 using Fusi.Api.Auth.Services;
-using SimpleBlobApi.Models;
+using Fusi.Api.Auth.Models;
 
 namespace SimpleBlobApi;
 
@@ -104,7 +104,7 @@ public sealed class Startup
                 Configuration.GetValue<string>("DatabaseName")));
         });
 
-        services.AddIdentity<ApplicationUser, ApplicationRole>()
+        services.AddIdentity<NamedUser, IdentityRole>()
             .AddEntityFrameworkStores<ApplicationDbContext>()
             .AddDefaultTokenProviders();
 
@@ -242,8 +242,8 @@ public sealed class Startup
         ConfigureMessagingServices(services);
 
         // user repository service
-        services.AddScoped<IUserRepository<ApplicationUser>,
-            UserRepository<ApplicationUser, ApplicationRole>>();
+        services.AddScoped<IUserRepository<NamedUser>,
+            UserRepository<NamedUser, IdentityRole>>();
 
         // BLOB services
         services.AddScoped<ISimpleBlobStore>(_ =>

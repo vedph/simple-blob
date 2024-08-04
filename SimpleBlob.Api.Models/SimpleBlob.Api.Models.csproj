@@ -10,11 +10,11 @@
     <Product>Simple BLOB</Product>
     <Description>Simple BLOB API models.</Description>
     <Copyright>by Daniele Fusi 2021</Copyright>
-    <Version>3.0.2</Version>
+    <Version>3.1.0</Version>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <PackageTags>BLOB</PackageTags>
-    <FileVersion>3.0.2</FileVersion>
-    <AssemblyVersion>3.0.2</AssemblyVersion>
+    <FileVersion>3.1.0</FileVersion>
+    <AssemblyVersion>3.1.0</AssemblyVersion>
   </PropertyGroup>
 
   <ItemGroup>

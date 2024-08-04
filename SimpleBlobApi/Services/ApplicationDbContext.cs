@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using SimpleBlobApi.Models;
 
 namespace SimpleBlobApi.Services;
 
@@ -11,7 +10,7 @@ namespace SimpleBlobApi.Services;
 /// </summary>
 /// <seealso cref="IdentityDbContext" />
 public sealed class ApplicationDbContext :
-    IdentityDbContext<ApplicationUser, ApplicationRole, string>
+    IdentityDbContext<NamedUser, IdentityRole, string>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ApplicationDbContext"/>
@@ -73,7 +72,7 @@ public sealed class ApplicationDbContext :
         base.OnModelCreating(modelBuilder);
 
         // rename identity tables
-        modelBuilder.Entity<ApplicationUser>(b =>
+        modelBuilder.Entity<NamedUser>(b =>
         {
             b.ToTable("app_user");
         });
@@ -93,7 +92,7 @@ public sealed class ApplicationDbContext :
             b.ToTable("app_user_token");
         });
 
-        modelBuilder.Entity<ApplicationRole>(b =>
+        modelBuilder.Entity<IdentityRole>(b =>
         {
             b.ToTable("app_role");
         });

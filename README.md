@@ -26,16 +26,6 @@
     - [Update User Command](#update-user-command)
     - [Show Settings Command](#show-settings-command)
   - [History](#history)
-    - [3.0.2](#302)
-    - [3.0.1](#301)
-    - [3.0.0](#300)
-    - [2.0.6](#206)
-    - [2.0.5](#205)
-    - [2.0.4](#204)
-    - [2.0.3](#203)
-    - [2.0.2](#202)
-    - [2.0.1](#201)
-    - [2.0.0](#200)
 
 A very simple BLOB store with minimal dependencies. This is used internally, as a support subsystem for other projects, but can eventually be used as a standalone utility service.
 
@@ -498,6 +488,10 @@ Example:
 ```
 
 ## History
+
+### 3.1.0
+
+- 2024-08-04: updated packages and removed identity artifacts.
 
 ### 3.0.2
 

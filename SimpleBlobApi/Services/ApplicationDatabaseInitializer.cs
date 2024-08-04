@@ -4,7 +4,6 @@ using Fusi.DbManager.PgSql;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using SimpleBlob.PgSql;
-using SimpleBlobApi.Models;
 using System;
 using System.Globalization;
 using System.IO;
@@ -17,7 +16,7 @@ namespace SimpleBlobApi.Services;
 /// Application database initializer.
 /// </summary>
 public sealed class ApplicationDatabaseInitializer :
-    AuthDatabaseInitializer<ApplicationUser, ApplicationRole, NamedSeededUserOptions>
+    AuthDatabaseInitializer<NamedUser, IdentityRole, NamedSeededUserOptions>
 {
     /// <summary>
     /// Initializes a new instance of the <see cref="ApplicationDatabaseInitializer"/>
@@ -31,7 +30,7 @@ public sealed class ApplicationDatabaseInitializer :
 
     private static string LoadResourceText(string name)
     {
-        using (StreamReader reader = new StreamReader(
+        using (StreamReader reader = new(
             Assembly.GetExecutingAssembly().GetManifestResourceStream(
                 $"SimpleBlobApi.Assets.{name}"), Encoding.UTF8))
         {
@@ -44,7 +43,7 @@ public sealed class ApplicationDatabaseInitializer :
     /// </summary>
     /// <param name="user">The user.</param>
     /// <param name="options">The options.</param>
-    protected override void InitUser(ApplicationUser user,
+    protected override void InitUser(NamedUser user,
         NamedSeededUserOptions options)
     {
         base.InitUser(user, options);
@@ -60,16 +59,16 @@ public sealed class ApplicationDatabaseInitializer :
     {
         // check if DB exists
         string name = Configuration.GetValue<string>("DatabaseName");
-        Serilog.Log.Information($"Checking for database {name}...");
+        Serilog.Log.Information("Checking for database {DatabaseName}...", name);
 
         string csTemplate = Configuration.GetConnectionString("Default");
         PgSqlDbManager manager = new PgSqlDbManager(csTemplate);
 
         if (!manager.Exists(name))
         {
-            Serilog.Log.Information($"Creating database {name}...");
+            Serilog.Log.Information("Creating database {DatabaseName}...", name);
 
-            PgSqlSimpleBlobStore store = new PgSqlSimpleBlobStore(
+            PgSqlSimpleBlobStore store = new(
                 string.Format(CultureInfo.InvariantCulture, csTemplate, name));
             string sql = store.GetSchema();
 

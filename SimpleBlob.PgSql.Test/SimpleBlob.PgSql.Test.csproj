@@ -3,16 +3,16 @@
 	<PropertyGroup>
 		<TargetFramework>net8.0</TargetFramework>
 		<IsPackable>false</IsPackable>
-		<Version>3.0.2</Version>
-		<FileVersion>3.0.2</FileVersion>
-		<AssemblyVersion>3.0.2</AssemblyVersion>
+		<Version>3.1.0</Version>
+		<FileVersion>3.1.0</FileVersion>
+		<AssemblyVersion>3.1.0</AssemblyVersion>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Fusi.DbManager.PgSql" Version="4.0.2" />
-		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.9.0" />
-		<PackageReference Include="xunit" Version="2.8.0" />
-		<PackageReference Include="xunit.runner.visualstudio" Version="2.8.0">
+		<PackageReference Include="Fusi.DbManager.PgSql" Version="4.0.3" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.10.0" />
+		<PackageReference Include="xunit" Version="2.9.0" />
+		<PackageReference Include="xunit.runner.visualstudio" Version="2.8.2">
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
