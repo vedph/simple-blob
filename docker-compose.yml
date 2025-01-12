@@ -16,15 +16,15 @@ services:
       - /var/db/pgsql:/var/lib/postgresql/data
 
   simple-blob-api:
-    image: vedph2020/simple-blob-api:3.0.2
+    image: vedph2020/simple-blob-api:4.0.0
     ports:
         - 2418:8080
     depends_on:
         - simple-blob-pgsql
     environment:
-        # for Windows use : as separator, for non Windows use __
-        # (see https://github.com/aspnet/Configuration/issues/469)
+        - ASPNETCORE_URLS=http://+:8080
         - CONNECTIONSTRINGS__DEFAULT=User ID=postgres;Password=postgres;Host=simple-blob-pgsql;Port=5432;Database={0};
+        - CONNECTIONSTRINGS__AUTH=User ID=postgres;Password=postgres;Host=simple-blob-pgsql;Port=5432;Database={0};
         # - ALLOWED__ORIGINS__3=http://www.something.com
         - SEEDDELAY=30
         - STOCKUSERS__0__PASSWORD=P4ss-W0rd!

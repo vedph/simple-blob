@@ -41,13 +41,12 @@ public sealed class FileMessageBuilderService : MessageBuilderServiceBase
     {
         // https://docs.microsoft.com/en-us/aspnet/core/fundamentals/file-providers?view=aspnetcore-3.0
 
-        IFileProvider provider = new PhysicalFileProvider(_messageDir);
+        PhysicalFileProvider provider = new(_messageDir);
         IFileInfo info = provider.GetFileInfo(templateName + ".html");
         if (!info.Exists) return null;
 
         string template;
-        using (StreamReader reader = new StreamReader(info.CreateReadStream(),
-            Encoding.UTF8))
+        using (StreamReader reader = new(info.CreateReadStream(), Encoding.UTF8))
         {
             template = reader.ReadToEnd();
         }

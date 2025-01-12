@@ -42,13 +42,17 @@ Projects:
 
 ## Docker
 
-Quick Docker image build:
+🐋 Quick Docker image build (you need to have a `buildx` container):
 
 ```bash
-docker build . -t vedph2020/simple-blob-api:3.0.2 -t vedph2020/simple-blob-api:latest
+docker buildx create --use
+
+docker buildx build . --platform linux/amd64,linux/arm64 -t vedph2020/simple-blob-api:4.0.0 -t vedph2020/simple-blob-api:latest --push
 ```
 
 (replace with the current version).
+
+>Remember that when creating the image in this way you must add `--platform=$BUILDPLATFORM` to the `FROM` commands including ASP.NET Core SDK and runtime in the Dockerfile.
 
 ## Quick Start
 
@@ -488,6 +492,12 @@ Example:
 ```
 
 ## History
+
+### 4.0.0
+
+- 2025-01-12:
+  - ⚠️ upgraded to .NET 9.
+  - replaced Swagger with Scalar.
 
 ### 3.1.0
 

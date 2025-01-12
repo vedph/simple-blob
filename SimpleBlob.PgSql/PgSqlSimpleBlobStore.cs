@@ -41,7 +41,13 @@ public sealed class PgSqlSimpleBlobStore : SqlSimpleBlobStore, ISimpleBlobStore
     /// Gets the code for the store schema.
     /// </summary>
     /// <returns>Code.</returns>
-    public string GetSchema()
+    public string GetSchema() => GetDDL();
+
+    /// <summary>
+    /// Gets the DDL code for this store.
+    /// </summary>
+    /// <returns>SQL code.</returns>
+    public static string GetDDL()
     {
         using StreamReader reader = new(
             Assembly.GetExecutingAssembly()
